@@ -4,7 +4,7 @@
 **Version:** 1.1  
 **Date:** 5 July 2026  
 **Audience:** RWA committee, product team, residents (summary sections)  
-**Related docs:** [FUNCTIONAL-SPEC.md](./FUNCTIONAL-SPEC.md) · [Implementation backlog](./tracking/backlog-product-improvements.md)
+**Related docs:** [Functional Spec](./functional-spec.md) · [Implementation backlog](../dev/archive/backlog-product-improvements.md)
 
 ---
 
@@ -322,9 +322,9 @@ Every roadmap item maps to the implementation backlog:
 | Phase 3 — Evaluate | IMP-501–507 | 7 | **DEFERRED** |
 | Documentation | IMP-D01–D05 | 5 | **DONE** |
 
-**Detailed tracking:** [`docs/tracking/backlog-product-improvements.md`](./tracking/backlog-product-improvements.md)
+**Detailed tracking:** [`dev/archive/backlog-product-improvements.md`](../dev/archive/backlog-product-improvements.md)
 
-**Functional specification:** [`docs/FUNCTIONAL-SPEC.md`](./FUNCTIONAL-SPEC.md)
+**Functional specification:** [`functional-spec.md`](./functional-spec.md)
 
 ---
 

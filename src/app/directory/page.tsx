@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
 import { UnitLink } from "@/components/shared/unit-link";
+import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -63,15 +66,16 @@ export default async function DirectoryPage({
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-heading text-2xl font-bold">Unit Directory</h1>
-          <p className="text-muted-foreground">Browse who lives where in your community.</p>
-        </div>
+        <PageHeader
+          feature="directory"
+          title="Neighbors"
+          subtitle="Browse who lives where in your community."
+        />
 
         <div className="flex flex-wrap gap-2">
           <a
             href="/directory"
-            className={`inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors ${
+            className={`inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors ${
               !params.tower ? "bg-primary text-primary-foreground" : "border border-input hover:bg-muted"
             }`}
           >
@@ -81,7 +85,7 @@ export default async function DirectoryPage({
             <a
               key={t}
               href={`/directory?tower=${t}`}
-              className={`inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors ${
+              className={`inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors ${
                 params.tower === t ? "bg-primary text-primary-foreground" : "border border-input hover:bg-muted"
               }`}
             >
@@ -90,83 +94,79 @@ export default async function DirectoryPage({
           ))}
         </div>
 
-        <div className="rounded-xl border bg-card">
-          {/* Mobile card list */}
-          <div className="md:hidden divide-y">
-            {Array.from(unitsByNumber.values()).map(({ unit, residents }) => (
-              <div key={unit.id} className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <UnitLink unitNumber={unit.unitNumber} />
-                  <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    Tower {unit.block}
-                  </span>
-                  {unit.floor !== null && (
-                    <span className="text-xs text-muted-foreground">Floor {unit.floor}</span>
-                  )}
+        {unitsByNumber.size === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No neighbors found"
+            description={params.tower ? `No residents in Tower ${params.tower} yet.` : "No residents registered yet."}
+          />
+        ) : (
+          <div className="rounded-xl border bg-card">
+            {/* Mobile card list */}
+            <div className="md:hidden divide-y">
+              {Array.from(unitsByNumber.values()).map(({ unit, residents }) => (
+                <div key={unit.id} className="p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <UnitLink unitNumber={unit.unitNumber} />
+                    <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      Tower {unit.block}
+                    </span>
+                    {unit.floor !== null && (
+                      <span className="text-xs text-muted-foreground">Floor {unit.floor}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {residents.map((r, i) => (
+                      <UserLink
+                        key={i}
+                        userId={r.id}
+                        name={r.name}
+                        className="text-xs"
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {residents.map((r, i) => (
-                    <UserLink
-                      key={i}
-                      userId={r.id}
-                      name={r.name}
-                      className="text-xs"
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-            {unitsByNumber.size === 0 && (
-              <div className="px-4 py-12 text-center text-muted-foreground">
-                No units found.
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
 
-          {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium">Unit</th>
-                  <th className="px-4 py-3 text-left font-medium">Tower</th>
-                  <th className="px-4 py-3 text-left font-medium">Floor</th>
-                  <th className="px-4 py-3 text-left font-medium">Residents</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from(unitsByNumber.values()).map(({ unit, residents }) => (
-                  <tr key={unit.id} className="border-b last:border-0">
-                    <td className="px-4 py-3">
-                      <UnitLink unitNumber={unit.unitNumber} />
-                    </td>
-                    <td className="px-4 py-3">Tower {unit.block}</td>
-                    <td className="px-4 py-3">{unit.floor}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {residents.map((r, i) => (
-                          <UserLink
-                            key={i}
-                            userId={r.id}
-                            name={r.name}
-                            className="text-xs"
-                          />
-                        ))}
-                      </div>
-                    </td>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-4 py-3 text-left font-medium">Unit</th>
+                    <th className="px-4 py-3 text-left font-medium">Tower</th>
+                    <th className="px-4 py-3 text-left font-medium">Floor</th>
+                    <th className="px-4 py-3 text-left font-medium">Residents</th>
                   </tr>
-                ))}
-                {unitsByNumber.size === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
-                      No units found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {Array.from(unitsByNumber.values()).map(({ unit, residents }) => (
+                    <tr key={unit.id} className="border-b last:border-0">
+                      <td className="px-4 py-3">
+                        <UnitLink unitNumber={unit.unitNumber} />
+                      </td>
+                      <td className="px-4 py-3">Tower {unit.block}</td>
+                      <td className="px-4 py-3">{unit.floor}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {residents.map((r, i) => (
+                            <UserLink
+                              key={i}
+                              userId={r.id}
+                              name={r.name}
+                              className="text-xs"
+                            />
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </DashboardLayout>
   );

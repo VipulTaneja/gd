@@ -11,7 +11,7 @@ export async function getHubData(
 }
 
 async function getGuestHubData(): Promise<HubData> {
-  const [notices, events, polls, facilities] = await Promise.all([
+  const [notices, events, polls, facilities, forumThreads] = await Promise.all([
     db.notice.findMany({
       where: {
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
@@ -36,6 +36,12 @@ async function getGuestHubData(): Promise<HubData> {
       select: { id: true, name: true, location: true },
       take: 8,
     }),
+    db.forumThread.findMany({
+      where: { status: { not: "HIDDEN" } },
+      orderBy: { lastActivityAt: "desc" },
+      take: 3,
+      include: { forum: { select: { slug: true } }, _count: { select: { posts: true } } },
+    }),
   ]);
 
   return {
@@ -44,6 +50,13 @@ async function getGuestHubData(): Promise<HubData> {
     notices,
     events,
     polls,
+    forumThreads: forumThreads.map((t) => ({
+      id: t.id,
+      title: t.title,
+      forumSlug: t.forum.slug,
+      lastActivityAt: t.lastActivityAt,
+      _count: t._count,
+    })),
     facilities,
     badges: { openTickets: 0, pendingDues: 0, unreadNotifications: 0, activePolls: polls.length },
   };
@@ -77,7 +90,7 @@ async function getResidentHubData(userId: string): Promise<HubData> {
     : null;
   const towerBlock = primaryUnit?.block ?? null;
 
-  const [notices, events, polls, facilities, openTickets, pendingDues, unreadNotifications, activePolls] =
+  const [notices, events, polls, facilities, forumThreads, openTickets, pendingDues, unreadNotifications, activePolls] =
     await Promise.all([
       db.notice.findMany({
         where: {
@@ -107,6 +120,12 @@ async function getResidentHubData(userId: string): Promise<HubData> {
       db.facility.findMany({
         select: { id: true, name: true, location: true },
         take: 8,
+      }),
+      db.forumThread.findMany({
+        where: { status: { not: "HIDDEN" } },
+        orderBy: { lastActivityAt: "desc" },
+        take: 3,
+        include: { forum: { select: { slug: true } }, _count: { select: { posts: true } } },
       }),
       db.helpTicket.count({
         where: { userId, status: { in: ["OPEN", "IN_PROGRESS"] } },
@@ -139,6 +158,13 @@ async function getResidentHubData(userId: string): Promise<HubData> {
     notices,
     events,
     polls,
+    forumThreads: forumThreads.map((t) => ({
+      id: t.id,
+      title: t.title,
+      forumSlug: t.forum.slug,
+      lastActivityAt: t.lastActivityAt,
+      _count: t._count,
+    })),
     facilities,
     badges: {
       openTickets,

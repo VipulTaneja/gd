@@ -44,6 +44,7 @@ const moreLinks: { feature: FeatureKey; href: string }[] = [
   { feature: "directory", href: "/directory" },
   { feature: "notifications", href: "/notifications" },
   { feature: "forums", href: "/forums" },
+  { feature: "team", href: "/team" },
 ];
 
 interface MobileBottomNavProps {

@@ -58,4 +58,10 @@ export const statusLabels: Record<string, string> = {
   CLOSED: "Closed",
   PENDING: "Due soon",
   PAID: "Paid",
+  ACTIVE: "Active",
+  USED: "Used",
+  EXPIRED: "Expired",
+  CANCELLED: "Cancelled",
+  OVERDUE: "Overdue",
+  WAIVED: "Waived",
 };

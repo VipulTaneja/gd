@@ -36,6 +36,7 @@ export default async function Home() {
           notices={hubData.notices}
           events={hubData.events}
           polls={hubData.polls}
+          forumThreads={hubData.forumThreads}
         />
       }
       pulse={<HubCommunityPulse />}

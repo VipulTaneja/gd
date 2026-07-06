@@ -79,6 +79,8 @@ model User {
   forumThreads          ForumThread[]
   forumPosts            ForumPost[]
   forumReports          ForumReport[]   @relation("ForumReportReporter")
+  forumSubscriptions    ForumSubscription[]
+  forumReactions        ForumReaction[]
   forumResolvedReports  ForumReport[]   @relation("ForumReportResolver")
 }
 
@@ -889,6 +891,7 @@ model ForumThread {
   forum  Forum       @relation(fields: [forumId], references: [id], onDelete: Cascade)
   author User        @relation(fields: [authorId], references: [id])
   posts  ForumPost[]
+  subscriptions ForumSubscription[]
 
   @@index([forumId, lastActivityAt(sort: Desc)])
   @@index([authorId])
@@ -899,6 +902,7 @@ model ForumPost {
   threadId      String
   authorId      String
   body          String
+  images        Json?
   replyToPostId String?
   isHidden      Boolean   @default(false)
   editedAt      DateTime?
@@ -906,6 +910,7 @@ model ForumPost {
 
   thread  ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   author  User        @relation(fields: [authorId], references: [id])
+  reactions ForumReaction[]
 
   @@index([threadId, createdAt(sort: Asc)])
   @@index([authorId])
@@ -931,4 +936,31 @@ model ForumReport {
   resolver User?          @relation("ForumReportResolver", fields: [resolvedById], references: [id])
 
   @@index([status, createdAt])
+}
+
+model ForumSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  threadId  String
+  createdAt DateTime @default(now())
+
+  user   User         @relation(fields: [userId], references: [id])
+  thread ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, threadId])
+  @@index([threadId])
+}
+
+model ForumReaction {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId, emoji])
+  @@index([postId])
 }

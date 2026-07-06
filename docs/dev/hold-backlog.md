@@ -1,6 +1,6 @@
 # Gulshan Dynasty — Hold Backlog
 
-> **Usage:** Deferred items moved from `docs/BACKLOG.md`. These are features that were evaluated and intentionally postponed to a future phase.
+> **Usage:** Deferred items moved from `backlog.md`. These are features that were evaluated and intentionally postponed to a future phase.
 
 **Status Legend:**
 - `DEFERRED` — Pushed to a future phase
@@ -106,7 +106,7 @@ These are operational tasks to be completed at deployment time, not development 
 
 ## Product Improvements Deferrals
 
-These items were deferred from `docs/tracking/backlog-product-improvements.md` and are intentionally postponed to a future phase.
+These items were deferred from `tracking/backlog-product-improvements.md` and are intentionally postponed to a future phase.
 
 ### P3: Long Horizon (Evaluate After 6 Months Usage)
 
@@ -118,7 +118,7 @@ These items were deferred from `docs/tracking/backlog-product-improvements.md` a
 | IMP-504 | Hindi UI / i18n for guards and staff | L | DEFERRED | next-intl; translate gate + key flows |
 | IMP-505 | CCTV / intercom hardware integration | XL | DEFERRED | Vendor-specific |
 | IMP-506 | Biometric gate integration | XL | DEFERRED | Hardware project |
-| IMP-507 | Multi-society SaaS mode | XL | DEFERRED | Explicitly out of scope per ARCHITECTURE |
+| IMP-507 | Multi-society SaaS mode | XL | DEFERRED | Explicitly out of scope per architecture docs |
 
 ### P1: Governance Deferrals
 
@@ -134,6 +134,42 @@ These items were deferred from `docs/tracking/backlog-product-improvements.md` a
 
 ---
 
+## UI/UX & Forum Deferred Items
+
+These items were moved from `backlog.md` on 2026-07-06. They require manual testing, E2E infrastructure, or high-complexity implementation.
+
+### Manual QA & Performance (require Lighthouse + device testing)
+
+| ID | Description | Complexity | Impact | Status | Implementation Pointers |
+|---|---|---|---|---|---|
+| CAS-039 | Performance — ensure animations don't hurt LCP/CLS | Low | Medium | DEFERRED | Run Lighthouse on `/`; check CLS on hub shortcuts; verify `next/image` with proper dimensions |
+| CAS-040 | Guest vs resident QA matrix | Low | Medium | DEFERRED | Manual checklist: verify 8 shortcuts, badge counts, tower-filtered notices, auth-aware hrefs |
+| HUB-S15 | Guest vs resident QA matrix (duplicate of CAS-040) | Low | Medium | DEFERRED | Merge with CAS-040 |
+| HUB-S16 | Performance check — Lighthouse ≥90 on hub | Low | High | DEFERRED | Run Lighthouse; verify no carousel in LCP; check `next/image` optimization |
+| FORUM-062 | Mobile QA pass (375px) | Medium | Medium | DEFERRED | Manual: verify composer sticky, long threads, image upload, scroll |
+
+### E2E Tests (need Playwright setup)
+
+| ID | Description | Complexity | Impact | Status | Implementation Pointers |
+|---|---|---|---|---|---|
+| CAS-042 | Screenshot regression — Playwright visual snapshots | Medium | Low | DEFERRED | Install `@playwright/test`; create `e2e/visual/`; write snapshot tests for 8 routes |
+| FORUM-063 | E2E smoke test: create thread → reply → report | Medium | Medium | DEFERRED | Create `e2e/forum-smoke.spec.ts`; steps: login → create → reply → report |
+
+### Server Refactor (low impact, optional)
+
+| ID | Description | Complexity | Impact | Status | Implementation Pointers |
+|---|---|---|---|---|---|
+| FORUM-019 | Server actions — forum routes still REST | Medium | Low | DEFERRED | Audit forum API routes; convert POST endpoints to server actions; keep GET as route handlers |
+
+### High Complexity Features
+
+| ID | Description | Complexity | Impact | Status | Implementation Pointers |
+|---|---|---|---|---|---|
+| FORUM-053 | @mention parsing + notification | High | Medium | DEFERRED | Install TipTap mention extension; configure user search; parse mentions server-side; create notifications; render as links |
+| FORUM-054 | Weekly digest email | High | Low | DEFERRED | Create weekly cron; query top threads; build React Email template; send via Resend; add opt-out preference |
+
+---
+
 ## Summary Statistics
 
 | Category | Count |
@@ -142,9 +178,10 @@ These items were deferred from `docs/tracking/backlog-product-improvements.md` a
 | Phase 2 items | 15 |
 | Deployment-time tasks | 3 |
 | Product Improvements deferrals | 9 |
-| **Total** | **41** |
+| UI/UX & Forum deferred | 10 |
+| **Total** | **51** |
 
 ---
 
-*Moved from docs/BACKLOG.md on 2026-07-04*
-*Original source: docs/tracking/archive/backlog-archived-2026-07-04.md (83 completed items)*
+*Moved from backlog.md on 2026-07-04*
+*Original source: archive/backlog-archived-2026-07-04.md (83 completed items)*

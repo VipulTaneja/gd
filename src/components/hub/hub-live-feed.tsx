@@ -4,26 +4,29 @@ import { SoftCard } from "@/components/shared/soft-card";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { FadeIn } from "@/components/shared/animated";
 import { empty } from "@/lib/microcopy";
-import type { HubNotice, HubEvent, HubPoll } from "@/types/hub";
+import type { HubNotice, HubEvent, HubPoll, HubForumThread } from "@/types/hub";
 
 interface HubLiveFeedProps {
   notices: HubNotice[];
   events: HubEvent[];
   polls: HubPoll[];
+  forumThreads: HubForumThread[];
 }
 
 const typeConfig = {
   notice: { icon: Bell, accent: "amber" as const, label: "Notice" },
   event: { icon: Calendar, accent: "sky" as const, label: "Event" },
   poll: { icon: MessageSquare, accent: "none" as const, label: "Poll" },
+  forum: { icon: MessageSquare, accent: "cyan" as const, label: "Forum" },
 };
 
 type FeedItem =
   | { type: "notice"; data: HubNotice; sortDate: Date }
   | { type: "event"; data: HubEvent; sortDate: Date }
-  | { type: "poll"; data: HubPoll; sortDate: Date };
+  | { type: "poll"; data: HubPoll; sortDate: Date }
+  | { type: "forum"; data: HubForumThread & { forumSlug: string }; sortDate: Date };
 
-export function HubLiveFeed({ notices, events, polls }: HubLiveFeedProps) {
+export function HubLiveFeed({ notices, events, polls, forumThreads }: HubLiveFeedProps) {
   const items: FeedItem[] = [
     ...notices.map((n) => ({
       type: "notice" as const,
@@ -39,6 +42,11 @@ export function HubLiveFeed({ notices, events, polls }: HubLiveFeedProps) {
       type: "poll" as const,
       data: p,
       sortDate: new Date(p.closesAt),
+    })),
+    ...forumThreads.map((t) => ({
+      type: "forum" as const,
+      data: t,
+      sortDate: new Date(t.lastActivityAt),
     })),
   ].sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
 
@@ -72,7 +80,9 @@ export function HubLiveFeed({ notices, events, polls }: HubLiveFeedProps) {
                 ? `/polls/${item.data.id}`
                 : item.type === "event"
                   ? `/events`
-                  : `/notices`;
+                  : item.type === "forum"
+                    ? `/forums/${item.data.forumSlug}/threads/${item.data.id}`
+                    : `/notices`;
 
             return (
               <Link
@@ -103,6 +113,7 @@ export function HubLiveFeed({ notices, events, polls }: HubLiveFeedProps) {
                     {item.type === "event" && item.data.location && ` · ${item.data.location}`}
                     {item.type === "poll" &&
                       ` · Closes ${new Date(item.data.closesAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
+                    {item.type === "forum" && ` · ${item.data._count.posts} replies`}
                   </p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 mt-2" />
@@ -119,6 +130,9 @@ export function HubLiveFeed({ notices, events, polls }: HubLiveFeedProps) {
           </Link>
           <Link href="/polls" className="text-gold hover:underline">
             Polls →
+          </Link>
+          <Link href="/forums" className="text-gold hover:underline">
+            Forums →
           </Link>
         </div>
       </SoftCard>

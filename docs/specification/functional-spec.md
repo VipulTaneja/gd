@@ -4,7 +4,7 @@
 **Version:** 1.1  
 **Date:** 5 July 2026  
 **Audience:** Product team, RWA committee, developers, residents (end-user sections)  
-**Related docs:** [ARCHITECTURE.md](./ARCHITECTURE.md) · [DESIGN-PROFILES.md](./DESIGN-PROFILES.md) · [BACKLOG.md](./BACKLOG.md)
+**Related docs:** [Architecture](../dev/architecture.md) · [Design Profiles](./design-profiles.md) · [Active Backlog](../dev/backlog.md)
 
 ---
 
@@ -897,8 +897,8 @@ Authentication, admin approval, hub home page, dashboard, notices, events + RSVP
 
 ## 14. Phase 2 Roadmap (Product Backlog Summary)
 
-> **Full implementation backlog:** [`docs/tracking/backlog-product-improvements.md`](./tracking/backlog-product-improvements.md) — 52 trackable items (IMP-001–507) with sprint plan, dependencies, and acceptance criteria.  
-> **Stakeholder roadmap:** [`docs/PRODUCT-ROADMAP.md`](./PRODUCT-ROADMAP.md) — quarterly themes, KPIs, and RWA decision log.
+> **Full implementation backlog:** [`dev/archive/backlog-product-improvements.md`](../dev/archive/backlog-product-improvements.md) — 52 trackable items (IMP-001–507).  
+> **Stakeholder roadmap:** [`product-roadmap.md`](./product-roadmap.md) — quarterly themes, KPIs, and RWA decision log.
 
 | Feature | User benefit |
 |---|---|
@@ -915,7 +915,7 @@ Authentication, admin approval, hub home page, dashboard, notices, events + RSVP
 | Recurring events | Weekly yoga without manual re-creation |
 | Inter-flat messaging | Contact neighbour without sharing phone |
 
-Full deferred list: [`docs/hold-backlog.md`](./hold-backlog.md)
+Full deferred list: [`dev/hold-backlog.md`](../dev/hold-backlog.md)
 
 ---
 
@@ -946,4 +946,4 @@ Full deferred list: [`docs/hold-backlog.md`](./hold-backlog.md)
 
 ---
 
-*For technical architecture, see [ARCHITECTURE.md](./ARCHITECTURE.md). For development tracking, see [BACKLOG.md](./BACKLOG.md).*
+*For technical architecture, see [Architecture](../dev/architecture.md). For development tracking, see [Backlog](../dev/backlog.md).*

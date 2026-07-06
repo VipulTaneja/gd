@@ -37,6 +37,14 @@ export interface HubPoll {
   scope: "GLOBAL" | "SUB_COMMUNITY";
 }
 
+export interface HubForumThread {
+  id: string;
+  title: string;
+  forumSlug: string;
+  lastActivityAt: Date;
+  _count: { posts: number };
+}
+
 export interface HubFacility {
   id: string;
   name: string;
@@ -74,6 +82,7 @@ export interface HubData {
   notices: HubNotice[];
   events: HubEvent[];
   polls: HubPoll[];
+  forumThreads: HubForumThread[];
   facilities: HubFacility[];
   badges: HubBadgeCounts;
 }

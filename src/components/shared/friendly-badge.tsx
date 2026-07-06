@@ -17,6 +17,12 @@ const statusConfig: Record<string, { icon: typeof Circle; className: string }> =
   CLOSED: { icon: CheckCircle2, className: "bg-slate-100 text-slate-600" },
   PENDING: { icon: Clock, className: "bg-amber-100 text-amber-700" },
   PAID: { icon: CheckCircle2, className: "bg-emerald-100 text-emerald-700" },
+  ACTIVE: { icon: CheckCircle2, className: "bg-emerald-100 text-emerald-700" },
+  USED: { icon: CheckCircle2, className: "bg-sky-100 text-sky-700" },
+  EXPIRED: { icon: Circle, className: "bg-slate-100 text-slate-600" },
+  CANCELLED: { icon: Circle, className: "bg-red-100 text-red-700" },
+  OVERDUE: { icon: AlertTriangle, className: "bg-red-100 text-red-700" },
+  WAIVED: { icon: Circle, className: "bg-slate-100 text-slate-600" },
 };
 
 interface FriendlyBadgeProps {

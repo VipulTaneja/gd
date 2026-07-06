@@ -22,6 +22,8 @@ const headerNav: { feature: FeatureKey; href: string }[] = [
   { feature: "notices", href: "/notices" },
   { feature: "events", href: "/events" },
   { feature: "polls", href: "/polls" },
+  { feature: "forums", href: "/forums" },
+  { feature: "team", href: "/team" },
 ];
 
 interface CasualHeaderProps {

@@ -16,12 +16,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 | Topic | Location |
 |---|---|
-| Functional spec | `docs/FUNCTIONAL-SPEC.md` |
-| Architecture & data model | `docs/ARCHITECTURE.md` |
-| Profile linking rules | `docs/DESIGN-PROFILES.md` |
-| UI/UX casual makeover tracker | `docs/tracking/ui-ux-casual-makeover-log.md` |
-| Hub redesign backlog | `docs/tracking/backlog-hub-redesign.md` |
-| Product backlog | `docs/BACKLOG.md` |
+| Functional spec | `docs/specification/functional-spec.md` |
+| Architecture & data model | `docs/dev/architecture.md` |
+| Profile linking rules | `docs/specification/design-profiles.md` |
+| Active backlog | `docs/dev/backlog.md` |
+| Deferred items | `docs/dev/hold-backlog.md` |
+| Product roadmap | `docs/specification/product-roadmap.md` |
 
 ---
 
@@ -101,7 +101,13 @@ src/
 prisma/
 ├── schema.prisma
 └── seed.ts
-docs/                       # Specs, architecture, tracking logs
+docs/
+├── specification/    # Functional spec, design profiles, roadmap
+├── dev/              # Architecture, backlogs, tracking
+│   ├── tracking/     # Active work logs
+│   └── archive/      # Completed work
+├── deploy/           # Deployment guides
+└── test/             # Testing docs
 ```
 
 **Path alias:** `@/*` → `src/*`
@@ -206,7 +212,7 @@ Feature colors: `src/lib/feature-colors.ts` — one pastel per feature area.
 
 ### Admin shell (enterprise, intentional)
 
-`src/app/admin/layout.tsx` — dark sidebar, utilitarian. **Do not** apply casual makeover to admin unless explicitly requested. Track in `docs/tracking/ui-ux-casual-makeover-log.md` item CAS-017.
+`src/app/admin/layout.tsx` — dark sidebar, utilitarian. **Do not** apply casual makeover to admin unless explicitly requested. Track in `docs/dev/tracking/ui-ux-casual-makeover-log.md` item CAS-017.
 
 ### Design tokens
 
@@ -254,7 +260,7 @@ Feature colors: `src/lib/feature-colors.ts` — one pastel per feature area.
 
 ### Links & profiles
 
-Per `docs/DESIGN-PROFILES.md`:
+Per `docs/specification/design-profiles.md`:
 
 - Every user name → `<UserLink userId={...} name={...} />`
 - Every unit number → `<UnitLink unitNumber={...} />`
@@ -291,7 +297,7 @@ When adding or updating a resident list page:
 
 ## Tracking & backlog workflow
 
-Active UI/UX work is tracked in `docs/tracking/ui-ux-casual-makeover-log.md` (42 items, dependency-ordered). When implementing a tracked item:
+Active UI/UX work is tracked in `docs/dev/backlog.md` (42 items). When implementing a tracked item:
 
 1. Check dependencies are `DONE`
 2. Implement per acceptance criteria

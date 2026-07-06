@@ -2,8 +2,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "@/components/shared/page-header";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
 
 export const dynamic = "force-dynamic";
 
@@ -32,14 +32,11 @@ export default async function ProfilePage() {
   return (
     <DashboardLayout user={layoutUser}>
       <div className="mx-auto max-w-2xl space-y-6">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Dashboard
-        </Link>
-
-        <h1 className="font-heading text-2xl font-bold">My Profile</h1>
+        <PageHeader
+          feature="directory"
+          title="My Profile"
+          subtitle={`${user.globalRole} · Member since ${user.createdAt.toLocaleDateString("en-IN", { month: "short", year: "numeric" })}`}
+        />
 
         <div className="rounded-xl border bg-card p-6 space-y-4">
           <div className="flex items-center gap-4">
@@ -58,17 +55,32 @@ export default async function ProfilePage() {
               <p className="mt-1">{user.phone ?? "Not provided"}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Role</label>
-              <p className="mt-1">{user.globalRole}</p>
-            </div>
-            <div>
               <label className="text-sm font-medium text-muted-foreground">Status</label>
-              <p className="mt-1">{user.approvalStatus}</p>
+              <div className="mt-1">
+                <FriendlyBadge value={user.approvalStatus} variant="status" />
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Member Since</label>
-              <p className="mt-1">{user.createdAt.toLocaleDateString()}</p>
-            </div>
+            {user.emergencyContactName && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Emergency Contact</label>
+                <p className="mt-1">{user.emergencyContactName}</p>
+                {user.emergencyContactPhone && (
+                  <p className="text-sm text-muted-foreground">{user.emergencyContactPhone}</p>
+                )}
+              </div>
+            )}
+            {user.vehiclePlates.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Vehicles</label>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {user.vehiclePlates.map((plate) => (
+                    <span key={plate} className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
+                      {plate}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

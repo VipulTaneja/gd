@@ -7,6 +7,7 @@ import { SoftCard } from "@/components/shared/soft-card";
 import { UserLink } from "@/components/shared/user-link";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { ReplyComposer } from "@/components/forums/reply-composer";
+import Image from "next/image";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,13 @@ export default async function ThreadDetailPage({
               </span>
             </div>
             <p className="text-sm whitespace-pre-wrap">{thread.body}</p>
+            {thread.posts[0]?.images && Array.isArray(thread.posts[0].images) && thread.posts[0].images.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {(thread.posts[0].images as string[]).map((url, i) => (
+                  <Image key={i} src={url} alt="" width={192} height={192} className="max-h-48 rounded-lg object-cover" />
+                ))}
+              </div>
+            )}
           </div>
         </SoftCard>
 
@@ -101,6 +109,13 @@ export default async function ThreadDetailPage({
                   )}
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{post.body}</p>
+                {post.images && Array.isArray(post.images) && post.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {(post.images as string[]).map((url, i) => (
+                      <Image key={i} src={url} alt="" width={192} height={192} className="max-h-48 rounded-lg object-cover" />
+                    ))}
+                  </div>
+                )}
               </div>
             </SoftCard>
           ))}

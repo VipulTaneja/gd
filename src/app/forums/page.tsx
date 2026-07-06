@@ -8,8 +8,14 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { MessageSquare } from "lucide-react";
 import { empty } from "@/lib/microcopy";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Forums — Gulshan Dynasty",
+  description: "Join neighborhood discussions, share suggestions, and connect with your community.",
+};
 
 function timeAgo(date: Date): string {
   const now = Date.now();

@@ -23,7 +23,8 @@ export type FeatureKey =
   | "dues"
   | "directory"
   | "notifications"
-  | "forums";
+  | "forums"
+  | "team";
 
 export interface FeatureStyle {
   icon: LucideIcon;
@@ -110,5 +111,12 @@ export const featureColors: Record<FeatureKey, FeatureStyle> = {
     bg: "bg-cyan-100",
     text: "text-cyan-700",
     ring: "ring-cyan-200",
+  },
+  team: {
+    icon: Users,
+    label: "Meet Our Team",
+    bg: "bg-rose-100",
+    text: "text-rose-700",
+    ring: "ring-rose-200",
   },
 };

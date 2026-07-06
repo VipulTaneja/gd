@@ -2,27 +2,13 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
-import { QrCode } from "lucide-react";
+import { QrCode, CreditCard } from "lucide-react";
+import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
+import { empty } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
-
-const statusStyles: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-800",
-  PAID: "bg-green-100 text-green-800",
-  OVERDUE: "bg-red-100 text-red-800",
-  WAIVED: "bg-gray-100 text-gray-800",
-};
-
-function generateUPIString(upiId: string, amount: number, label: string): string {
-  const params = new URLSearchParams({
-    pa: upiId,
-    pn: "Gulshan Dynasty RWA",
-    am: amount.toString(),
-    cu: "INR",
-    tn: label,
-  });
-  return `upi://pay?${params.toString()}`;
-}
 
 export default async function DuesPage() {
   const session = await auth();
@@ -56,14 +42,11 @@ export default async function DuesPage() {
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="font-heading text-2xl font-bold">My Dues</h1>
-          {totalPending > 0 && (
-            <span className="inline-flex items-center rounded-full bg-gold/10 px-3 py-1 text-sm font-medium text-gold-dark w-full sm:w-auto justify-center sm:justify-start">
-              Outstanding: ₹{totalPending.toLocaleString("en-IN")}
-            </span>
-          )}
-        </div>
+        <PageHeader
+          feature="dues"
+          title="My Dues"
+          subtitle={totalPending > 0 ? `Outstanding: ₹${totalPending.toLocaleString("en-IN")}` : "No pending payments"}
+        />
 
         {totalPending > 0 && (
           <div className="rounded-xl border border-gold/30 bg-card p-6">
@@ -84,32 +67,35 @@ export default async function DuesPage() {
           </div>
         )}
 
-        <div className="space-y-3">
-          {dues.map((due) => (
-            <div key={due.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border bg-card p-4">
-              <div className="min-w-0">
-                <p className="font-medium truncate">{due.label}</p>
-                <p className="text-sm text-muted-foreground">
-                  Unit {due.unit.unitNumber} · Due {due.dueDate.toLocaleDateString()}
-                </p>
+        {dues.length === 0 ? (
+          <EmptyState
+            icon={CreditCard}
+            title={empty.dues.title}
+            description={empty.dues.description}
+          />
+        ) : (
+          <div className="space-y-3">
+            {dues.map((due) => (
+              <div key={due.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border bg-card p-4">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{due.label}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Unit {due.unit.unitNumber} · Due {due.dueDate.toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-heading text-lg font-bold">₹{Number(due.amount).toLocaleString()}</span>
+                  <FriendlyBadge value={due.status} variant="status" />
+                  {due.paidAt && (
+                    <span className="text-xs text-muted-foreground">
+                      Paid {due.paidAt.toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="font-heading text-lg font-bold">₹{Number(due.amount).toLocaleString()}</span>
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[due.status]}`}>
-                  {due.status}
-                </span>
-                {due.paidAt && (
-                  <span className="text-xs text-muted-foreground">
-                    Paid {due.paidAt.toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-          {dues.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">No dues found.</div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

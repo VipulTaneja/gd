@@ -20,7 +20,7 @@ export async function POST(
   }
 
   const { id } = await params;
-  const { body, replyToPostId } = await request.json();
+  const { body, replyToPostId, images } = await request.json();
 
   if (!body) {
     return NextResponse.json({ error: "Body is required" }, { status: 400 });
@@ -61,6 +61,7 @@ export async function POST(
         threadId: id,
         authorId: session.user.id,
         body: sanitize(body),
+        images: images && Array.isArray(images) && images.length > 0 ? images.slice(0, 3) : null,
         replyToPostId: replyToPostId || null,
       },
     });

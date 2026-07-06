@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
 import { Calendar, MapPin, Users } from "lucide-react";
+import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
+import { actions, empty } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
 
@@ -29,68 +33,68 @@ export default async function EventsPage() {
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="font-heading text-2xl font-bold">Events</h1>
-          <Link href="/events/new"
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light w-full sm:w-auto">
-            Create Event
-          </Link>
-        </div>
+        <PageHeader
+          feature="events"
+          title="Events"
+          subtitle="Community gatherings and activities"
+          action={
+            <Link href="/events/new"
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light w-full sm:w-auto">
+              {actions.newEvent}
+            </Link>
+          }
+        />
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => {
-            const rsvp = event.rsvps[0]?.status;
-            return (
-              <Link key={event.id} href={`/events/${event.id}`}
-                className="group rounded-xl border bg-card p-5 transition-all hover:ring-gold hover:shadow-lg">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="rounded-lg bg-gold/10 px-3 py-1 text-center">
-                    <p className="text-xs text-gold font-medium">
-                      {event.startsAt.toLocaleDateString("en-IN", { month: "short" })}
-                    </p>
-                    <p className="font-heading text-xl font-bold text-gold">
-                      {event.startsAt.getDate()}
-                    </p>
+        {events.length === 0 ? (
+          <EmptyState
+            icon={Calendar}
+            title={empty.events.title}
+            description={empty.events.description}
+            action={{ label: actions.newEvent, href: "/events/new" }}
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {events.map((event) => {
+              const rsvp = event.rsvps[0]?.status;
+              return (
+                <Link key={event.id} href={`/events/${event.id}`}
+                  className="group rounded-xl border bg-card p-5 transition-all hover:ring-gold hover:shadow-lg">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="rounded-lg bg-gold/10 px-3 py-1 text-center">
+                      <p className="text-xs text-gold font-medium">
+                        {event.startsAt.toLocaleDateString("en-IN", { month: "short" })}
+                      </p>
+                      <p className="font-heading text-xl font-bold text-gold">
+                        {event.startsAt.getDate()}
+                      </p>
+                    </div>
+                    {rsvp && <FriendlyBadge value={rsvp} variant="status" />}
                   </div>
-                  {rsvp && (
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                      rsvp === "ACCEPTED" ? "bg-green-100 text-green-800" :
-                      rsvp === "DECLINED" ? "bg-red-100 text-red-800" :
-                      "bg-amber-100 text-amber-800"
-                    }`}>
-                      {rsvp}
-                    </span>
+                  <h3 className="font-heading text-base font-semibold group-hover:text-gold">{event.title}</h3>
+                  {event.description && (
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{event.description}</p>
                   )}
-                </div>
-                <h3 className="font-heading text-base font-semibold group-hover:text-gold">{event.title}</h3>
-                {event.description && (
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{event.description}</p>
-                )}
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {event.startsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                  {event.location && (
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {event.location}
+                      <Calendar className="h-3.5 w-3.5" />
+                      {event.startsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
-                  )}
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" />
-                    {event._count.rsvps}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-          {events.length === 0 && (
-            <div className="col-span-full text-center py-12 text-muted-foreground">
-              No upcoming events.
-            </div>
-          )}
-        </div>
+                    {event.location && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {event.location}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" />
+                      {event._count.rsvps}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

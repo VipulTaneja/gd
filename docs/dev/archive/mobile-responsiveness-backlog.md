@@ -265,8 +265,8 @@ className="... text-base md:text-sm ..."  // 16px on mobile prevents iOS zoom
 
 ## Related Docs
 
-- [`ui-ux-casual-makeover-log.md`](./ui-ux-casual-makeover-log.md) — CAS-038 (touch audit), CAS-037 (reduced motion)
-- [`backlog-hub-redesign.md`](./backlog-hub-redesign.md) — HUB-S14 (mobile pass, superseded)
+- [`ui-ux-casual-makeover.md`](./ui-ux-casual-makeover-archived-2026-07-06.md) — CAS-038 (touch audit), CAS-037 (reduced motion)
+- [`hub-redesign.md`](./hub-redesign-archived-2026-07-06.md) — HUB-S14 (mobile pass, superseded)
 - [`AGENTS.md`](../../AGENTS.md) — agent coding conventions
 
 ---
