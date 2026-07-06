@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { validateRichTextBody } from "@/lib/rich-text";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -8,15 +9,20 @@ export async function POST(request: Request) {
 
   const { ticketId, body } = await request.json();
 
-  if (!ticketId || !body) {
+  if (!ticketId) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+
+  const parsedBody = validateRichTextBody(body);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ error: parsedBody.error }, { status: 400 });
   }
 
   const comment = await db.ticketComment.create({
     data: {
       ticketId,
       authorId: session.user!.id,
-      body,
+      body: parsedBody.html,
     },
   });
 

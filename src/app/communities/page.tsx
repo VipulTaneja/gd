@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
 import { Users, Calendar, MessageSquare } from "lucide-react";
+import { syncTowerCommunitiesForUser } from "@/lib/tower-communities";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,8 @@ export default async function CommunitiesPage() {
     select: { name: true, email: true, globalRole: true },
   });
   if (!user) redirect("/login");
+
+  await syncTowerCommunitiesForUser(session.user.id);
 
   const communities = await db.subCommunity.findMany({
     where: { isArchived: false },

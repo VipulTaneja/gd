@@ -7,7 +7,7 @@ import { SoftCard } from "@/components/shared/soft-card";
 import { UserLink } from "@/components/shared/user-link";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { ReplyComposer } from "@/components/forums/reply-composer";
-import Image from "next/image";
+import { RichTextContent } from "@/components/shared/rich-text-content";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +63,13 @@ export default async function ThreadDetailPage({
         <PageHeader
           feature="forums"
           title={thread.title}
-          subtitle={`by ${thread.author.name} · ${thread.viewCount + 1} views`}
+          subtitle={
+            <>
+              by{" "}
+              <UserLink userId={thread.author.id} name={thread.author.name} /> ·{" "}
+              {thread.viewCount + 1} views
+            </>
+          }
         />
 
         <SoftCard>
@@ -79,11 +85,12 @@ export default async function ThreadDetailPage({
                 {thread.createdAt.toLocaleDateString()}
               </span>
             </div>
-            <p className="text-sm whitespace-pre-wrap">{thread.body}</p>
+            <RichTextContent content={thread.body} />
             {thread.posts[0]?.images && Array.isArray(thread.posts[0].images) && thread.posts[0].images.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {(thread.posts[0].images as string[]).map((url, i) => (
-                  <Image key={i} src={url} alt="" width={192} height={192} className="max-h-48 rounded-lg object-cover" />
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={url} alt="" className="max-h-48 rounded-lg object-cover" />
                 ))}
               </div>
             )}
@@ -108,11 +115,12 @@ export default async function ThreadDetailPage({
                     <span className="text-xs text-muted-foreground italic">(edited)</span>
                   )}
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{post.body}</p>
+                <RichTextContent content={post.body} />
                 {post.images && Array.isArray(post.images) && post.images.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mt-3">
                     {(post.images as string[]).map((url, i) => (
-                      <Image key={i} src={url} alt="" width={192} height={192} className="max-h-48 rounded-lg object-cover" />
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={url} alt="" className="max-h-48 rounded-lg object-cover" />
                     ))}
                   </div>
                 )}

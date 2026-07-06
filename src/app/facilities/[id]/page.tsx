@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
+import { UserLink } from "@/components/shared/user-link";
+import { canApproveFacilityBooking } from "@/lib/rbac-leaders";
 import { BookingGrid } from "./booking-grid";
 import { PendingBookings } from "@/components/facilities/pending-bookings";
 
@@ -18,39 +20,63 @@ export default async function FacilityDetailPage({
 
   const { id } = await params;
 
-  const facility = await db.facility.findUnique({
-    where: { id },
-    include: {
-      bookings: {
-        where: { startsAt: { gte: new Date() }, status: { not: "CANCELLED" } },
-        orderBy: { startsAt: "asc" },
+  const [facility, user, canApprove, membership, pendingBookingsRaw] = await Promise.all([
+    db.facility.findUnique({
+      where: { id },
+      include: {
+        bookings: {
+          where: { startsAt: { gte: new Date() }, status: "CONFIRMED" },
+          orderBy: { startsAt: "asc" },
+        },
+        blackouts: {
+          where: { endsAt: { gte: new Date() } },
+          orderBy: { startsAt: "asc" },
+        },
+        leaders: {
+          include: { user: { select: { id: true, name: true } } },
+          orderBy: { assignedAt: "asc" },
+        },
       },
-      blackouts: {
-        where: { endsAt: { gte: new Date() } },
-        orderBy: { startsAt: "asc" },
+    }),
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, email: true, globalRole: true },
+    }),
+    canApproveFacilityBooking(session.user.id, id),
+    db.unitMembership.findFirst({
+      where: {
+        userId: session.user.id,
+        OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
       },
-    },
-  });
+      select: { unitId: true },
+    }),
+    db.facilityBooking.findMany({
+      where: {
+        facilityId: id,
+        status: "PENDING_APPROVAL",
+        startsAt: { gte: new Date() },
+      },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { startsAt: "asc" },
+    }),
+  ]);
 
   if (!facility) notFound();
-
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { name: true, email: true, globalRole: true },
-  });
   if (!user) redirect("/login");
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(user.globalRole);
-
-  const membership = await db.unitMembership.findFirst({
-    where: { userId: session.user!.id, OR: [{ endDate: null }, { endDate: { gt: new Date() } }] },
-    select: { unitId: true },
-  });
+  const pendingBookings = pendingBookingsRaw.map((b) => ({
+    id: b.id,
+    startsAt: b.startsAt.toISOString(),
+    endsAt: b.endsAt.toISOString(),
+    user: { id: b.user.id, name: b.user.name },
+  }));
 
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        <Link href="/facilities" className="text-sm text-muted-foreground hover:text-foreground">← Facilities</Link>
+        <Link href="/facilities" className="text-sm text-muted-foreground hover:text-foreground">
+          ← Facilities
+        </Link>
 
         <div>
           <h1 className="font-heading text-2xl font-bold">{facility.name}</h1>
@@ -60,8 +86,25 @@ export default async function FacilityDetailPage({
             <span>Slots: {facility.slotMinutes} min</span>
             <span>Capacity: {facility.capacity}</span>
             <span>Book up to {facility.maxAdvDays} days ahead</span>
+            {facility.requiresApproval && <span>Leader approval required</span>}
           </div>
         </div>
+
+        {facility.leaders.length > 0 && (
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-sm font-medium mb-2">Amenity leaders</p>
+            <div className="flex flex-wrap gap-2">
+              {facility.leaders.map((leader) => (
+                <span
+                  key={leader.id}
+                  className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800"
+                >
+                  <UserLink userId={leader.user.id} name={leader.user.name} />
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {facility.blackouts.length > 0 && (
           <div className="rounded-xl border bg-amber-50 p-4">
@@ -92,8 +135,12 @@ export default async function FacilityDetailPage({
           userUnitId={membership?.unitId || null}
         />
 
-        {isAdmin && facility.requiresApproval && (
-          <PendingBookings facilityId={facility.id} />
+        {(canApprove && (facility.requiresApproval || pendingBookings.length > 0)) && (
+          <PendingBookings
+            facilityId={facility.id}
+            canApprove={canApprove}
+            initialBookings={pendingBookings}
+          />
         )}
       </div>
     </DashboardLayout>

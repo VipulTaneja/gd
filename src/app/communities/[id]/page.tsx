@@ -5,6 +5,9 @@ import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
 import Link from "next/link";
 import { JoinCommunityButton } from "./join-button";
+import { isTowerCommunity, syncTowerCommunitiesForUser } from "@/lib/tower-communities";
+import { isCommunityLeader } from "@/lib/rbac-leaders";
+import { CommunityLeaderPanel } from "@/components/communities/community-leader-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +19,10 @@ export default async function CommunityDetailPage({
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
+  const userId = session.user.id;
   const { id } = await params;
+
+  await syncTowerCommunitiesForUser(userId);
 
   const community = await db.subCommunity.findUnique({
     where: { id, isArchived: false },
@@ -56,21 +62,32 @@ export default async function CommunityDetailPage({
   if (!community) notFound();
 
   const user = await db.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: { name: true, email: true, globalRole: true },
   });
   if (!user) redirect("/login");
 
-  const userId = session.user!.id;
   const isMember = community.memberships.some((m) => m.userId === userId);
+  const isTower = isTowerCommunity(community);
+  const isLeader = await isCommunityLeader(userId, id);
 
-  const hasPendingRequest = await db.communityJoinRequest.findFirst({
-    where: {
-      userId,
-      subCommunityId: id,
-      status: "PENDING",
-    },
-  });
+  const pendingJoinRequests = isLeader && !isTower
+    ? await db.communityJoinRequest.findMany({
+        where: { subCommunityId: id, status: "PENDING" },
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+
+  const hasPendingRequest =
+    !isTower &&
+    !!(await db.communityJoinRequest.findFirst({
+      where: {
+        userId,
+        subCommunityId: id,
+        status: "PENDING",
+      },
+    }));
 
   return (
     <DashboardLayout user={user}>
@@ -85,9 +102,19 @@ export default async function CommunityDetailPage({
             {community.description && (
               <p className="mt-1 text-muted-foreground">{community.description}</p>
             )}
+            {isTower && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                All active Tower {community.targetBlock} residents are automatically members.
+              </p>
+            )}
           </div>
-          {!isMember && !hasPendingRequest && (
+          {!isMember && !hasPendingRequest && !isTower && (
             <JoinCommunityButton communityId={community.id} />
+          )}
+          {!isMember && isTower && (
+            <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+              Tower {community.targetBlock} residents only
+            </span>
           )}
           {hasPendingRequest && (
             <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
@@ -100,6 +127,15 @@ export default async function CommunityDetailPage({
             </span>
           )}
         </div>
+
+        {isLeader && (
+          <CommunityLeaderPanel
+            communityId={community.id}
+            communityName={community.name}
+            isTower={isTower}
+            pendingRequests={pendingJoinRequests}
+          />
+        )}
 
         {/* Members */}
         <div className="rounded-xl border bg-card p-6">
@@ -116,7 +152,7 @@ export default async function CommunityDetailPage({
                     : "bg-gray-100 text-gray-800"
                 }`}
               >
-                {m.user.name}
+                <UserLink userId={m.userId} name={m.user.name} className="hover:text-inherit" />
                 {m.role === "ADMIN" && " ★"}
               </span>
             ))}

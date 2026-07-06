@@ -11,7 +11,6 @@ export async function updateUserProfile(userId: string, data: {
   organization?: string;
   emergencyContactName?: string;
   emergencyContactPhone?: string;
-  vehiclePlates?: string[];
 }) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -40,9 +39,6 @@ export async function updateUserProfile(userId: string, data: {
       }),
       ...(data.emergencyContactPhone !== undefined && {
         emergencyContactPhone: data.emergencyContactPhone || null,
-      }),
-      ...(data.vehiclePlates !== undefined && {
-        vehiclePlates: data.vehiclePlates,
       }),
     },
   });

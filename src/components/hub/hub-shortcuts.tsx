@@ -17,14 +17,14 @@ const shortcuts: {
   guestHref: string;
   badgeKey?: keyof HubBadgeCounts;
 }[] = [
+  { feature: "communities", href: "/communities", guestHref: "/login?callbackUrl=/communities" },
+  { feature: "directory", href: "/directory", guestHref: "/login?callbackUrl=/directory" },
+  { feature: "polls", href: "/polls", guestHref: "/login?callbackUrl=/polls", badgeKey: "activePolls" },
+  { feature: "events", href: "/events", guestHref: "/login?callbackUrl=/events" },
   { feature: "facilities", href: "/facilities", guestHref: "/login?callbackUrl=/facilities" },
   { feature: "visitors", href: "/visitors", guestHref: "/login?callbackUrl=/visitors" },
   { feature: "tickets", href: "/tickets", guestHref: "/login?callbackUrl=/tickets" },
   { feature: "dues", href: "/dues", guestHref: "/login?callbackUrl=/dues", badgeKey: "pendingDues" },
-  { feature: "notices", href: "/notices", guestHref: "/login?callbackUrl=/notices" },
-  { feature: "events", href: "/events", guestHref: "/login?callbackUrl=/events" },
-  { feature: "polls", href: "/polls", guestHref: "/login?callbackUrl=/polls", badgeKey: "activePolls" },
-  { feature: "directory", href: "/directory", guestHref: "/login?callbackUrl=/directory" },
 ];
 
 export function HubShortcuts({ isAuthenticated, badges }: HubShortcutsProps) {

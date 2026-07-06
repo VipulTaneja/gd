@@ -19,7 +19,7 @@ export default async function NewThreadPage({
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, globalRole: true, id: true, approvalStatus: true },
+    select: { name: true, email: true, globalRole: true, id: true, approvalStatus: true, isActive: true },
   });
   if (!user) redirect("/login");
 
@@ -28,7 +28,7 @@ export default async function NewThreadPage({
   const forum = await db.forum.findUnique({ where: { slug } });
   if (!forum) redirect("/forums");
 
-  if (!(await canPost(forum, user as { id: string; globalRole: string; approvalStatus: string }))) {
+  if (!(await canPost(forum, user))) {
     redirect(`/forums/${slug}`);
   }
 

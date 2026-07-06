@@ -2,9 +2,13 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
+import { UserLink } from "@/components/shared/user-link";
 import Link from "next/link";
 import { AssignMemberForm } from "./assign-form";
+import { InviteMemberForm } from "./invite-member-form";
 import { TransferOwnershipButton } from "./transfer-button";
+import { EditMembershipButton } from "./edit-membership-button";
+import { AssignUnitLeaderForm } from "./assign-leader-form";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +25,7 @@ export default async function UnitDetailPage({
   const unit = await db.unit.findUnique({
     where: { id },
     include: {
+      leader: { select: { id: true, name: true, email: true } },
       memberships: {
         orderBy: [{ endDate: "asc" }, { startDate: "desc" }],
         include: {
@@ -38,6 +43,8 @@ export default async function UnitDetailPage({
   });
 
   if (!user) redirect("/login");
+
+  const isSuperAdmin = user.globalRole === "SUPER_ADMIN";
 
   const activeMemberships = unit.memberships.filter(
     (m) => !m.endDate || m.endDate > new Date(),
@@ -65,6 +72,17 @@ export default async function UnitDetailPage({
           <TransferOwnershipButton unitId={unit.id} />
         </div>
 
+        {isSuperAdmin && (
+          <div className="rounded-xl border bg-card p-6">
+            <h2 className="font-heading text-lg font-semibold mb-4">Unit Leader</h2>
+            <AssignUnitLeaderForm
+              unitId={unit.id}
+              currentLeader={unit.leader}
+              members={activeMemberships.map((m) => m.user)}
+            />
+          </div>
+        )}
+
         {/* Active Members */}
         <div className="rounded-xl border bg-card p-6">
           <h2 className="font-heading text-lg font-semibold mb-4">Active Residents</h2>
@@ -75,12 +93,12 @@ export default async function UnitDetailPage({
               {activeMemberships.map((m) => (
                 <div key={m.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
-                    <p className="font-medium">{m.user.name}</p>
+                    <UserLink userId={m.user.id} name={m.user.name} className="font-medium" />
                     <p className="text-xs text-muted-foreground">{m.user.email}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center rounded-full bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
-                      {m.role}
+                      {m.role.replace("_", " ")}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       Since {m.startDate.toLocaleDateString()}
@@ -90,6 +108,13 @@ export default async function UnitDetailPage({
                         Primary
                       </span>
                     )}
+                    <EditMembershipButton
+                      membershipId={m.id}
+                      unitId={unit.id}
+                      currentRole={m.role}
+                      currentIsPrimary={m.isPrimary}
+                      currentEndDate={m.endDate?.toISOString() ?? null}
+                    />
                   </div>
                 </div>
               ))}
@@ -111,6 +136,11 @@ export default async function UnitDetailPage({
           <AssignMemberForm unitId={unit.id} />
         </div>
 
+        <div className="rounded-xl border bg-card p-6">
+          <h2 className="font-heading text-lg font-semibold mb-4">Invite via audit trail</h2>
+          <InviteMemberForm unitId={unit.id} />
+        </div>
+
         {/* Past Memberships */}
         {pastMemberships.length > 0 && (
           <div className="rounded-xl border bg-card p-6">
@@ -119,11 +149,11 @@ export default async function UnitDetailPage({
               {pastMemberships.map((m) => (
                 <div key={m.id} className="flex items-center justify-between rounded-lg border p-3 opacity-60">
                   <div>
-                    <p className="font-medium">{m.user.name}</p>
+                    <UserLink userId={m.user.id} name={m.user.name} className="font-medium" />
                     <p className="text-xs text-muted-foreground">{m.user.email}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground">{m.role}</span>
+                    <span className="text-xs text-muted-foreground">{m.role.replace("_", " ")}</span>
                     <span className="text-xs text-muted-foreground">
                       {m.startDate.toLocaleDateString()} — {m.endDate?.toLocaleDateString()}
                     </span>

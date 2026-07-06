@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { actions, empty } from "@/lib/microcopy";
+import { RichTextPreview } from "@/components/shared/rich-text-preview";
 
 export const dynamic = "force-dynamic";
 
@@ -101,7 +102,7 @@ export default async function PollsPage({
                   </div>
                   <h3 className="font-heading text-base font-semibold group-hover:text-gold">{poll.title}</h3>
                   {poll.description && (
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{poll.description}</p>
+                    <RichTextPreview content={poll.description} className="mt-1 line-clamp-2" />
                   )}
                   {status === "active" && poll.options.length > 0 && (
                     <div className="mt-3 space-y-1.5">

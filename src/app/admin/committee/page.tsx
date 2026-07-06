@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
+import { UserLink } from "@/components/shared/user-link";
 import { CommitteeForm } from "./committee-form";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export default async function AdminCommitteePage() {
               {current.map((d) => (
                 <div key={d.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
-                    <p className="font-medium">{d.user.name}</p>
+                    <UserLink userId={d.user.id} name={d.user.name} className="font-medium" />
                     <p className="text-xs text-muted-foreground">{d.user.email}</p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -67,7 +68,7 @@ export default async function AdminCommitteePage() {
               {past.map((d) => (
                 <div key={d.id} className="flex items-center justify-between rounded-lg border p-3 opacity-60">
                   <div>
-                    <p className="font-medium">{d.user.name}</p>
+                    <UserLink userId={d.user.id} name={d.user.name} className="font-medium" />
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">{d.title}</span>

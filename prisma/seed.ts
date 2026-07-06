@@ -148,53 +148,65 @@ async function seedDev() {
 
   // ─── LOOKUP REAL USERS ─────────────────────────────────────────
   console.log("👤 Looking up existing residents...");
-  const lookupUser = async (email: string) => {
-    const u = await prisma.user.findUnique({ where: { email } });
-    if (!u) console.warn(`   ⚠️  User not found: ${email}`);
+  const lookupOrCreateUser = async (email: string, name: string) => {
+    let u = await prisma.user.findUnique({ where: { email } });
+    if (!u) {
+      console.log(`   Creating user: ${name} (${email})`);
+      u = await prisma.user.create({
+        data: {
+          email,
+          name,
+          globalRole: "RESIDENT",
+          approvalStatus: "APPROVED",
+          isActive: true,
+          termsAcceptedAt: new Date(),
+        },
+      });
+    }
     return u;
   };
 
-  const vipul = await lookupUser("noemail-919891777078@gulshandynasty.local");
-  const deepakSapra = await lookupUser("noemail-919811278448@gulshandynasty.local");
-  const sumitTayal = await lookupUser("noemail-919811111372@gulshandynasty.local");
-  const meenalKumar = await lookupUser("noemail-919560928800@gulshandynasty.local");
-  const rajesh = await lookupUser("rajesh@example.com");
-  const priya = await lookupUser("priya@example.com");
-  const amit = await lookupUser("amit@example.com");
-  const neha = await lookupUser("neha@example.com");
-  const anita = await lookupUser("anita@example.com");
-  const deepa = await lookupUser("deepa@example.com");
-  const ravi = await lookupUser("ravi@example.com");
-  const meena = await lookupUser("meena@example.com");
-  const vikram = await lookupUser("vikram@example.com");
-  const karan = await lookupUser("karan@example.com");
-  const sneha = await lookupUser("sneha@example.com");
-  const arun = await lookupUser("arun@example.com");
+  const vipul = await lookupOrCreateUser("noemail-919891777078@gulshandynasty.local", "Vipul Taneja");
+  const deepakSapra = await lookupOrCreateUser("noemail-919811278448@gulshandynasty.local", "Deepak Sapra");
+  const sumitTayal = await lookupOrCreateUser("noemail-919811111372@gulshandynasty.local", "Sumit Tayal");
+  const meenalKumar = await lookupOrCreateUser("noemail-919560928800@gulshandynasty.local", "Meenal Kumar");
+  const rajesh = await lookupOrCreateUser("rajesh@example.com", "Rajesh Kumar");
+  const priya = await lookupOrCreateUser("priya@example.com", "Priya Sharma");
+  const amit = await lookupOrCreateUser("amit@example.com", "Amit Sharma");
+  const neha = await lookupOrCreateUser("neha@example.com", "Neha Gupta");
+  const anita = await lookupOrCreateUser("anita@example.com", "Anita Reddy");
+  const deepa = await lookupOrCreateUser("deepa@example.com", "Deepa Iyer");
+  const ravi = await lookupOrCreateUser("ravi@example.com", "Ravi Patel");
+  const meena = await lookupOrCreateUser("meena@example.com", "Meena Singh");
+  const vikram = await lookupOrCreateUser("vikram@example.com", "Vikram Choudhary");
+  const karan = await lookupOrCreateUser("karan@example.com", "Karan Malhotra");
+  const sneha = await lookupOrCreateUser("sneha@example.com", "Sneha Kapoor");
+  const arun = await lookupOrCreateUser("arun@example.com", "Arun Nair");
 
   // Additional real residents for variety
-  const abhishekAgrawal = await lookupUser("abhishek@mtalkz.com");
-  const aditya = await lookupUser("greenaditya@gmail.com");
-  const ajayJain = await lookupUser("avnikajain07@gmail.com");
-  const amitMittal = await lookupUser("namratakumari@gmail.com");
-  const ankit = await lookupUser("ankittayal@thestepindia.com");
-  const ashishSaini = await lookupUser("contact@ashishtools.co.in");
-  const bhanu = await lookupUser("noemail-919310011010@gulshandynasty.local");
-  const deepakGupta = await lookupUser("deepak@yogiassociates.com");
-  const gaurav = await lookupUser("gmalil@gmail.com");
-  const harish = await lookupUser("harishgoyal@gatewaypapers.com");
-  const manik = await lookupUser("manikuppal@gmail.com");
-  const mohit = await lookupUser("casinoite@gmail.com");
-  const nitin = await lookupUser("nitinkumargupta@gmail.com");
-  const pankaj = await lookupUser("noemail-919999960068@gulshandynasty.local");
-  const rakesh = await lookupUser("drmalhotra68@gmail.com");
-  const sachin = await lookupUser("sachin@advadvise.in");
-  const sanjay = await lookupUser("chiragmittal13@gmail.com");
-  const sumeet = await lookupUser("sumeet86@gmail.com");
-  const sunil = await lookupUser("sunil22sharma@gmail.com");
-  const varun = await lookupUser("goyal.v81@gmail.com");
-  const salil = await lookupUser("noemail-919871488022@gulshandynasty.local");
-  const sameer = await lookupUser("sameer.com@gmail.com");
-  const manojBansal = await lookupUser("manoj4506@gmail.com");
+  const abhishekAgrawal = await lookupOrCreateUser("abhishek@mtalkz.com", "Abhishek Agrawal");
+  const aditya = await lookupOrCreateUser("greenaditya@gmail.com", "Aditya Goel");
+  const ajayJain = await lookupOrCreateUser("avnikajain07@gmail.com", "Ajay Jain");
+  const amitMittal = await lookupOrCreateUser("namratakumari@gmail.com", "Amit Mittal");
+  const ankit = await lookupOrCreateUser("ankittayal@thestepindia.com", "Ankit Tayal");
+  const ashishSaini = await lookupOrCreateUser("contact@ashishtools.co.in", "Ashish Saini");
+  const bhanu = await lookupOrCreateUser("noemail-919310011010@gulshandynasty.local", "Bhanu Binani");
+  const deepakGupta = await lookupOrCreateUser("deepak@yogiassociates.com", "Deepak Gupta");
+  const gaurav = await lookupOrCreateUser("gmalil@gmail.com", "Gaurav");
+  const harish = await lookupOrCreateUser("harishgoyal@gatewaypapers.com", "Harish Goyal");
+  const manik = await lookupOrCreateUser("manikuppal@gmail.com", "Manik Uppal");
+  const mohit = await lookupOrCreateUser("casinoite@gmail.com", "Mohit Kalra");
+  const nitin = await lookupOrCreateUser("nitinkumargupta@gmail.com", "Nitin Gupta");
+  const pankaj = await lookupOrCreateUser("noemail-919999960068@gulshandynasty.local", "Pankaj Sharma");
+  const rakesh = await lookupOrCreateUser("drmalhotra68@gmail.com", "Rakesh Malhotra");
+  const sachin = await lookupOrCreateUser("sachin@advadvise.in", "Sachin");
+  const sanjay = await lookupOrCreateUser("chiragmittal13@gmail.com", "Sanjay Mittal");
+  const sumeet = await lookupOrCreateUser("sumeet86@gmail.com", "Sumeet");
+  const sunil = await lookupOrCreateUser("sunil22sharma@gmail.com", "Sunil Sharma");
+  const varun = await lookupOrCreateUser("goyal.v81@gmail.com", "Varun Goyal");
+  const salil = await lookupOrCreateUser("noemail-919871488022@gulshandynasty.local", "Salil");
+  const sameer = await lookupOrCreateUser("sameer.com@gmail.com", "Sameer");
+  const manojBansal = await lookupOrCreateUser("manoj4506@gmail.com", "Manoj Bansal");
 
   const allUsers = [vipul, deepakSapra, sumitTayal, meenalKumar, rajesh, priya, amit, neha, anita, deepa, ravi, meena, vikram, karan, sneha, arun].filter(Boolean);
   console.log(`   ✅ ${allUsers.length} key users found`);
@@ -212,9 +224,9 @@ async function seedDev() {
   // ─── SUB-COMMUNITIES ──────────────────────────────────────────
   console.log("\n🏘️ Creating sub-communities...");
   const communityDefs = [
-    { name: "Tower A Residents", description: "Official group for all Tower A residents — maintenance updates, shared concerns, and social events." },
-    { name: "Tower B Residents", description: "Official group for all Tower B residents — stay connected with your tower neighbours." },
-    { name: "Tower C Residents", description: "Official group for all Tower C residents — announcements and community discussions." },
+    { name: "Tower A Residents", description: "Official group for all Tower A residents — maintenance updates, shared concerns, and social events.", targetBlock: "A" as const },
+    { name: "Tower B Residents", description: "Official group for all Tower B residents — stay connected with your tower neighbours.", targetBlock: "B" as const },
+    { name: "Tower C Residents", description: "Official group for all Tower C residents — announcements and community discussions.", targetBlock: "C" as const },
     { name: "Infrastructure & Fire Safety", description: "Overseeing building maintenance, fire safety compliance, structural repairs, and emergency preparedness across all towers." },
     { name: "Sports & Recreation", description: "Organizing cricket tournaments, badminton matches, yoga sessions, and all sports activities in the community." },
     { name: "Cultural Activities", description: "Planning and executing festival celebrations, cultural evenings, art workshops, music sessions, and community performances." },
@@ -229,7 +241,10 @@ async function seedDev() {
   for (const c of communityDefs) {
     const sc = await prisma.subCommunity.upsert({
       where: { name: c.name },
-      update: {},
+      update: {
+        description: c.description,
+        targetBlock: "targetBlock" in c ? c.targetBlock : null,
+      },
       create: c,
     });
     createdCommunities.push(sc);
@@ -276,29 +291,10 @@ async function seedDev() {
   addMember(anita, "Cultural Activities", "MEMBER");
   addMember(manik, "Cultural Activities", "MEMBER");
 
-  // Tower A — Rajesh as admin
+  // Tower communities — admins only; residents are synced from unit memberships
   addMember(rajesh, "Tower A Residents", "ADMIN");
-  addMember(priya, "Tower A Residents", "MEMBER");
-  addMember(anita, "Tower A Residents", "MEMBER");
-  addMember(deepa, "Tower A Residents", "MEMBER");
-  addMember(meenalKumar, "Tower A Residents", "MEMBER");
-  addMember(nitin, "Tower A Residents", "MEMBER");
-
-  // Tower B — Amit as admin
   addMember(amit, "Tower B Residents", "ADMIN");
-  addMember(neha, "Tower B Residents", "MEMBER");
-  addMember(ravi, "Tower B Residents", "MEMBER");
-  addMember(sneha, "Tower B Residents", "MEMBER");
-  addMember(gaurav, "Tower B Residents", "MEMBER");
-  addMember(gaurav, "Tower B Residents", "MEMBER");
-
-  // Tower C — Vipul as admin
   addMember(vipul, "Tower C Residents", "ADMIN");
-  addMember(deepakSapra, "Tower C Residents", "MEMBER");
-  addMember(sumitTayal, "Tower C Residents", "MEMBER");
-  addMember(meena, "Tower C Residents", "MEMBER");
-  addMember(vikram, "Tower C Residents", "MEMBER");
-  addMember(varun, "Tower C Residents", "MEMBER");
 
   // Garden Club
   addMember(anita, "Garden Club", "ADMIN");
@@ -343,6 +339,14 @@ async function seedDev() {
   }
   console.log(`   ✅ ${cmData.length} community memberships created`);
 
+  // Sync tower community memberships from active unit residents
+  console.log("\n🏢 Syncing tower community memberships...");
+  const { syncAllTowerCommunities } = await import("../src/lib/tower-communities");
+  const towerSync = await syncAllTowerCommunities(prisma);
+  for (const result of towerSync) {
+    console.log(`   ✅ ${result.name}: +${result.added} members, -${result.removed} removed`);
+  }
+
   // ─── DESIGNATIONS (RWA COMMITTEE) ─────────────────────────────
   console.log("\n🏛️ Creating RWA committee designations...");
   const designationData = [
@@ -367,24 +371,25 @@ async function seedDev() {
 
   // ─── NOTICES ───────────────────────────────────────────────────
   console.log("\n📢 Seeding notices...");
+  const adminId = vipul?.id ?? (await prisma.user.findUnique({ where: { email: "admin+dev-setup-secret@gulshandynasty.com" } }))?.id;
   const noticeData = [
-    { title: "Monthly Maintenance Bill — July 2026", body: "The July 2026 maintenance bills have been generated. Please check your dues section and pay before the 15th to avoid late fees. For any discrepancies, contact the office.", priority: "IMPORTANT" as NoticePriority, targetBlock: null },
-    { title: "Tower B Lift Maintenance — 12th July", body: "Lift No. 2 in Tower B will be out of service on 12th July (Saturday) from 9 AM to 5 PM for annual maintenance. Please use the stairs or Lift No. 1.", priority: "IMPORTANT" as NoticePriority, targetBlock: "B" },
-    { title: "Emergency: Fire Alarm Testing — All Towers", body: "Annual fire alarm testing will be conducted on 10th July between 10 AM and 12 PM. Expect loud alarms. Please do not panic.", priority: "EMERGENCY" as NoticePriority, targetBlock: null },
-    { title: "Independence Day Celebration — 15th August", body: "Join us for the Independence Day flag hoisting ceremony at 8 AM in the central garden area, followed by cultural performances by kids. Refreshments will be served.", priority: "NORMAL" as NoticePriority, targetBlock: null },
-    { title: "Tower C Water Tank Cleaning", body: "The overhead water tanks in Tower C will be cleaned on 18th July from 6 AM to 10 AM. Water supply will be temporarily interrupted during this period.", priority: "IMPORTANT" as NoticePriority, targetBlock: "C" },
-    { title: "New Parking Guidelines — Effective Immediately", body: "Please ensure your vehicles are parked within designated slots only. Visitor vehicles must be parked in the ground-floor visitor bay. Vehicles blocking fire exits will be towed at owner's expense.", priority: "IMPORTANT" as NoticePriority, targetBlock: null },
-    { title: "Community Garden — Volunteer Call", body: "We are planning to set up a terrace garden on the 2nd floor of each tower. Interested residents, please join the Garden Club sub-community or contact Anita Reddy.", priority: "NORMAL" as NoticePriority, targetBlock: null },
-    { title: "Security Advisory — Stranger Entry", body: "In view of recent incidents in the neighbourhood, please ensure all visitors are verified at the gate before allowing entry. Report any suspicious activity to security immediately.", priority: "IMPORTANT" as NoticePriority, targetBlock: null },
-    { title: "Tower A Common Area Painting", body: "Tower A common areas (lobby, corridors, and staircase) will be repainted starting 20th July. Work will be done floor-by-floor over 2 weeks. Please cooperate with the painters.", priority: "NORMAL" as NoticePriority, targetBlock: "A" },
-    { title: "Diwali Celebrations — Pre-booking Open", body: "We are organizing a grand Diwali mela on 18th October at the amphitheater. Food stalls, cultural performances, and a raffle draw! Book your stall or performance slot now.", priority: "NORMAL" as NoticePriority, targetBlock: null },
+    { title: "Monthly Maintenance Bill — July 2026", body: "The July 2026 maintenance bills have been generated. Please check your dues section and pay before the 15th to avoid late fees. For any discrepancies, contact the office.", priority: "IMPORTANT" as NoticePriority, targetBlock: null, createdById: adminId! },
+    { title: "Tower B Lift Maintenance — 12th July", body: "Lift No. 2 in Tower B will be out of service on 12th July (Saturday) from 9 AM to 5 PM for annual maintenance. Please use the stairs or Lift No. 1.", priority: "IMPORTANT" as NoticePriority, targetBlock: "B", createdById: adminId! },
+    { title: "Emergency: Fire Alarm Testing — All Towers", body: "Annual fire alarm testing will be conducted on 10th July between 10 AM and 12 PM. Expect loud alarms. Please do not panic.", priority: "EMERGENCY" as NoticePriority, targetBlock: null, createdById: adminId! },
+    { title: "Independence Day Celebration — 15th August", body: "Join us for the Independence Day flag hoisting ceremony at 8 AM in the central garden area, followed by cultural performances by kids. Refreshments will be served.", priority: "NORMAL" as NoticePriority, targetBlock: null, createdById: adminId! },
+    { title: "Tower C Water Tank Cleaning", body: "The overhead water tanks in Tower C will be cleaned on 18th July from 6 AM to 10 AM. Water supply will be temporarily interrupted during this period.", priority: "IMPORTANT" as NoticePriority, targetBlock: "C", createdById: adminId! },
+    { title: "New Parking Guidelines — Effective Immediately", body: "Please ensure your vehicles are parked within designated slots only. Visitor vehicles must be parked in the ground-floor visitor bay. Vehicles blocking fire exits will be towed at owner's expense.", priority: "IMPORTANT" as NoticePriority, targetBlock: null, createdById: adminId! },
+    { title: "Community Garden — Volunteer Call", body: "We are planning to set up a terrace garden on the 2nd floor of each tower. Interested residents, please join the Garden Club sub-community or contact Anita Reddy.", priority: "NORMAL" as NoticePriority, targetBlock: null, createdById: adminId! },
+    { title: "Security Advisory — Stranger Entry", body: "In view of recent incidents in the neighbourhood, please ensure all visitors are verified at the gate before allowing entry. Report any suspicious activity to security immediately.", priority: "IMPORTANT" as NoticePriority, targetBlock: null, createdById: adminId! },
+    { title: "Tower A Common Area Painting", body: "Tower A common areas (lobby, corridors, and staircase) will be repainted starting 20th July. Work will be done floor-by-floor over 2 weeks. Please cooperate with the painters.", priority: "NORMAL" as NoticePriority, targetBlock: "A", createdById: adminId! },
+    { title: "Diwali Celebrations — Pre-booking Open", body: "We are organizing a grand Diwali mela on 18th October at the amphitheater. Food stalls, cultural performances, and a raffle draw! Book your stall or performance slot now.", priority: "NORMAL" as NoticePriority, targetBlock: null, createdById: adminId! },
   ];
 
   for (const n of noticeData) {
     const existing = await prisma.notice.findFirst({ where: { title: n.title } });
     if (!existing) {
       await prisma.notice.create({
-        data: { ...n, createdById: vipul?.id!, publishedAt: daysAgo(Math.floor(Math.random() * 10) + 1) },
+        data: { ...n, publishedAt: daysAgo(Math.floor(Math.random() * 10) + 1) },
       });
     }
   }
@@ -852,11 +857,11 @@ async function seedDev() {
   // ─── PETS ──────────────────────────────────────────────────────
   console.log("\n🐾 Creating pet registrations...");
   const pets = [
-    { userId: vipul?.id!, unitId: unitC1702?.id!, name: "Bruno", breed: "German Shepherd", vaccinationExpiry: daysFromNow(180) },
-    { userId: priya?.id!, unitId: unitA0101?.id!, name: "Milo", breed: "Labrador Retriever", vaccinationExpiry: daysFromNow(90) },
-    { userId: deepakSapra?.id!, unitId: unitC0301?.id!, name: "Whiskers", breed: "Persian Cat", vaccinationExpiry: daysFromNow(120) },
-    { userId: vikram?.id!, unitId: unitC0301?.id!, name: "Chintu", breed: "Indie Pariah Dog", vaccinationExpiry: daysAgo(15) },
-    { userId: deepa?.id!, unitId: unitA0101?.id!, name: "Nemo", breed: "Golden Retriever", vaccinationExpiry: daysFromNow(200) },
+    { userId: vipul?.id!, unitId: unitC1702?.id!, name: "Bruno", petType: "DOG" as const, breed: "German Shepherd", color: "Black & Tan", ageYears: 4, gender: "MALE" as const, vaccinationExpiry: daysFromNow(180) },
+    { userId: priya?.id!, unitId: unitA0101?.id!, name: "Milo", petType: "DOG" as const, breed: "Labrador Retriever", color: "Golden", ageYears: 3, gender: "MALE" as const, vaccinationExpiry: daysFromNow(90) },
+    { userId: deepakSapra?.id!, unitId: unitC0301?.id!, name: "Whiskers", petType: "CAT" as const, breed: "Persian", color: "White", ageYears: 2, gender: "FEMALE" as const, vaccinationExpiry: daysFromNow(120) },
+    { userId: vikram?.id!, unitId: unitC0301?.id!, name: "Chintu", petType: "DOG" as const, breed: "Indie", color: "Brown", ageYears: 5, gender: "MALE" as const, vaccinationExpiry: daysAgo(15) },
+    { userId: deepa?.id!, unitId: unitA0101?.id!, name: "Nemo", petType: "DOG" as const, breed: "Golden Retriever", color: "Cream", ageYears: 1, gender: "MALE" as const, vaccinationExpiry: daysFromNow(200) },
   ].filter(p => p.userId && p.unitId);
 
   for (const p of pets) {
@@ -866,6 +871,36 @@ async function seedDev() {
     }
   }
   console.log(`   ✅ ${pets.length} pets registered`);
+
+  // ─── VEHICLES ──────────────────────────────────────────────────
+  console.log("\n🚗 Creating unit vehicles...");
+  const vehicleData = [
+    { userId: vipul?.id!, unitId: unitC1702?.id!, vehicleType: "SUV" as const, registrationNumber: "UP16CT1234", make: "BMW", model: "X5", color: "Black" },
+    { userId: priya?.id!, unitId: unitA0101?.id!, vehicleType: "SEDAN" as const, registrationNumber: "DL4CAF5678", make: "Honda", model: "City", color: "Silver" },
+    { userId: amit?.id!, unitId: unitB1201?.id!, vehicleType: "SUV" as const, registrationNumber: "UP14AB9012", make: "Hyundai", model: "Creta", color: "White" },
+    { userId: deepakSapra?.id!, unitId: unitC0301?.id!, vehicleType: "EV" as const, registrationNumber: "UP16EV3456", make: "Tata", model: "Nexon EV", color: "Blue" },
+    { userId: rajesh?.id!, unitId: unitA0101?.id!, vehicleType: "MOTORCYCLE" as const, registrationNumber: "UP16BK7890", make: "Royal Enfield", model: "Classic 350", color: "Maroon" },
+  ].filter(v => v.userId && v.unitId);
+
+  for (const v of vehicleData) {
+    const existing = await prisma.vehicle.findFirst({
+      where: { unitId: v.unitId, registrationNumber: v.registrationNumber },
+    });
+    if (!existing) {
+      await prisma.vehicle.create({
+        data: {
+          unitId: v.unitId,
+          registeredByUserId: v.userId,
+          vehicleType: v.vehicleType,
+          registrationNumber: v.registrationNumber,
+          make: v.make,
+          model: v.model,
+          color: v.color,
+        },
+      });
+    }
+  }
+  console.log(`   ✅ ${vehicleData.length} vehicles registered`);
 
   // ─── LOST & FOUND ──────────────────────────────────────────────
   console.log("\n🔍 Creating lost & found items...");
@@ -921,6 +956,49 @@ async function seedDev() {
     }
   }
   console.log(`   ✅ ${notificationData.length} notifications created`);
+
+  // ─── DELEGATED LEADERSHIP (dev sample) ───────────────────────
+  console.log("\n👔 Seeding unit & amenity leaders...");
+  const leaderUnitC1702 = await prisma.unit.findUnique({ where: { unitNumber: "C-1702" } });
+  const leaderUnitC0301 = await prisma.unit.findUnique({ where: { unitNumber: "C-0301" } });
+  const pool = await prisma.facility.findUnique({ where: { name: "Swimming Pool & Sun Deck" } });
+
+  if (vipul && leaderUnitC1702) {
+    await prisma.unit.update({
+      where: { id: leaderUnitC1702.id },
+      data: {
+        leaderUserId: vipul.id,
+        leaderAssignedAt: new Date(),
+        leaderAssignedById: vipul.id,
+      },
+    });
+  }
+  if (deepakSapra && leaderUnitC0301) {
+    await prisma.unit.update({
+      where: { id: leaderUnitC0301.id },
+      data: {
+        leaderUserId: deepakSapra.id,
+        leaderAssignedAt: new Date(),
+        leaderAssignedById: vipul?.id ?? deepakSapra.id,
+      },
+    });
+  }
+  if (sumitTayal && pool && vipul) {
+    await prisma.facilityLeader.upsert({
+      where: { facilityId_userId: { facilityId: pool.id, userId: sumitTayal.id } },
+      update: {},
+      create: {
+        facilityId: pool.id,
+        userId: sumitTayal.id,
+        assignedById: vipul.id,
+      },
+    });
+    await prisma.facility.update({
+      where: { id: pool.id },
+      data: { requiresApproval: true },
+    });
+  }
+  console.log("   ✅ Unit leaders + pool amenity leader seeded");
 
   console.log("\n🎉 DEV seed complete!");
   console.log("   ────────────────────────────────────");

@@ -22,8 +22,6 @@ export async function hidePost(postId: string) {
       metadata: { threadId: post.threadId },
     },
   });
-
-  return post;
 }
 
 export async function deletePost(postId: string) {
@@ -45,8 +43,6 @@ export async function deletePost(postId: string) {
       metadata: { threadId: post.threadId },
     },
   });
-
-  return { success: true };
 }
 
 export async function lockThread(threadId: string) {
@@ -68,8 +64,6 @@ export async function lockThread(threadId: string) {
       metadata: { title: thread.title },
     },
   });
-
-  return thread;
 }
 
 export async function unlockThread(threadId: string) {
@@ -91,8 +85,6 @@ export async function unlockThread(threadId: string) {
       metadata: { title: thread.title },
     },
   });
-
-  return thread;
 }
 
 export async function pinThread(threadId: string) {
@@ -117,8 +109,6 @@ export async function pinThread(threadId: string) {
       metadata: { title: thread.title },
     },
   });
-
-  return thread;
 }
 
 export async function resolveReport(reportId: string) {
@@ -140,8 +130,6 @@ export async function resolveReport(reportId: string) {
       metadata: { postId: report.postId },
     },
   });
-
-  return report;
 }
 
 export async function dismissReport(reportId: string) {
@@ -163,6 +151,4 @@ export async function dismissReport(reportId: string) {
       metadata: { postId: report.postId },
     },
   });
-
-  return report;
 }

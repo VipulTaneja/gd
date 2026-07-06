@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MembershipTimeline } from "@/components/shared/membership-timeline";
 import { UnitLink } from "@/components/shared/unit-link";
+import { UserLink } from "@/components/shared/user-link";
 import { UserProfileEdit } from "@/components/shared/user-profile-edit";
+import { PhoneLink } from "@/components/shared/phone-link";
 import { AdminUserActions } from "@/components/shared/admin-user-actions";
 import {
   updateUserProfile,
@@ -60,7 +62,6 @@ export default async function UserProfilePage({
       organization: true,
       emergencyContactName: true,
       emergencyContactPhone: true,
-      vehiclePlates: true,
       createdAt: true,
       unitMemberships: {
         where: { endDate: null },
@@ -92,6 +93,23 @@ export default async function UserProfilePage({
     include: { unit: true },
     orderBy: { startDate: "desc" },
   });
+
+  // Fetch co-residents (family members in same units)
+  const unitIds = user.unitMemberships.map((m) => m.unitId);
+  const coResidents = unitIds.length > 0
+    ? await db.unitMembership.findMany({
+        where: {
+          unitId: { in: unitIds },
+          userId: { not: userId },
+          OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
+        },
+        include: {
+          user: { select: { id: true, name: true, avatarUrl: true, globalRole: true } },
+          unit: { select: { unitNumber: true } },
+        },
+        orderBy: { startDate: "desc" },
+      })
+    : [];
 
   const roleBadgeColor: Record<string, string> = {
     SUPER_ADMIN: "bg-gold text-black",
@@ -158,9 +176,7 @@ export default async function UserProfilePage({
                       <Badge variant="outline">{user.approvalStatus}</Badge>
                     )}
                     {user.phone && (
-                      <span className="text-sm text-muted-foreground">
-                        {user.phone}
-                      </span>
+                      <PhoneLink phone={user.phone} className="text-sm text-muted-foreground" />
                     )}
                   </div>
                   {user.organization && (
@@ -194,6 +210,42 @@ export default async function UserProfilePage({
                       </span>
                     </div>
                     <Badge variant="outline">{m.role.replace("_", " ")}</Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {coResidents.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-gold" />
+                  Family / Co-Residents
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {coResidents.map((cr) => (
+                  <div
+                    key={cr.id}
+                    className="flex items-center justify-between rounded-lg border p-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <UserLink
+                        userId={cr.user.id}
+                        name={cr.user.name}
+                        avatarUrl={cr.user.avatarUrl}
+                        showAvatar
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {cr.unit.unitNumber}
+                      </span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {cr.role.replace("_", " ")}
+                      </Badge>
+                    </div>
                   </div>
                 ))}
               </CardContent>
@@ -322,30 +374,25 @@ export default async function UserProfilePage({
             </Card>
           )}
 
-          {(user.emergencyContactName || user.vehiclePlates.length > 0) && (
+          {user.emergencyContactName && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Additional Info</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                {user.emergencyContactName && (
-                  <div>
-                    <span className="text-muted-foreground">
-                      Emergency Contact:
-                    </span>{" "}
-                    {user.emergencyContactName}
-                    {user.emergencyContactPhone &&
-                      ` (${user.emergencyContactPhone})`}
-                  </div>
-                )}
-                {user.vehiclePlates.length > 0 && (
-                  <div>
-                    <span className="text-muted-foreground">
-                      Vehicles:
-                    </span>{" "}
-                    {user.vehiclePlates.join(", ")}
-                  </div>
-                )}
+                <div>
+                  <span className="text-muted-foreground">
+                    Emergency Contact:
+                  </span>{" "}
+                  {user.emergencyContactName}
+                  {user.emergencyContactPhone && (
+                    <>
+                      {" ("}
+                      <PhoneLink phone={user.emergencyContactPhone} />
+                      {")"}
+                    </>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { UserLink } from "@/components/shared/user-link";
 import { ApproveMoveButton, RejectMoveButton, CompleteMoveButton } from "./buttons";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export default async function AdminMovesPage() {
   const moves = await db.moveRequest.findMany({
     include: {
       unit: { select: { unitNumber: true, block: true } },
-      requester: { select: { name: true, email: true } },
+      requester: { select: { id: true, name: true, email: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -49,7 +50,7 @@ export default async function AdminMovesPage() {
               </span>
             </div>
             <div className="text-sm">
-              <p>{move.requester.name}</p>
+              <UserLink userId={move.requester.id} name={move.requester.name} />
               <p className="text-muted-foreground">{move.requester.email}</p>
             </div>
             <div className="text-sm text-muted-foreground">
@@ -89,7 +90,7 @@ export default async function AdminMovesPage() {
                   <td className="px-4 py-3 font-medium">{move.type.replace("_", " ")}</td>
                   <td className="px-4 py-3">{move.unit.unitNumber}</td>
                   <td className="px-4 py-3">
-                    <p>{move.requester.name}</p>
+                    <UserLink userId={move.requester.id} name={move.requester.name} />
                     <p className="text-xs text-muted-foreground">{move.requester.email}</p>
                   </td>
                   <td className="px-4 py-3">

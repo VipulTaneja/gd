@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
+import { RichTextContent } from "@/components/shared/rich-text-content";
 import { VoteForm } from "./vote-form";
 import { PollResults } from "./poll-results";
 
@@ -51,7 +52,9 @@ export default async function PollDetailPage({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h1 className="font-heading text-2xl font-bold">{poll.title}</h1>
-            {poll.description && <p className="mt-1 text-muted-foreground">{poll.description}</p>}
+            {poll.description && (
+              <RichTextContent content={poll.description} className="mt-1 text-muted-foreground" />
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {poll.isAnonymous && (

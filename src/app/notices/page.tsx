@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Bell } from "lucide-react";
 import { nav, actions, empty } from "@/lib/microcopy";
 import Link from "next/link";
+import { RichTextPreview } from "@/components/shared/rich-text-preview";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +76,7 @@ export default async function NoticesPage() {
                 <FriendlyBadge value={notice.priority} variant="priority" />
                 <div className="flex-1">
                   <h3 className="font-heading text-base font-semibold">{notice.title}</h3>
-                  <p className="mt-1.5 text-sm text-muted-foreground whitespace-pre-wrap line-clamp-4">{notice.body}</p>
+                  <RichTextPreview content={notice.body} className="mt-1.5" clamp />
                   <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
                     <span>{notice.publishedAt.toLocaleDateString()}</span>
                     {notice.targetBlock && <span>Tower {notice.targetBlock}</span>}

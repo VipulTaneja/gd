@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { actions, empty } from "@/lib/microcopy";
+import { RichTextPreview } from "@/components/shared/rich-text-preview";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,7 @@ export default async function EventsPage() {
                   </div>
                   <h3 className="font-heading text-base font-semibold group-hover:text-gold">{event.title}</h3>
                   {event.description && (
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+                    <RichTextPreview content={event.description} className="mt-1 line-clamp-2" />
                   )}
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">

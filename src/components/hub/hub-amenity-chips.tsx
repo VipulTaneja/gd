@@ -1,6 +1,8 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Building2, Waves, Dumbbell, TreePine } from "lucide-react";
 import { FadeIn } from "@/components/shared/animated";
+import { getFacilityImage } from "@/lib/hub-images";
 import type { HubFacility } from "@/types/hub";
 
 interface HubAmenityChipsProps {
@@ -30,13 +32,29 @@ export function HubAmenityChips({ facilities }: HubAmenityChipsProps) {
           <div className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
             {facilities.map((f) => {
               const Icon = facilityIcon(f.name);
+              const image = getFacilityImage(f.name);
+
               return (
                 <Link
                   key={f.id}
                   href={`/facilities/${f.id}`}
-                  className="flex shrink-0 snap-start items-center gap-2 rounded-full bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground shadow-sm ring-1 ring-foreground/5 transition-all hover:bg-emerald-50 hover:text-emerald-700 hover:ring-emerald-200"
+                  className="flex shrink-0 snap-start items-center gap-2 rounded-full bg-card py-1.5 pl-1.5 pr-3.5 text-xs font-medium text-muted-foreground shadow-sm ring-1 ring-foreground/5 transition-all hover:bg-emerald-50 hover:text-emerald-700 hover:ring-emerald-200"
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  {image ? (
+                    <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full ring-1 ring-foreground/5">
+                      <Image
+                        src={image.src}
+                        alt={image.alt}
+                        width={28}
+                        height={28}
+                        className="h-full w-full object-cover"
+                      />
+                    </span>
+                  ) : (
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                      <Icon className="h-3.5 w-3.5" />
+                    </span>
+                  )}
                   {f.name}
                 </Link>
               );

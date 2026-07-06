@@ -126,12 +126,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
       }
 
-      // Refresh user data from DB on session update
-      if (trigger === "update" || (token.email && !token.fetchedAt)) {
+      const shouldRefresh =
+        trigger === "update" ||
+        !!user ||
+        (token.id && (!token.fetchedAt || Date.now() - token.fetchedAt > 5 * 60 * 1000));
+
+      if (shouldRefresh && (token.email || token.id)) {
         try {
           const { db } = await import("@/lib/db");
+          const { getLeaderScopes, hasAnyLeaderScope } = await import("@/lib/leader-scopes");
           const dbUser = await db.user.findUnique({
-            where: { email: token.email! },
+            where: token.email ? { email: token.email } : { id: token.id as string },
             select: {
               id: true,
               globalRole: true,
@@ -146,6 +151,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.approvalStatus = dbUser.approvalStatus;
             token.isActive = dbUser.isActive;
             token.termsAcceptedAt = dbUser.termsAcceptedAt;
+            const scopes = await getLeaderScopes(dbUser.id);
+            token.leaderScopes = scopes;
+            token.isLeader = hasAnyLeaderScope(scopes);
+            token.fetchedAt = Date.now();
           }
         } catch {
           // Silently fail if DB is unavailable
@@ -162,6 +171,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           approvalStatus: token.approvalStatus,
           isActive: token.isActive,
           termsAcceptedAt: token.termsAcceptedAt,
+          isLeader: token.isLeader ?? false,
+          leaderScopes: token.leaderScopes ?? null,
         });
       }
       return session;

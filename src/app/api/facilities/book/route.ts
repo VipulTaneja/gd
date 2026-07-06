@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { canBookFacility } from "@/lib/rbac-leaders";
 
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!(await canBookFacility(session.user.id))) {
+    return NextResponse.json(
+      { error: "Only owners and tenants with an active unit membership can book facilities" },
+      { status: 403 },
+    );
+  }
 
   const { facilityId, startsAt, endsAt } = await request.json();
 
@@ -12,7 +20,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  // Check per-user booking limit
   const facility = await db.facility.findUnique({ where: { id: facilityId } });
   if (!facility) return NextResponse.json({ error: "Facility not found" }, { status: 404 });
 
@@ -21,7 +28,7 @@ export async function POST(request: Request) {
       facilityId,
       userId: session.user!.id,
       startsAt: { gte: new Date() },
-      status: { not: "CANCELLED" },
+      status: { notIn: ["CANCELLED", "REJECTED"] },
     },
   });
 
@@ -29,7 +36,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Maximum ${facility.maxBookingsPerUser} bookings per user` }, { status: 400 });
   }
 
-  // Check blackout periods
   const overlappingBlackout = await db.facilityBlackout.findFirst({
     where: {
       facilityId,
@@ -42,13 +48,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Slot overlaps with maintenance period" }, { status: 400 });
   }
 
-  // Check capacity
   const overlappingBookings = await db.facilityBooking.count({
     where: {
       facilityId,
       startsAt: { lt: new Date(endsAt) },
       endsAt: { gt: new Date(startsAt) },
-      status: { not: "CANCELLED" },
+      status: "CONFIRMED",
     },
   });
 
@@ -56,13 +61,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Slot is fully booked" }, { status: 400 });
   }
 
-  // Check for exclusive booking conflict
   if (facility.capacity === 1) {
     const existing = await db.facilityBooking.findFirst({
       where: {
         facilityId,
         startsAt: new Date(startsAt),
-        status: { not: "CANCELLED" },
+        status: "CONFIRMED",
       },
     });
     if (existing) {

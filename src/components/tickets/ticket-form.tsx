@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { Loader2, Wrench, Zap, Building, Home, Shield, HelpCircle } from "lucide-react";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
+import { isRichTextEmpty } from "@/lib/rich-text";
 import {
   Select,
   SelectContent,
@@ -36,6 +38,7 @@ export function TicketForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isRichTextEmpty(description)) return;
     startTransition(async () => {
       const res = await fetch("/api/tickets", {
         method: "POST",
@@ -108,11 +111,16 @@ export function TicketForm() {
 
       <div className="space-y-1.5">
         <label htmlFor="ticket-description" className="text-sm font-medium">Description</label>
-        <textarea id="ticket-description" value={description} onChange={(e) => setDescription(e.target.value)} required rows={4}
-          className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold md:text-sm" />
+        <RichTextEditor
+          id="ticket-description"
+          value={description}
+          onChange={setDescription}
+          placeholder="Describe the issue…"
+          minHeight="160px"
+        />
       </div>
 
-      <button type="submit" disabled={pending}
+      <button type="submit" disabled={pending || isRichTextEmpty(description)}
         className="inline-flex h-11 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light disabled:opacity-50">
         {pending ? (
           <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating...</>

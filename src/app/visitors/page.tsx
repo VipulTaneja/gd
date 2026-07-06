@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
+import { UnitLink } from "@/components/shared/unit-link";
 import { DoorOpen } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -93,7 +94,7 @@ export default async function VisitorsPage({
                 <p className="text-sm text-muted-foreground">{pass.visitorType.replace(/_/g, " ")}</p>
                 <div className="mt-3 text-xs text-muted-foreground">
                   <p>Valid: {pass.validFrom.toLocaleDateString()} — {pass.validUntil.toLocaleDateString()}</p>
-                  <p>Unit: {pass.unit.unitNumber}</p>
+                  <p>Unit: <UnitLink unitNumber={pass.unit.unitNumber} /></p>
                   {pass.parkingSlot && <p>Parking: {pass.parkingSlot}</p>}
                 </div>
               </Link>

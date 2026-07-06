@@ -3,51 +3,132 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
 import { createBulkNotifications } from "@/lib/notifications";
+import { validateRichTextBody } from "@/lib/rich-text";
+import { isAdmin } from "@/lib/rbac";
+import {
+  buildNoticeVisibilityFilter,
+  canCreateGlobalNotice,
+  canCreateScopedNotice,
+  getCommunityMemberUserIds,
+} from "@/lib/community-leaders";
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const where = await buildNoticeVisibilityFilter(session.user.id);
+
+  const notices = await db.notice.findMany({
+    where,
+    orderBy: [{ priority: "desc" }, { publishedAt: "desc" }],
+    select: {
+      id: true,
+      title: true,
+      body: true,
+      priority: true,
+      targetBlock: true,
+      subCommunityId: true,
+      publishedAt: true,
+      expiresAt: true,
+    },
+  });
+
+  return NextResponse.json(notices);
+}
 
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { title, body, priority, targetBlock, expiresAt } = await request.json();
+  const userId = session.user.id;
+  const { title, body, priority, targetBlock, subCommunityId, expiresAt } = await request.json();
 
-  if (!title || !body) {
+  if (!title) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const noticePriority = priority || "NORMAL";
+
+  if (subCommunityId) {
+    const community = await db.subCommunity.findUnique({
+      where: { id: subCommunityId },
+      select: { id: true, isArchived: true },
+    });
+    if (!community || community.isArchived) {
+      return NextResponse.json({ error: "Community not found" }, { status: 404 });
+    }
+    if (!(await canCreateScopedNotice(userId, subCommunityId, noticePriority))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (targetBlock) {
+      return NextResponse.json({ error: "Tower-scoped notices require admin access" }, { status: 403 });
+    }
+  } else {
+    if (!(await canCreateGlobalNotice(userId))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (noticePriority === "EMERGENCY" && !(await isAdmin(userId))) {
+      return NextResponse.json({ error: "Emergency notices require admin access" }, { status: 403 });
+    }
+  }
+
+  const parsedBody = validateRichTextBody(body);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ error: parsedBody.error }, { status: 400 });
   }
 
   const notice = await db.notice.create({
     data: {
       title,
-      body,
-      priority: priority || "NORMAL",
+      body: parsedBody.html,
+      priority: noticePriority,
       targetBlock: targetBlock || null,
+      subCommunityId: subCommunityId || null,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
-      createdById: session.user!.id,
+      createdById: userId,
     },
   });
 
-  await logAction(session.user!.id, "NOTICE_CREATED", "Notice", notice.id, { title, priority, targetBlock });
+  await logAction(userId, "NOTICE_CREATED", "Notice", notice.id, {
+    title,
+    priority: noticePriority,
+    targetBlock,
+    subCommunityId,
+  });
 
-  // Notify residents (filtered by target block if specified)
-  const residents = targetBlock
-    ? await db.user.findMany({
-        where: {
-          isActive: true,
-          approvalStatus: "APPROVED",
-          unitMemberships: { some: { unit: { block: targetBlock } } },
-        },
-        select: { id: true },
-      })
-    : await db.user.findMany({
-        where: { isActive: true, approvalStatus: "APPROVED" },
-        select: { id: true },
-      });
+  const recipientIds = subCommunityId
+    ? await getCommunityMemberUserIds(subCommunityId)
+    : targetBlock
+      ? (
+          await db.user.findMany({
+            where: {
+              isActive: true,
+              approvalStatus: "APPROVED",
+              unitMemberships: {
+                some: {
+                  unit: { block: targetBlock },
+                  OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
+                },
+              },
+            },
+            select: { id: true },
+          })
+        ).map((r) => r.id)
+      : (
+          await db.user.findMany({
+            where: { isActive: true, approvalStatus: "APPROVED" },
+            select: { id: true },
+          })
+        ).map((r) => r.id);
 
   await createBulkNotifications(
-    residents.map((r) => r.id),
+    recipientIds,
     "NOTICE_PUBLISHED",
-    priority === "EMERGENCY" ? `EMERGENCY: ${title}` : `New notice: ${title}`,
+    noticePriority === "EMERGENCY" ? `EMERGENCY: ${title}` : `New notice: ${title}`,
     undefined,
-    `/notices`
+    `/notices`,
   );
 
   return NextResponse.json({ success: true, id: notice.id });

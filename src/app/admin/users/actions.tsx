@@ -1,6 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
+import { Pencil, Loader2, X, Check } from "lucide-react";
 import { approveUser, rejectUser, deactivateUser, changeUserRole, approveClaim, rejectClaim } from "./server-actions";
 
 export function ApproveUserButton({ userId }: { userId: string }) {
@@ -95,5 +96,128 @@ export function RejectClaimButton({ userId }: { userId: string }) {
     >
       {pending ? "..." : "Reject"}
     </button>
+  );
+}
+
+export function EditUserButton({
+  userId,
+  currentName,
+  currentPhone,
+  currentEmergencyName,
+  currentEmergencyPhone,
+}: {
+  userId: string;
+  currentName: string;
+  currentPhone: string;
+  currentEmergencyName: string;
+  currentEmergencyPhone: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [name, setName] = useState(currentName);
+  const [phone, setPhone] = useState(currentPhone);
+  const [emergencyName, setEmergencyName] = useState(currentEmergencyName);
+  const [emergencyPhone, setEmergencyPhone] = useState(currentEmergencyPhone);
+
+  const handleSave = () => {
+    startTransition(async () => {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          name,
+          phone: phone || null,
+          emergencyContactName: emergencyName || null,
+          emergencyContactPhone: emergencyPhone || null,
+        }),
+      });
+
+      if (res.ok) {
+        setOpen(false);
+        window.location.reload();
+      }
+    });
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex h-8 items-center justify-center rounded-lg bg-muted px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/80"
+        title="Edit user"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setOpen(false)}>
+          <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-heading text-lg font-bold">Edit User Details</h3>
+              <button onClick={() => setOpen(false)} className="h-8 w-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1 flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold md:text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Phone</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="mt-1 flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold md:text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Emergency Contact Name</label>
+                <input
+                  type="text"
+                  value={emergencyName}
+                  onChange={(e) => setEmergencyName(e.target.value)}
+                  className="mt-1 flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold md:text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Emergency Contact Phone</label>
+                <input
+                  type="tel"
+                  value={emergencyPhone}
+                  onChange={(e) => setEmergencyPhone(e.target.value)}
+                  className="mt-1 flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold md:text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-lg border border-input px-4 text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={pending}
+                className="inline-flex h-11 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light disabled:opacity-50"
+              >
+                {pending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

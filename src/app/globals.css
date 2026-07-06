@@ -217,3 +217,78 @@
     transform: none;
   }
 }
+
+/* Rich text — editor + rendered content */
+.rich-text-content p,
+.ProseMirror p {
+  margin: 0.5em 0;
+}
+
+.rich-text-content p:first-child,
+.ProseMirror p:first-child {
+  margin-top: 0;
+}
+
+.rich-text-content p:last-child,
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-content ul,
+.rich-text-content ol,
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0.5em 0;
+  padding-left: 1.25rem;
+}
+
+.rich-text-content li,
+.ProseMirror li {
+  margin: 0.15em 0;
+}
+
+.rich-text-content img,
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.rich-text-content blockquote,
+.ProseMirror blockquote {
+  margin: 0.75em 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--gold);
+  color: var(--muted-foreground);
+}
+
+.rich-text-content h2,
+.ProseMirror h2 {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0.75em 0 0.35em;
+}
+
+.rich-text-content h3,
+.ProseMirror h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.65em 0 0.3em;
+}
+
+.ProseMirror {
+  min-height: inherit;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

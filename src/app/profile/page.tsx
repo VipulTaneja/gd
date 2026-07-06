@@ -4,6 +4,18 @@ import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
+import { PhoneLink } from "@/components/shared/phone-link";
+import { UnitLink } from "@/components/shared/unit-link";
+import { UnitInviteCard } from "@/components/profile/unit-invite-card";
+import { OwnerConsentCard } from "@/components/profile/owner-consent-card";
+import { MyFacilityBookings } from "@/components/facilities/my-bookings";
+import {
+  acceptUnitInviteAction,
+  approveTenantInviteAction,
+  declineUnitInviteAction,
+  getOwnerConsentInvitesForUser,
+  getPendingInvitesForUser,
+} from "@/app/profile/invite-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +35,21 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/login");
 
+  const [pendingInvites, ownerConsentInvites, myBookings] = await Promise.all([
+    getPendingInvitesForUser(user.id),
+    getOwnerConsentInvitesForUser(user.id),
+    db.facilityBooking.findMany({
+      where: {
+        userId: user.id,
+        startsAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        status: { in: ["CONFIRMED", "PENDING_APPROVAL", "REJECTED"] },
+      },
+      include: { facility: { select: { id: true, name: true } } },
+      orderBy: { startsAt: "desc" },
+      take: 10,
+    }),
+  ]);
+
   const layoutUser = {
     name: user.name,
     email: user.email,
@@ -36,6 +63,30 @@ export default async function ProfilePage() {
           feature="directory"
           title="My Profile"
           subtitle={`${user.globalRole} · Member since ${user.createdAt.toLocaleDateString("en-IN", { month: "short", year: "numeric" })}`}
+        />
+
+        <OwnerConsentCard
+          invites={ownerConsentInvites.map((inv) => ({
+            id: inv.id,
+            requestedRole: inv.requestedRole,
+            unit: inv.unit,
+            user: inv.user,
+            invitedBy: inv.invitedBy,
+          }))}
+          onApprove={approveTenantInviteAction}
+        />
+
+        <UnitInviteCard
+          invites={pendingInvites.map((inv) => ({
+            id: inv.id,
+            requestedRole: inv.requestedRole,
+            unit: inv.unit,
+            invitedBy: inv.invitedBy,
+            expiresAt: inv.expiresAt?.toISOString() ?? null,
+            ownerConsent: inv.ownerConsent,
+          }))}
+          onAccept={acceptUnitInviteAction}
+          onDecline={declineUnitInviteAction}
         />
 
         <div className="rounded-xl border bg-card p-6 space-y-4">
@@ -52,7 +103,9 @@ export default async function ProfilePage() {
           <div className="grid gap-4 pt-4 border-t sm:grid-cols-2">
             <div>
               <label className="text-sm font-medium text-muted-foreground">Phone</label>
-              <p className="mt-1">{user.phone ?? "Not provided"}</p>
+              <p className="mt-1">
+                {user.phone ? <PhoneLink phone={user.phone} /> : "Not provided"}
+              </p>
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Status</label>
@@ -65,20 +118,10 @@ export default async function ProfilePage() {
                 <label className="text-sm font-medium text-muted-foreground">Emergency Contact</label>
                 <p className="mt-1">{user.emergencyContactName}</p>
                 {user.emergencyContactPhone && (
-                  <p className="text-sm text-muted-foreground">{user.emergencyContactPhone}</p>
+                  <p className="text-sm text-muted-foreground">
+                    <PhoneLink phone={user.emergencyContactPhone} />
+                  </p>
                 )}
-              </div>
-            )}
-            {user.vehiclePlates.length > 0 && (
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Vehicles</label>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {user.vehiclePlates.map((plate) => (
-                    <span key={plate} className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
-                      {plate}
-                    </span>
-                  ))}
-                </div>
               </div>
             )}
           </div>
@@ -91,8 +134,11 @@ export default async function ProfilePage() {
               {user.unitMemberships.map((membership) => (
                 <div key={membership.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
-                    <p className="font-medium">{membership.unit.unitNumber}</p>
+                    <UnitLink unitNumber={membership.unit.unitNumber} className="font-medium" />
                     <p className="text-sm text-muted-foreground">Tower {membership.unit.block}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Manage pets & vehicles on your unit profile
+                    </p>
                   </div>
                   <span className="inline-flex items-center rounded-full bg-gold/10 px-3 py-1 text-sm font-medium text-gold">
                     {membership.role}
@@ -102,6 +148,17 @@ export default async function ProfilePage() {
             </div>
           </div>
         )}
+
+        <MyFacilityBookings
+          bookings={myBookings.map((b) => ({
+            id: b.id,
+            startsAt: b.startsAt.toISOString(),
+            endsAt: b.endsAt.toISOString(),
+            status: b.status,
+            rejectionReason: b.rejectionReason,
+            facility: b.facility,
+          }))}
+        />
       </div>
     </DashboardLayout>
   );

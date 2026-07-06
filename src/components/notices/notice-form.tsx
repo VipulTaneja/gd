@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
+import { isRichTextEmpty, plainTextToHtml } from "@/lib/rich-text";
 
 const EMERGENCY_TEMPLATES = [
   {
@@ -26,7 +28,8 @@ const EMERGENCY_TEMPLATES = [
   },
 ];
 
-export function NoticeForm() {
+export function NoticeForm({ communityId }: { communityId?: string }) {
+  const isCommunityScoped = !!communityId;
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [priority, setPriority] = useState("NORMAL");
@@ -37,19 +40,24 @@ export function NoticeForm() {
 
   const applyTemplate = (template: typeof EMERGENCY_TEMPLATES[0]) => {
     setTitle(template.title);
-    setBody(template.body);
+    setBody(plainTextToHtml(template.body));
     setPriority("EMERGENCY");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isRichTextEmpty(body)) {
+      setResult({ error: "Body is required" });
+      return;
+    }
     startTransition(async () => {
       const res = await fetch("/api/notices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title, body, priority,
-          targetBlock: targetBlock || null,
+          targetBlock: isCommunityScoped ? null : targetBlock || null,
+          subCommunityId: communityId || null,
           expiresAt: expiresAt || null,
         }),
       });
@@ -64,7 +72,7 @@ export function NoticeForm() {
       {result?.error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{result.error}</div>}
       {result?.success && <div className="rounded-lg bg-green-50 p-3 text-sm text-green-800">Notice published</div>}
 
-      {priority === "EMERGENCY" && (
+      {priority === "EMERGENCY" && !isCommunityScoped && (
         <div className="space-y-2">
           <label className="text-sm font-medium">Quick Templates</label>
           <div className="flex gap-2 flex-wrap">
@@ -90,30 +98,37 @@ export function NoticeForm() {
 
       <div className="space-y-1.5">
         <label htmlFor="notice-body" className="text-sm font-medium">Body</label>
-        <textarea id="notice-body" value={body} onChange={(e) => setBody(e.target.value)} required rows={6}
-          className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+        <RichTextEditor
+          id="notice-body"
+          value={body}
+          onChange={setBody}
+          placeholder="Write your notice…"
+          minHeight="200px"
+        />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className={`grid gap-4 ${isCommunityScoped ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
         <div className="space-y-1.5">
           <label htmlFor="notice-priority" className="text-sm font-medium">Priority</label>
           <select id="notice-priority" value={priority} onChange={(e) => setPriority(e.target.value)}
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
             <option value="NORMAL">Normal</option>
             <option value="IMPORTANT">Important</option>
-            <option value="EMERGENCY">Emergency</option>
+            {!isCommunityScoped && <option value="EMERGENCY">Emergency</option>}
           </select>
         </div>
-        <div className="space-y-1.5">
-          <label htmlFor="notice-target" className="text-sm font-medium">Target Tower</label>
-          <select id="notice-target" value={targetBlock} onChange={(e) => setTargetBlock(e.target.value)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-            <option value="">All Towers</option>
-            <option value="A">Tower A</option>
-            <option value="B">Tower B</option>
-            <option value="C">Tower C</option>
-          </select>
-        </div>
+        {!isCommunityScoped && (
+          <div className="space-y-1.5">
+            <label htmlFor="notice-target" className="text-sm font-medium">Target Tower</label>
+            <select id="notice-target" value={targetBlock} onChange={(e) => setTargetBlock(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+              <option value="">All Towers</option>
+              <option value="A">Tower A</option>
+              <option value="B">Tower B</option>
+              <option value="C">Tower C</option>
+            </select>
+          </div>
+        )}
         <div className="space-y-1.5">
           <label htmlFor="notice-expires" className="text-sm font-medium">Expires</label>
           <input id="notice-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)}

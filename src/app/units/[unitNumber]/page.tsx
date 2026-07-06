@@ -7,7 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { UserLink } from "@/components/shared/user-link";
 import { MembershipTimeline } from "@/components/shared/membership-timeline";
 import { AdminUnitActions } from "@/components/shared/admin-unit-actions";
+import { UnitPetsSection } from "@/components/units/unit-pets-section";
+import { UnitVehiclesSection } from "@/components/units/unit-vehicles-section";
+import { UnitLeaderPanel } from "@/components/units/unit-leader-panel";
 import { assignResident, generateDue } from "./actions";
+import {
+  cancelUnitInviteAction,
+  getPendingInvitesForUnit,
+  inviteUnitMemberAction,
+  searchUsersForInvite,
+} from "./leader-actions";
+import { hasActiveUnitRole } from "@/lib/rbac";
+import { isUnitLeader } from "@/lib/rbac-leaders";
 import {
   Building2,
   Users,
@@ -15,7 +26,6 @@ import {
   Ticket,
   DoorOpen,
   CalendarDays,
-  Car,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -41,11 +51,12 @@ export default async function UnitProfilePage({
   });
   if (!layoutUser) redirect("/login");
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(layoutUser.globalRole);
+  const isAdminUser = ["SUPER_ADMIN", "ADMIN"].includes(layoutUser.globalRole);
 
   const unit = await db.unit.findUnique({
     where: { unitNumber },
     include: {
+      leader: { select: { id: true, name: true } },
       memberships: {
         where: { endDate: null },
         include: { user: true },
@@ -60,25 +71,47 @@ export default async function UnitProfilePage({
         include: { user: true },
         orderBy: { createdAt: "desc" },
       },
+      pets: {
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { name: "asc" },
+      },
+      vehicles: {
+        include: { registeredByUser: { select: { id: true, name: true } } },
+        orderBy: { registrationNumber: "asc" },
+      },
     },
   });
 
   if (!unit) notFound();
 
-  const allMemberships = await db.unitMembership.findMany({
-    where: { unitId: unit.id },
-    include: { user: true },
-    orderBy: { startDate: "desc" },
-  });
+  const isMember = await hasActiveUnitRole(session.user.id, unit.id);
+  const isLeader = await isUnitLeader(session.user.id, unit.id);
+  const canViewSensitive = isAdminUser || isMember;
+  const canEditAssets = isAdminUser || isMember;
 
-  const openTickets = await db.helpTicket.findMany({
-    where: {
-      unitId: unit.id,
-      status: { in: ["OPEN", "IN_PROGRESS"] },
-    },
-    include: { user: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const pendingInvites =
+    isLeader || isAdminUser
+      ? await getPendingInvitesForUnit(unit.id, session.user.id)
+      : [];
+
+  const allMemberships = canViewSensitive
+    ? await db.unitMembership.findMany({
+        where: { unitId: unit.id },
+        include: { user: true },
+        orderBy: { startDate: "desc" },
+      })
+    : [];
+
+  const openTickets = canViewSensitive
+    ? await db.helpTicket.findMany({
+        where: {
+          unitId: unit.id,
+          status: { in: ["OPEN", "IN_PROGRESS"] },
+        },
+        include: { user: true },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
 
   const pendingDues = unit.dues.filter((d) => d.status === "PENDING");
   const totalPending = pendingDues.reduce(
@@ -114,6 +147,12 @@ export default async function UnitProfilePage({
                   <h2 className="font-heading text-2xl font-bold">
                     {unit.unitNumber}
                   </h2>
+                  {unit.leader && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Unit leader:{" "}
+                      <UserLink userId={unit.leader.id} name={unit.leader.name} />
+                    </p>
+                  )}
                   <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Building2 className="h-4 w-4" /> Tower {unit.block}
@@ -168,6 +207,26 @@ export default async function UnitProfilePage({
             </CardContent>
           </Card>
 
+          {isLeader && (
+            <UnitLeaderPanel
+              unitId={unit.id}
+              unitNumber={unitNumber}
+              pendingInvites={pendingInvites.map((inv) => ({
+                id: inv.id,
+                requestedRole: inv.requestedRole,
+                user: inv.user,
+                createdAt: inv.createdAt.toISOString(),
+              }))}
+              onSearch={async (q) => searchUsersForInvite(unit.id, q)}
+              onInvite={async (userId, role) =>
+                inviteUnitMemberAction(unit.id, userId, role)
+              }
+              onCancel={cancelUnitInviteAction}
+            />
+          )}
+
+          {canViewSensitive && (
+          <>
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -186,10 +245,51 @@ export default async function UnitProfilePage({
               />
             </CardContent>
           </Card>
+
+          <UnitPetsSection
+            unitNumber={unitNumber}
+            canEdit={canEditAssets}
+            pets={unit.pets.map((p) => ({
+              id: p.id,
+              name: p.name,
+              petType: p.petType,
+              breed: p.breed,
+              color: p.color,
+              ageYears: p.ageYears,
+              gender: p.gender,
+              vaccinationExpiry: p.vaccinationExpiry?.toISOString() ?? null,
+              notes: p.notes,
+              user: p.user,
+            }))}
+          />
+
+          <UnitVehiclesSection
+            unitNumber={unitNumber}
+            canEdit={canEditAssets}
+            vehicles={unit.vehicles.map((v) => ({
+              id: v.id,
+              vehicleType: v.vehicleType,
+              registrationNumber: v.registrationNumber,
+              make: v.make,
+              model: v.model,
+              color: v.color,
+              registeredByUser: v.registeredByUser,
+            }))}
+          />
+          </>
+          )}
+
+          {!canViewSensitive && (
+            <Card>
+              <CardContent className="pt-6 text-sm text-muted-foreground">
+                Dues, pets, vehicles, and tickets are visible to unit members only.
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
-          {isAdmin && (
+          {isAdminUser && (
             <AdminUnitActions
               onAssignResident={async (data) => {
                 "use server";
@@ -202,6 +302,8 @@ export default async function UnitProfilePage({
             />
           )}
 
+          {canViewSensitive && (
+          <>
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -259,7 +361,10 @@ export default async function UnitProfilePage({
                       <Badge variant="outline" className="text-[10px]">
                         {t.status}
                       </Badge>
-                      <span>by {t.user.name}</span>
+                      <span>
+                        by{" "}
+                        <UserLink userId={t.user.id} name={t.user.name} />
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -284,7 +389,8 @@ export default async function UnitProfilePage({
                     <div>
                       <p className="font-medium">{vp.visitorName}</p>
                       <p className="text-xs text-muted-foreground">
-                        by {vp.user.name}
+                        by{" "}
+                        <UserLink userId={vp.user.id} name={vp.user.name} />
                       </p>
                     </div>
                     <Badge className="bg-green-100 text-green-800 text-[10px]">
@@ -295,32 +401,7 @@ export default async function UnitProfilePage({
               </CardContent>
             </Card>
           )}
-
-          {allMemberships.some((m) => m.user.vehiclePlates && m.user.vehiclePlates.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Car className="h-5 w-5 text-gold" />
-                  Registered Vehicles
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {allMemberships
-                  .filter((m) => m.user.vehiclePlates && m.user.vehiclePlates.length > 0)
-                  .map((m) => (
-                    <div key={m.id} className="rounded-lg border p-2 text-sm">
-                      <p className="font-medium">{m.user.name}</p>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {m.user.vehiclePlates.map((plate: string) => (
-                          <span key={plate} className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs font-mono">
-                            {plate}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-              </CardContent>
-            </Card>
+          </>
           )}
 
           <Card>

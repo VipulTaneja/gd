@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Home, Building2, DoorOpen, LifeBuoy, LayoutGrid } from "lucide-react";
+import { Home, Building2, DoorOpen, LifeBuoy, LayoutGrid, Crown } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -45,19 +45,27 @@ const moreLinks: { feature: FeatureKey; href: string }[] = [
   { feature: "notifications", href: "/notifications" },
   { feature: "forums", href: "/forums" },
   { feature: "team", href: "/team" },
+  { feature: "contacts", href: "/contacts" },
 ];
 
 interface MobileBottomNavProps {
   isAuthenticated?: boolean;
+  isLeader?: boolean;
 }
 
-export function MobileBottomNav({ isAuthenticated = true }: MobileBottomNavProps) {
+export function MobileBottomNav({
+  isAuthenticated = true,
+  isLeader = false,
+}: MobileBottomNavProps) {
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
 
   if (pathname.startsWith("/admin")) return null;
 
-  const isMoreActive = !tabs.some(({ match }) => match(pathname)) && pathname !== "/";
+  const isMoreActive =
+    !tabs.some(({ match }) => match(pathname)) &&
+    pathname !== "/" &&
+    pathname !== "/leader";
 
   const getHref = (href: string) =>
     isAuthenticated ? href : `/login?callbackUrl=${encodeURIComponent(href)}`;
@@ -118,6 +126,19 @@ export function MobileBottomNav({ isAuthenticated = true }: MobileBottomNavProps
                 <SheetTitle>{isAuthenticated ? "More" : "Sign in to explore"}</SheetTitle>
               </SheetHeader>
               <nav className="mt-2 grid grid-cols-3 gap-1 pb-4">
+                {isLeader && (
+                  <Link
+                    href={getHref("/leader")}
+                    onClick={() => setSheetOpen(false)}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 text-xs font-medium transition-colors",
+                      pathname === "/leader" ? "bg-gold/10 text-gold-dark" : "hover:bg-muted",
+                    )}
+                  >
+                    <Crown className="h-5 w-5" />
+                    <span>Leader hub</span>
+                  </Link>
+                )}
                 {moreLinks.map(({ feature, href }) => {
                   const style = featureColors[feature];
                   if (!style) return null;

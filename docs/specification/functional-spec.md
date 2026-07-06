@@ -85,6 +85,18 @@ A user may hold **multiple unit memberships** (e.g. owner of A-0302 and tenant o
 | Admin | Manages a specific club/group |
 | Member | Participant in the group |
 
+### 3.3 Delegated leadership (v1)
+
+Super Admin assigns operational leaders without creating new accounts:
+
+| Scope | Field / model | Assigned by | Capabilities |
+|---|---|---|---|
+| Unit | `Unit.leaderUserId` | Super Admin | Invite `TENANT` / family roles; invitee accepts; cancel pending invites |
+| Sub-community | `CommunityRole.ADMIN` | Super Admin | Approve joins (non-tower); scoped events/notices; forum moderation |
+| Facility | `FacilityLeader` | Super Admin | Approve/reject bookings (RWA Admin always has override) |
+
+Unit leaders cannot assign owners, remove members, or approve onboarding claims (v1). See `docs/dev/archive/delegated-leadership-archived-2026-07-07.md` for v1 implementation details; active follow-on in `docs/dev/backlog-delegated-leadership.md`.
+
 ---
 
 ## 4. Product Scope

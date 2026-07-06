@@ -14,9 +14,15 @@ interface ResidentShellProps {
     globalRole?: string;
   };
   unreadCount?: number;
+  isLeader?: boolean;
 }
 
-export function ResidentShell({ children, user, unreadCount = 0 }: ResidentShellProps) {
+export function ResidentShell({
+  children,
+  user,
+  unreadCount = 0,
+  isLeader = false,
+}: ResidentShellProps) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <CasualHeader
@@ -26,7 +32,7 @@ export function ResidentShell({ children, user, unreadCount = 0 }: ResidentShell
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-5 pb-[calc(4rem+env(safe-area-inset-bottom)+1rem)] md:pb-8">
         {children}
       </main>
-      <MobileBottomNav />
+      <MobileBottomNav isLeader={isLeader} />
     </div>
   );
 }

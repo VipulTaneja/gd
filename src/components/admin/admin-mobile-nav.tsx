@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import {
+  Menu,
+  LayoutDashboard,
+  Users,
+  Home,
+  FileText,
+  Settings,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,15 +20,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import { adminNavItems, type AdminNavIcon } from "@/lib/admin-nav";
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-}
+const adminNavIcons: Record<AdminNavIcon, LucideIcon> = {
+  "layout-dashboard": LayoutDashboard,
+  users: Users,
+  home: Home,
+  "file-text": FileText,
+  settings: Settings,
+};
 
-export function AdminMobileNav({ navItems }: { navItems: NavItem[] }) {
+export function AdminMobileNav() {
   const pathname = usePathname();
 
   return (
@@ -37,7 +47,8 @@ export function AdminMobileNav({ navItems }: { navItems: NavItem[] }) {
           <SheetTitle className="text-primary-foreground">GD Admin</SheetTitle>
         </SheetHeader>
         <nav className="space-y-1 px-3 py-4">
-          {navItems.map((item) => {
+          {adminNavItems.map((item) => {
+            const Icon = adminNavIcons[item.icon];
             const active =
               item.href === "/admin"
                 ? pathname === "/admin"
@@ -57,7 +68,7 @@ export function AdminMobileNav({ navItems }: { navItems: NavItem[] }) {
                   />
                 }
               >
-                <item.icon className="h-5 w-5" />
+                <Icon className="h-5 w-5" />
                 {item.label}
               </SheetTrigger>
             );

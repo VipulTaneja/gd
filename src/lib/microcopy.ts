@@ -9,7 +9,7 @@ export const nav = {
   facilities: "Book a spot",
   visitors: "Guests",
   dues: "Payments",
-  directory: "Neighbors",
+  directory: "Neighbours",
   profile: "My profile",
   notifications: "Notifications",
   more: "More",
@@ -28,6 +28,7 @@ export const actions = {
 export const greetings = {
   guestTitle: "Welcome to Gulshan Dynasty",
   guestSubtitle: "Your neighborhood, one tap away.",
+  guestCtaHint: "Book amenities, invite guests, stay in the loop.",
   loginTitle: "Hey, neighbor 👋",
   loginSubtitle: "Sign in to book amenities, invite guests, and stay in the loop.",
 } as const;

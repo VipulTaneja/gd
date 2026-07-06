@@ -16,7 +16,6 @@ interface UserData {
   organization?: string | null;
   emergencyContactName?: string | null;
   emergencyContactPhone?: string | null;
-  vehiclePlates: string[];
 }
 
 interface UserProfileEditProps {
@@ -27,7 +26,6 @@ interface UserProfileEditProps {
     organization?: string;
     emergencyContactName?: string;
     emergencyContactPhone?: string;
-    vehiclePlates?: string[];
   }) => Promise<void>;
 }
 
@@ -42,18 +40,11 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
     organization: user.organization ?? "",
     emergencyContactName: user.emergencyContactName ?? "",
     emergencyContactPhone: user.emergencyContactPhone ?? "",
-    vehiclePlates: user.vehiclePlates.join(", "),
   });
 
   const handleSubmit = async () => {
     startSaving(async () => {
-      await onUpdate({
-        ...formData,
-        vehiclePlates: formData.vehiclePlates
-          .split(",")
-          .map((p) => p.trim())
-          .filter(Boolean),
-      });
+      await onUpdate(formData);
       setEditing(false);
       router.refresh();
     });
@@ -142,17 +133,6 @@ export function UserProfileEdit({ user, onUpdate }: UserProfileEditProps) {
                   emergencyContactPhone: e.target.value,
                 })
               }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="vehicles">Vehicle Plates (comma-separated)</Label>
-            <Input
-              id="vehicles"
-              value={formData.vehiclePlates}
-              onChange={(e) =>
-                setFormData({ ...formData, vehiclePlates: e.target.value })
-              }
-              placeholder="DL01AB1234, DL02CD5678"
             />
           </div>
         </div>

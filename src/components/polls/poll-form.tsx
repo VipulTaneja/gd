@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
 
 export function PollForm({ communityId }: { communityId?: string }) {
   const [title, setTitle] = useState("");
@@ -83,8 +84,12 @@ export function PollForm({ communityId }: { communityId?: string }) {
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium">Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
-          className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+        <RichTextEditor
+          value={description}
+          onChange={setDescription}
+          placeholder="Explain what this vote is about…"
+          minHeight="120px"
+        />
       </div>
 
       <div className="space-y-1.5">

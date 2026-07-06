@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { getSLADeadline, getSLAStatus } from "@/lib/tickets";
+import { RichTextContent } from "@/components/shared/rich-text-content";
 import { CommentForm } from "./comment-form";
 import { StatusButtons } from "./status-buttons";
 
@@ -67,7 +68,7 @@ export default async function TicketDetailPage({
         </div>
 
         <div className="rounded-xl border bg-card p-6">
-          <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
+          <RichTextContent content={ticket.description} />
           <p className="mt-4 text-xs text-muted-foreground">
             Created {ticket.createdAt.toLocaleString()}
             {ticket.resolvedAt && ` · Resolved ${ticket.resolvedAt.toLocaleString()}`}
@@ -114,7 +115,7 @@ export default async function TicketDetailPage({
                     {comment.createdAt.toLocaleString()}
                   </span>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{comment.body}</p>
+                <RichTextContent content={comment.body} />
               </div>
             ))}
             {ticket.comments.length === 0 && (

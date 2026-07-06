@@ -2,14 +2,22 @@
 
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
 
-export function EventForm({ communityId }: { communityId?: string }) {
+export function EventForm({
+  communityId,
+  facilities = [],
+}: {
+  communityId?: string;
+  facilities?: { id: string; name: string }[];
+}) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [maxAttendees, setMaxAttendees] = useState("");
+  const [facilityId, setFacilityId] = useState("");
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ success?: boolean; error?: string; id?: string } | null>(null);
 
@@ -24,6 +32,7 @@ export function EventForm({ communityId }: { communityId?: string }) {
           scope: communityId ? "SUB_COMMUNITY" : "GLOBAL",
           subCommunityId: communityId,
           maxAttendees: maxAttendees ? parseInt(maxAttendees) : null,
+          facilityId: facilityId || null,
         }),
       });
       const data = await res.json();
@@ -35,6 +44,7 @@ export function EventForm({ communityId }: { communityId?: string }) {
         setStartsAt("");
         setEndsAt("");
         setMaxAttendees("");
+        setFacilityId("");
       }
     });
   };
@@ -56,8 +66,12 @@ export function EventForm({ communityId }: { communityId?: string }) {
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium">Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
-          className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+        <RichTextEditor
+          value={description}
+          onChange={setDescription}
+          placeholder="Event details…"
+          minHeight="140px"
+        />
       </div>
 
       <div className="space-y-1.5">
@@ -86,6 +100,26 @@ export function EventForm({ communityId }: { communityId?: string }) {
           placeholder="Unlimited"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
       </div>
+
+      {facilities.length > 0 && (
+        <div className="space-y-1.5">
+          <label htmlFor="event-facility" className="text-sm font-medium">Link amenity (optional)</label>
+          <select
+            id="event-facility"
+            value={facilityId}
+            onChange={(e) => setFacilityId(e.target.value)}
+            className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:h-9 md:text-sm"
+          >
+            <option value="">No linked booking</option>
+            {facilities.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Reserves the amenity for this event time. May require leader approval.
+          </p>
+        </div>
+      )}
 
       <button type="submit" disabled={pending}
         className="inline-flex h-9 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light disabled:opacity-50">

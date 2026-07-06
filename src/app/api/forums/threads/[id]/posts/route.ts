@@ -3,12 +3,9 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { containsProfanity } from "@/lib/forums/profanity";
 import { checkPostRateLimit } from "@/lib/forums/rate-limit";
+import { validateRichTextBody } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
-
-function sanitize(text: string): string {
-  return text.replace(/<[^>]*>/g, "").trim();
-}
 
 export async function POST(
   request: NextRequest,
@@ -19,22 +16,20 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = session.user.id;
   const { id } = await params;
-  const { body, replyToPostId, images } = await request.json();
+  const { body, replyToPostId } = await request.json();
 
-  if (!body) {
-    return NextResponse.json({ error: "Body is required" }, { status: 400 });
+  const parsedBody = validateRichTextBody(body);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ error: parsedBody.error }, { status: 400 });
   }
 
-  if (body.length > 10000) {
-    return NextResponse.json({ error: "Body must be 10,000 characters or less" }, { status: 400 });
-  }
-
-  if (containsProfanity(body)) {
+  if (containsProfanity(parsedBody.plain)) {
     return NextResponse.json({ error: "Post contains inappropriate language" }, { status: 400 });
   }
 
-  const underLimit = await checkPostRateLimit(session.user.id);
+  const underLimit = await checkPostRateLimit(userId);
   if (!underLimit) {
     return NextResponse.json({ error: "Daily limit reached" }, { status: 429 });
   }
@@ -59,9 +54,8 @@ export async function POST(
     const newPost = await tx.forumPost.create({
       data: {
         threadId: id,
-        authorId: session.user.id,
-        body: sanitize(body),
-        images: images && Array.isArray(images) && images.length > 0 ? images.slice(0, 3) : null,
+        authorId: userId,
+        body: parsedBody.html,
         replyToPostId: replyToPostId || null,
       },
     });
@@ -74,12 +68,10 @@ export async function POST(
     return newPost;
   });
 
-  // Send notifications
-  const authorName = (await db.user.findUnique({ where: { id: session.user.id }, select: { name: true } }))?.name ?? "Someone";
+  const authorName = (await db.user.findUnique({ where: { id: userId }, select: { name: true } }))?.name ?? "Someone";
   const threadTitle = thread.title.length > 50 ? thread.title.slice(0, 50) + "…" : thread.title;
 
-  // Notify thread author (if not the replier)
-  if (thread.authorId !== session.user.id) {
+  if (thread.authorId !== userId) {
     await db.notification.create({
       data: {
         userId: thread.authorId,
@@ -91,10 +83,9 @@ export async function POST(
     }).catch(() => {});
   }
 
-  // Notify parent post author (if replying to someone else's post)
   if (replyToPostId) {
     const parentPost = await db.forumPost.findUnique({ where: { id: replyToPostId }, select: { authorId: true } });
-    if (parentPost && parentPost.authorId !== session.user.id && parentPost.authorId !== thread.authorId) {
+    if (parentPost && parentPost.authorId !== userId && parentPost.authorId !== thread.authorId) {
       await db.notification.create({
         data: {
           userId: parentPost.authorId,

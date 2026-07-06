@@ -6,7 +6,7 @@ import { featureColors } from "@/lib/feature-colors";
 interface PageHeaderProps {
   feature: FeatureKey;
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   action?: ReactNode;
   className?: string;
 }

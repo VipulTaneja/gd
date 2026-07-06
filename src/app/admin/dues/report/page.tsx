@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { UserLink } from "@/components/shared/user-link";
+import { PhoneLink } from "@/components/shared/phone-link";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +19,7 @@ async function getOverdueDues() {
           block: true,
           memberships: {
             where: { endDate: null, isPrimary: true },
-            include: { user: { select: { name: true, email: true, phone: true } } },
+            include: { user: { select: { id: true, name: true, email: true, phone: true } } },
           },
         },
       },
@@ -78,8 +80,20 @@ export default async function AdminDuesReportPage() {
               <div>
                 <p className="font-medium">{due.unit.unitNumber}</p>
                 <p className="text-sm text-muted-foreground">
-                  {due.unit.memberships[0]?.user.name ?? "—"}
+                  {due.unit.memberships[0]?.user ? (
+                    <UserLink
+                      userId={due.unit.memberships[0].user.id}
+                      name={due.unit.memberships[0].user.name}
+                    />
+                  ) : (
+                    "—"
+                  )}
                 </p>
+                {due.unit.memberships[0]?.user.phone && (
+                  <p className="text-xs text-muted-foreground">
+                    <PhoneLink phone={due.unit.memberships[0].user.phone} />
+                  </p>
+                )}
               </div>
               <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                 getAgingBucket(due.dueDate) === "90+ days" ? "bg-red-100 text-red-800" :
@@ -123,7 +137,21 @@ export default async function AdminDuesReportPage() {
                 <tr key={due.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">{due.unit.unitNumber}</td>
                   <td className="px-4 py-3">
-                    {due.unit.memberships[0]?.user.name ?? "—"}
+                    {due.unit.memberships[0]?.user ? (
+                      <div>
+                        <UserLink
+                          userId={due.unit.memberships[0].user.id}
+                          name={due.unit.memberships[0].user.name}
+                        />
+                        {due.unit.memberships[0].user.phone && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            <PhoneLink phone={due.unit.memberships[0].user.phone} />
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-4 py-3">{due.label}</td>
                   <td className="px-4 py-3 font-medium">₹{Number(due.amount).toLocaleString("en-IN")}</td>

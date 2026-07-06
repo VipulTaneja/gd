@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import type { GlobalRole } from "@/generated/prisma/enums";
 import { createNotification } from "@/lib/notifications";
+import { syncTowerCommunitiesForUser } from "@/lib/tower-communities";
 
 async function requireAdmin() {
   const session = await auth();
@@ -26,6 +27,11 @@ export async function approveUser(userId: string) {
       approvedAt: new Date(),
     },
   });
+
+  const { processPendingInvitesOnAccountApproval } = await import(
+    "@/lib/unit-membership-requests"
+  );
+  await processPendingInvitesOnAccountApproval(userId);
 
   await createNotification(
     userId,
@@ -115,6 +121,8 @@ export async function approveClaim(userId: string, unitId: string) {
       isPrimary: true,
     },
   });
+
+  await syncTowerCommunitiesForUser(userId);
 
   await createNotification(
     userId,

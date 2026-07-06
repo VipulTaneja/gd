@@ -1,0 +1,94 @@
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { DashboardLayout } from "@/components/dashboard/layout";
+import { LeaderHub, LeaderHubHeader } from "@/components/leader/leader-hub";
+import { AmenityLeaderQueue } from "@/components/facilities/my-bookings";
+import { getLeaderScopes, hasAnyLeaderScope } from "@/lib/leader-scopes";
+import { isAdmin } from "@/lib/rbac";
+
+export const dynamic = "force-dynamic";
+
+export default async function LeaderPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true, globalRole: true },
+  });
+  if (!user) redirect("/login");
+
+  const scopes = await getLeaderScopes(session.user.id);
+  if (!hasAnyLeaderScope(scopes) && !(await isAdmin(session.user.id))) {
+    redirect("/");
+  }
+
+  const [communities, facilities, pendingByFacility, pendingQueue] = await Promise.all([
+    scopes.communityLeaderIds.length > 0
+      ? db.subCommunity.findMany({
+          where: { id: { in: scopes.communityLeaderIds }, isArchived: false },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
+    scopes.amenityLeaderFacilityIds.length > 0
+      ? db.facility.findMany({
+          where: { id: { in: scopes.amenityLeaderFacilityIds } },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
+    scopes.amenityLeaderFacilityIds.length > 0
+      ? db.facilityBooking.groupBy({
+          by: ["facilityId"],
+          where: {
+            facilityId: { in: scopes.amenityLeaderFacilityIds },
+            status: "PENDING_APPROVAL",
+            startsAt: { gte: new Date() },
+          },
+          _count: { id: true },
+        })
+      : Promise.resolve([]),
+    scopes.amenityLeaderFacilityIds.length > 0
+      ? db.facilityBooking.findMany({
+          where: {
+            facilityId: { in: scopes.amenityLeaderFacilityIds },
+            status: "PENDING_APPROVAL",
+            startsAt: { gte: new Date() },
+          },
+          include: {
+            facility: { select: { id: true, name: true } },
+            user: { select: { id: true, name: true } },
+          },
+          orderBy: { startsAt: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const pendingMap = new Map(pendingByFacility.map((p) => [p.facilityId, p._count.id]));
+
+  return (
+    <DashboardLayout user={user}>
+      <div className="mx-auto max-w-2xl space-y-6">
+        <LeaderHubHeader />
+        <AmenityLeaderQueue
+          bookings={pendingQueue.map((b) => ({
+            id: b.id,
+            startsAt: b.startsAt.toISOString(),
+            endsAt: b.endsAt.toISOString(),
+            facility: b.facility,
+            user: b.user,
+          }))}
+        />
+        <LeaderHub
+          ledUnitNumber={scopes.ledUnitNumber}
+          communityLeaders={communities}
+          amenityFacilities={facilities.map((f) => ({
+            id: f.id,
+            name: f.name,
+            pendingCount: pendingMap.get(f.id) ?? 0,
+          }))}
+        />
+      </div>
+    </DashboardLayout>
+  );
+}

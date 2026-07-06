@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { UserLink } from "@/components/shared/user-link";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +8,7 @@ export default async function PublicCommitteePage() {
     where: {
       OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
     },
-    include: { user: { select: { name: true, avatarUrl: true } } },
+    include: { user: { select: { id: true, name: true, avatarUrl: true } } },
     orderBy: [{ startDate: "desc" }],
   });
 
@@ -32,7 +33,9 @@ export default async function PublicCommitteePage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gold/10 text-gold text-xl font-bold">
                   {d.user.name.charAt(0)}
                 </div>
-                <h3 className="mt-4 font-heading text-lg font-semibold">{d.user.name}</h3>
+                <h3 className="mt-4 font-heading text-lg font-semibold">
+                  <UserLink userId={d.user.id} name={d.user.name} className="hover:text-gold" />
+                </h3>
                 <p className="mt-1 text-sm font-medium text-gold">{d.title}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Since {d.startDate.toLocaleDateString("en-IN", { year: "numeric", month: "long" })}

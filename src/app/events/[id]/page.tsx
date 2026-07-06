@@ -2,8 +2,10 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
+import { UserLink } from "@/components/shared/user-link";
 import Link from "next/link";
 import { Calendar, MapPin, Users } from "lucide-react";
+import { RichTextContent } from "@/components/shared/rich-text-content";
 import { RsvpButtons } from "./rsvp-buttons";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +52,9 @@ export default async function EventDetailPage({
 
         <div>
           <h1 className="font-heading text-2xl font-bold">{event.title}</h1>
-          {event.description && <p className="mt-2 text-muted-foreground">{event.description}</p>}
+          {event.description && (
+            <RichTextContent content={event.description} className="mt-2 text-muted-foreground" />
+          )}
         </div>
 
         <div className="rounded-xl border bg-card p-6 space-y-4">
@@ -96,7 +100,7 @@ export default async function EventDetailPage({
                   <div className="flex flex-wrap gap-2">
                     {accepted.map((r) => (
                       <span key={r.id} className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                        {r.user.name}
+                        <UserLink userId={r.user.id} name={r.user.name} className="hover:text-green-900" />
                       </span>
                     ))}
                   </div>
@@ -108,7 +112,7 @@ export default async function EventDetailPage({
                   <div className="flex flex-wrap gap-2">
                     {maybe.map((r) => (
                       <span key={r.id} className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                        {r.user.name}
+                        <UserLink userId={r.user.id} name={r.user.name} className="hover:text-amber-900" />
                       </span>
                     ))}
                   </div>
@@ -120,7 +124,7 @@ export default async function EventDetailPage({
                   <div className="flex flex-wrap gap-2">
                     {declined.map((r) => (
                       <span key={r.id} className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                        {r.user.name}
+                        <UserLink userId={r.user.id} name={r.user.name} className="hover:text-red-900" />
                       </span>
                     ))}
                   </div>

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
+import { UserLink } from "@/components/shared/user-link";
 import Link from "next/link";
 import { CommunityForm } from "../community-form";
 import { AssignAdminForm } from "./assign-admin-form";
@@ -73,7 +74,7 @@ export default async function CommunityDetailPage({
             {community.memberships.map((m) => (
               <div key={m.id} className="flex items-center justify-between rounded-lg border p-3">
                 <div>
-                  <p className="font-medium">{m.user.name}</p>
+                  <UserLink userId={m.user.id} name={m.user.name} className="font-medium" />
                   <p className="text-xs text-muted-foreground">{m.user.email}</p>
                 </div>
                 <div className="flex items-center gap-2">

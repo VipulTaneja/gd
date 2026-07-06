@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { getHubData } from "@/lib/hub-data";
 import { CommunityHub } from "@/components/hub/community-hub";
 import { HubHeader } from "@/components/hub/hub-header";
-import { HubGreeting } from "@/components/hub/hub-greeting";
+import { HubHero } from "@/components/hub/hub-hero";
 import { HubShortcuts } from "@/components/hub/hub-shortcuts";
 import { HubLiveFeed } from "@/components/hub/hub-live-feed";
 import { HubCommunityPulse } from "@/components/hub/hub-community-pulse";
@@ -24,7 +24,7 @@ export default async function Home() {
           unreadCount={hubData.badges.unreadNotifications}
         />
       }
-      greeting={<HubGreeting user={hubData.user} />}
+      hero={<HubHero user={hubData.user} />}
       shortcuts={
         <HubShortcuts
           isAuthenticated={hubData.isResident}

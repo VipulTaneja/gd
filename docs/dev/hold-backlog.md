@@ -25,7 +25,7 @@ These items were deferred from their original sprints and may be picked up in fu
 |---|---|---|---|---|---|
 | E3-S6 | Admin: Bulk import units via CSV upload | M | DEFERRED | `/admin/units/import`; react-dropzone for CSV; parse with `papaparse`; validate against regex `^[ABC]-\d{4}$`; upsert | Deferred to Sprint 3 |
 | E3-S7 | Admin: Bulk import residents via CSV (user email + unit + role + dates) | L | DEFERRED | CSV columns: email, name, unitNumber, role, startDate, endDate; create User + UnitMembership; skip existing | Deferred to Sprint 3 |
-| E3-S12 | Tenant owner consent workflow (G24): when tenant assigned, owner must approve | L | DEFERRED | On TENANT membership creation: set `ownerConsent=PENDING`; notify unit owners; owner approves via notification link; tenant access blocked until GRANTED | Deferred to Sprint 4 |
+| E3-S12 | Tenant owner consent workflow (G24): when tenant assigned, owner must approve | L | DEFERRED | On TENANT membership creation: set `ownerConsent=PENDING`; notify unit owners; owner approves via notification link; tenant access blocked until GRANTED | Deferred to Sprint 4 · coordinates with [`backlog-delegated-leadership.md`](backlog-delegated-leadership.md) **UL-028** |
 
 ### Epic 6: Calendar & Events
 

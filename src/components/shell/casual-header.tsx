@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Bell, LogOut, User } from "lucide-react";
+import { Bell, LogOut, User, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MobileSearch } from "@/components/shared/mobile-search";
+import { GlobalSearchDialog } from "@/components/shared/global-search-dialog";
 import { featureColors, type FeatureKey } from "@/lib/feature-colors";
 import { nav, actions } from "@/lib/microcopy";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,7 @@ const headerNav: { feature: FeatureKey; href: string }[] = [
   { feature: "events", href: "/events" },
   { feature: "polls", href: "/polls" },
   { feature: "forums", href: "/forums" },
+  { feature: "contacts", href: "/contacts" },
   { feature: "team", href: "/team" },
 ];
 
@@ -34,6 +35,7 @@ interface CasualHeaderProps {
 export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProps) {
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(unreadProp ?? 0);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     if (unreadProp != null) return;
@@ -55,14 +57,16 @@ export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProp
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-lg pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image
-            src="https://www.gulshandynasty.com/images/logo.webp"
-            alt="Gulshan Dynasty"
-            width={100}
-            height={28}
-            className="h-7 w-auto"
-            priority
-          />
+          <div className="rounded-lg bg-zinc-800 px-3 py-2">
+            <Image
+              src="https://www.gulshandynasty.com/images/logo.webp"
+              alt="Gulshan Dynasty"
+              width={164}
+              height={45}
+              className="h-10 w-auto"
+              priority
+            />
+          </div>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
@@ -88,7 +92,22 @@ export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProp
         </nav>
 
         <div className="flex items-center gap-1">
-          <MobileSearch />
+          <GlobalSearchDialog
+            open={searchOpen}
+            onOpenChange={setSearchOpen}
+            trigger={
+              <button
+                className="flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm text-muted-foreground transition-colors hover:bg-muted"
+                aria-label="Search"
+              >
+                <Search className="h-4 w-4" />
+                <span className="hidden sm:inline">Search...</span>
+                <kbd className="ml-1 pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs">⌘</span>K
+                </kbd>
+              </button>
+            }
+          />
           {user ? (
             <>
               <Link

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import type { UnitRole } from "@/generated/prisma/enums";
+import { syncTowerCommunitiesForUser } from "@/lib/tower-communities";
 
 async function requireAdmin() {
   const session = await auth();
@@ -55,6 +56,8 @@ export async function assignMember(
         isPrimary: data.isPrimary,
       },
     });
+
+    await syncTowerCommunitiesForUser(targetUser.id);
 
     await db.auditLog.create({
       data: {
@@ -118,6 +121,11 @@ export async function transferOwnership(
         },
       });
     });
+
+    await syncTowerCommunitiesForUser(newOwner.id);
+    for (const owner of currentOwners) {
+      await syncTowerCommunitiesForUser(owner.userId);
+    }
 
     await db.auditLog.create({
       data: {

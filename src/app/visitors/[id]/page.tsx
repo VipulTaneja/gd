@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
+import { PhoneLink } from "@/components/shared/phone-link";
+import { UnitLink } from "@/components/shared/unit-link";
 import { QRCodeDisplay } from "./qr-display";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +67,12 @@ export default async function VisitorPassDetailPage({
           <QRCodeDisplay passId={pass.id} otp={pass.otp} unitNumber={pass.unit.unitNumber} />
 
           <div className="text-sm text-muted-foreground space-y-1">
-            <p>Unit: {pass.unit.unitNumber}</p>
+            <p>Unit: <UnitLink unitNumber={pass.unit.unitNumber} /></p>
+            {pass.visitorPhone && (
+              <p>
+                Phone: <PhoneLink phone={pass.visitorPhone} />
+              </p>
+            )}
             <p>Valid: {pass.validFrom.toLocaleString()} — {pass.validUntil.toLocaleString()}</p>
             {pass.parkingSlot && <p>Parking: {pass.parkingSlot}</p>}
             {pass.isRecurring && <p>Recurring: {pass.recurrenceDays.join(", ")}</p>}

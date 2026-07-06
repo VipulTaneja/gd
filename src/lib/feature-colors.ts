@@ -10,6 +10,8 @@ import {
   CreditCard,
   Users,
   Home,
+  Phone,
+  Sparkles,
 } from "lucide-react";
 
 export type FeatureKey =
@@ -22,9 +24,11 @@ export type FeatureKey =
   | "visitors"
   | "dues"
   | "directory"
+  | "communities"
   | "notifications"
   | "forums"
-  | "team";
+  | "team"
+  | "contacts";
 
 export interface FeatureStyle {
   icon: LucideIcon;
@@ -93,10 +97,17 @@ export const featureColors: Record<FeatureKey, FeatureStyle> = {
   },
   directory: {
     icon: Users,
-    label: "Neighbors",
+    label: "Neighbours",
     bg: "bg-teal-100",
     text: "text-teal-700",
     ring: "ring-teal-200",
+  },
+  communities: {
+    icon: Sparkles,
+    label: "Communities",
+    bg: "bg-amber-100",
+    text: "text-amber-700",
+    ring: "ring-amber-200",
   },
   notifications: {
     icon: BellRing,
@@ -118,5 +129,12 @@ export const featureColors: Record<FeatureKey, FeatureStyle> = {
     bg: "bg-rose-100",
     text: "text-rose-700",
     ring: "ring-rose-200",
+  },
+  contacts: {
+    icon: Phone,
+    label: "Contacts",
+    bg: "bg-emerald-100",
+    text: "text-emerald-700",
+    ring: "ring-emerald-200",
   },
 };

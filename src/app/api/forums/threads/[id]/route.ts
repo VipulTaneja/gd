@@ -2,12 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isAdmin } from "@/lib/rbac";
+import { validateRichTextBody } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
-
-function sanitize(text: string): string {
-  return text.replace(/<[^>]*>/g, "").trim();
-}
 
 export async function GET(
   request: NextRequest,
@@ -59,12 +56,9 @@ export async function PATCH(
   const { id } = await params;
   const { body } = await request.json();
 
-  if (!body) {
-    return NextResponse.json({ error: "Body is required" }, { status: 400 });
-  }
-
-  if (body.length > 10000) {
-    return NextResponse.json({ error: "Body must be 10,000 characters or less" }, { status: 400 });
+  const parsedBody = validateRichTextBody(body);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ error: parsedBody.error }, { status: 400 });
   }
 
   const thread = await db.forumThread.findUnique({ where: { id } });
@@ -81,20 +75,24 @@ export async function PATCH(
     return NextResponse.json({ error: "Can only edit within 15 minutes of posting" }, { status: 403 });
   }
 
-  const sanitized = sanitize(body);
+  // Find the first post (thread body) and update it
+  const firstPost = await db.forumPost.findFirst({
+    where: { threadId: id, authorId: session.user.id },
+    orderBy: { createdAt: "asc" },
+  });
 
-  await db.$transaction([
-    db.forumThread.update({
-      where: { id },
-      data: { body: sanitized, updatedAt: new Date() },
-    }),
-    db.forumPost.updateMany({
-      where: { threadId: id, authorId: session.user.id },
-      orderBy: { createdAt: "asc" },
-      take: 1,
-      data: { body: sanitized, editedAt: new Date() },
-    }),
-  ]);
+  if (firstPost) {
+    await db.$transaction([
+      db.forumThread.update({
+        where: { id },
+        data: { body: parsedBody.html, updatedAt: new Date() },
+      }),
+      db.forumPost.update({
+        where: { id: firstPost.id },
+        data: { body: parsedBody.html, editedAt: new Date() },
+      }),
+    ]);
+  }
 
   return NextResponse.json({ success: true });
 }

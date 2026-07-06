@@ -2,13 +2,18 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
+import { UserLink } from "@/components/shared/user-link";
+import {
+  LEADER_AUDIT_PRESETS,
+  getLeaderAuditPresetActions,
+} from "@/lib/audit-leader-presets";
 
 export const dynamic = "force-dynamic";
 
 export default async function AuditLogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ action?: string; entity?: string }>;
+  searchParams: Promise<{ action?: string; entity?: string; preset?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -21,12 +26,18 @@ export default async function AuditLogPage({
 
   const params = await searchParams;
   const where: Record<string, unknown> = {};
-  if (params.action) where.action = params.action;
+  const presetActions = params.preset ? getLeaderAuditPresetActions(params.preset) : null;
+
+  if (presetActions) {
+    where.action = { in: presetActions };
+  } else if (params.action) {
+    where.action = params.action;
+  }
   if (params.entity) where.entityType = params.entity;
 
   const logs = await db.auditLog.findMany({
     where,
-    include: { user: { select: { name: true, email: true } } },
+    include: { user: { select: { id: true, name: true, email: true } } },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -45,11 +56,29 @@ export default async function AuditLogPage({
           <a
             href="/admin/audit"
             className={`inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors ${
-              !params.action && !params.entity ? "bg-primary text-primary-foreground" : "border border-input hover:bg-muted"
+              !params.action && !params.entity && !params.preset
+                ? "bg-primary text-primary-foreground"
+                : "border border-input hover:bg-muted"
             }`}
           >
             All
           </a>
+          {Object.entries(LEADER_AUDIT_PRESETS).map(([key, { label }]) => (
+            <a
+              key={key}
+              href={`/admin/audit?preset=${key}`}
+              className={`inline-flex h-9 items-center justify-center rounded-lg px-3 text-xs font-medium transition-colors ${
+                params.preset === key
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-input hover:bg-muted"
+              }`}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
           {actions.map((a) => (
             <a
               key={a.action}
@@ -82,7 +111,7 @@ export default async function AuditLogPage({
                       {log.createdAt.toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium">{log.user.name}</p>
+                      <UserLink userId={log.user.id} name={log.user.name} className="font-medium" />
                       <p className="text-xs text-muted-foreground">{log.user.email}</p>
                     </td>
                     <td className="px-4 py-3">

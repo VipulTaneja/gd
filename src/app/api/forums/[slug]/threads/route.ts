@@ -4,10 +4,11 @@ import { db } from "@/lib/db";
 import { canReadForum, canPost } from "@/lib/forums/rbac";
 import { containsProfanity } from "@/lib/forums/profanity";
 import { checkThreadRateLimit } from "@/lib/forums/rate-limit";
+import { validateRichTextBody } from "@/lib/rich-text";
 
 export const dynamic = "force-dynamic";
 
-function sanitize(text: string): string {
+function sanitizeTitle(text: string): string {
   return text.replace(/<[^>]*>/g, "").trim();
 }
 
@@ -74,19 +75,25 @@ export async function POST(
   const { slug } = await params;
   const { title, body } = await request.json();
 
-  if (!title || !body) {
+  if (!title) {
     return NextResponse.json({ error: "Title and body are required" }, { status: 400 });
   }
 
-  if (title.length > 120) {
+  const parsedBody = validateRichTextBody(body);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ error: parsedBody.error }, { status: 400 });
+  }
+
+  const sanitizedTitle = sanitizeTitle(title);
+  if (!sanitizedTitle) {
+    return NextResponse.json({ error: "Title is required" }, { status: 400 });
+  }
+
+  if (sanitizedTitle.length > 120) {
     return NextResponse.json({ error: "Title must be 120 characters or less" }, { status: 400 });
   }
 
-  if (body.length > 10000) {
-    return NextResponse.json({ error: "Body must be 10,000 characters or less" }, { status: 400 });
-  }
-
-  if (containsProfanity(title) || containsProfanity(body)) {
+  if (containsProfanity(sanitizedTitle) || containsProfanity(parsedBody.plain)) {
     return NextResponse.json({ error: "Post contains inappropriate language" }, { status: 400 });
   }
 
@@ -111,24 +118,23 @@ export async function POST(
     data: {
       forumId: forum.id,
       authorId: session.user.id,
-      title: sanitize(title),
-      body: sanitize(body),
+      title: sanitizedTitle,
+      body: parsedBody.html,
       posts: {
         create: {
           authorId: session.user.id,
-          body: sanitize(body),
+          body: parsedBody.html,
         },
       },
     },
     include: { posts: true },
   });
 
-  // Notify admins about new thread
   const admins = await db.user.findMany({
     where: { globalRole: { in: ["SUPER_ADMIN", "ADMIN"] }, isActive: true },
     select: { id: true },
   });
-  const threadTitle = title.length > 50 ? title.slice(0, 50) + "…" : title;
+  const threadTitle = sanitizedTitle.length > 50 ? sanitizedTitle.slice(0, 50) + "…" : sanitizedTitle;
   for (const admin of admins) {
     if (admin.id !== session.user.id) {
       await db.notification.create({

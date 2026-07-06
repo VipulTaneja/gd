@@ -40,7 +40,7 @@ export default async function ForumThreadsPage({
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, globalRole: true, id: true, approvalStatus: true },
+    select: { name: true, email: true, globalRole: true, id: true, approvalStatus: true, isActive: true },
   });
   if (!user) redirect("/login");
 
@@ -53,7 +53,7 @@ export default async function ForumThreadsPage({
   const forum = await db.forum.findUnique({ where: { slug } });
   if (!forum) redirect("/forums");
 
-  if (!canReadForum(forum, user as { id: string; globalRole: string; approvalStatus: string })) {
+  if (!canReadForum(forum, user)) {
     redirect("/forums");
   }
 

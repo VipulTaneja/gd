@@ -1,13 +1,12 @@
-"use client";
-
 import { ReactNode } from "react";
+import { auth } from "@/lib/auth";
 import { ResidentShell } from "@/components/shell/resident-shell";
 
-export function DashboardLayout({
+export async function DashboardLayout({
   children,
   user,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   user: {
     name: string;
     email: string;
@@ -16,5 +15,12 @@ export function DashboardLayout({
     avatarUrl?: string | null;
   };
 }) {
-  return <ResidentShell user={user}>{children}</ResidentShell>;
+  const session = await auth();
+  const isLeader = session?.user?.isLeader ?? false;
+
+  return (
+    <ResidentShell user={user} isLeader={isLeader}>
+      {children}
+    </ResidentShell>
+  );
 }

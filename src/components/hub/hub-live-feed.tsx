@@ -1,9 +1,12 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Bell, Calendar, MessageSquare, ArrowRight, Sparkles } from "lucide-react";
 import { SoftCard } from "@/components/shared/soft-card";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { FadeIn } from "@/components/shared/animated";
 import { empty } from "@/lib/microcopy";
+import { cn } from "@/lib/utils";
+import { hubEventFallback } from "@/lib/hub-images";
 import type { HubNotice, HubEvent, HubPoll, HubForumThread } from "@/types/hub";
 
 interface HubLiveFeedProps {
@@ -14,10 +17,15 @@ interface HubLiveFeedProps {
 }
 
 const typeConfig = {
-  notice: { icon: Bell, accent: "amber" as const, label: "Notice" },
-  event: { icon: Calendar, accent: "sky" as const, label: "Event" },
-  poll: { icon: MessageSquare, accent: "none" as const, label: "Poll" },
-  forum: { icon: MessageSquare, accent: "cyan" as const, label: "Forum" },
+  notice: { icon: Bell, accent: "amber" as const, label: "Notice", bg: "bg-amber-100", text: "text-amber-700" },
+  event: { icon: Calendar, accent: "sky" as const, label: "Event", bg: "bg-sky-100", text: "text-sky-700" },
+  poll: { icon: MessageSquare, accent: "none" as const, label: "Poll", bg: "bg-violet-100", text: "text-violet-700" },
+  forum: { icon: MessageSquare, accent: "cyan" as const, label: "Forum", bg: "bg-cyan-100", text: "text-cyan-700" },
+};
+
+const noticePriorityBorder: Record<string, string> = {
+  EMERGENCY: "border-l-4 border-l-rose-500",
+  IMPORTANT: "border-l-4 border-l-amber-500",
 };
 
 type FeedItem =
@@ -84,15 +92,40 @@ export function HubLiveFeed({ notices, events, polls, forumThreads }: HubLiveFee
                     ? `/forums/${item.data.forumSlug}/threads/${item.data.id}`
                     : `/notices`;
 
+            const priorityBorder =
+              item.type === "notice"
+                ? noticePriorityBorder[item.data.priority]
+                : undefined;
+
             return (
               <Link
                 key={`${item.type}-${item.data.id}`}
                 href={href}
-                className="flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-muted/60"
+                className={cn(
+                  "flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-muted/60",
+                  priorityBorder
+                )}
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                </div>
+                {item.type === "event" ? (
+                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg ring-1 ring-foreground/5">
+                    <Image
+                      src={hubEventFallback.src}
+                      alt={hubEventFallback.alt}
+                      width={44}
+                      height={44}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className={cn(
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg",
+                      config.bg
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4", config.text)} />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">

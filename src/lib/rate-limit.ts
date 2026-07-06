@@ -1,56 +1,35 @@
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
-function cleanup() {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore) {
-    if (now > entry.resetAt) {
-      rateLimitStore.delete(key);
-    }
-  }
-}
-
-const CLEANUP_INTERVAL = 60_000;
-let lastCleanup = Date.now();
+const buckets = new Map<string, { count: number; resetAt: number }>();
 
 export function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number,
-): { allowed: boolean; remaining: number; resetAt: number } {
+): { ok: true } | { ok: false; retryAfterMs: number } {
   const now = Date.now();
+  const entry = buckets.get(key);
 
-  if (now - lastCleanup > CLEANUP_INTERVAL) {
-    cleanup();
-    lastCleanup = now;
-  }
-
-  const entry = rateLimitStore.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };
+  if (!entry || now >= entry.resetAt) {
+    buckets.set(key, { count: 1, resetAt: now + windowMs });
+    return { ok: true };
   }
 
   if (entry.count >= limit) {
-    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+    return { ok: false, retryAfterMs: entry.resetAt - now };
   }
 
-  entry.count++;
-  return { allowed: true, remaining: limit - entry.count, resetAt: entry.resetAt };
+  entry.count += 1;
+  return { ok: true };
 }
 
-export function getRateLimitHeaders(
-  result: { remaining: number; resetAt: number },
-  limit: number,
-): Record<string, string> {
-  return {
-    "X-RateLimit-Limit": String(limit),
-    "X-RateLimit-Remaining": String(result.remaining),
-    "X-RateLimit-Reset": String(Math.ceil(result.resetAt / 1000)),
-  };
+export function rateLimitResponse(retryAfterMs: number) {
+  return new Response(
+    JSON.stringify({ error: "Too many requests. Please try again shortly." }),
+    {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(Math.ceil(retryAfterMs / 1000)),
+      },
+    },
+  );
 }

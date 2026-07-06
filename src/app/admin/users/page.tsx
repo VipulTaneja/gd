@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { UserLink } from "@/components/shared/user-link";
 import { UnitLink } from "@/components/shared/unit-link";
-import { ApproveUserButton, RejectUserButton, DeactivateUserButton, ChangeRoleSelect, ApproveClaimButton, RejectClaimButton } from "./actions";
+import { ApproveUserButton, RejectUserButton, DeactivateUserButton, ChangeRoleSelect, ApproveClaimButton, RejectClaimButton, EditUserButton } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +10,20 @@ async function getUsers(filter?: string) {
   return db.user.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatarUrl: true,
+      globalRole: true,
+      approvalStatus: true,
+      isActive: true,
+      phone: true,
+      emergencyContactName: true,
+      emergencyContactPhone: true,
+      createdAt: true,
       unitMemberships: {
-        include: { unit: true },
+        select: { unit: true },
         where: { endDate: null },
       },
     },
@@ -217,7 +228,16 @@ export default async function UsersPage({
                     </>
                   )}
                   {user.isActive && user.approvalStatus !== "PENDING" && (
-                    <DeactivateUserButton userId={user.id} />
+                    <>
+                      <EditUserButton
+                        userId={user.id}
+                        currentName={user.name}
+                        currentPhone={user.phone ?? ""}
+                        currentEmergencyName={user.emergencyContactName ?? ""}
+                        currentEmergencyPhone={user.emergencyContactPhone ?? ""}
+                      />
+                      <DeactivateUserButton userId={user.id} />
+                    </>
                   )}
                 </div>
               </div>
@@ -270,7 +290,16 @@ export default async function UsersPage({
                             </>
                           )}
                           {user.isActive && user.approvalStatus !== "PENDING" && (
-                            <DeactivateUserButton userId={user.id} />
+                            <>
+                              <EditUserButton
+                                userId={user.id}
+                                currentName={user.name}
+                                currentPhone={user.phone ?? ""}
+                                currentEmergencyName={user.emergencyContactName ?? ""}
+                                currentEmergencyPhone={user.emergencyContactPhone ?? ""}
+                              />
+                              <DeactivateUserButton userId={user.id} />
+                            </>
                           )}
                         </div>
                       </td>

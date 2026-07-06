@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { SoftCard } from "@/components/shared/soft-card";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
 import { Loader2 } from "lucide-react";
+import { isRichTextEmpty } from "@/lib/rich-text";
 
 export function NewThreadForm({ slug }: { slug: string }) {
   const router = useRouter();
@@ -16,7 +18,7 @@ export function NewThreadForm({ slug }: { slug: string }) {
     e.preventDefault();
     setError(null);
 
-    if (!title.trim() || !body.trim()) {
+    if (!title.trim() || isRichTextEmpty(body)) {
       setError("Title and body are required");
       return;
     }
@@ -26,7 +28,7 @@ export function NewThreadForm({ slug }: { slug: string }) {
         const res = await fetch(`/api/forums/${slug}/threads`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: title.trim(), body: body.trim() }),
+          body: JSON.stringify({ title: title.trim(), body }),
         });
 
         const data = await res.json();
@@ -69,25 +71,22 @@ export function NewThreadForm({ slug }: { slug: string }) {
             <label htmlFor="body" className="text-sm font-medium">
               Body
             </label>
-            <textarea
-              id="body"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              maxLength={10000}
-              rows={8}
-              className="mt-1.5 block w-full rounded-xl border bg-card px-4 py-2.5 text-sm ring-foreground/5 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              placeholder="Describe your topic in detail..."
-            />
-            <p className="mt-1 text-xs text-muted-foreground text-right">
-              {body.length.toLocaleString()}/10,000
-            </p>
+            <div className="mt-1.5">
+              <RichTextEditor
+                id="body"
+                value={body}
+                onChange={setBody}
+                placeholder="Describe your topic in detail…"
+                minHeight="220px"
+              />
+            </div>
           </div>
           {error && (
             <p className="text-sm text-rose-600">{error}</p>
           )}
           <button
             type="submit"
-            disabled={isPending || !title.trim() || !body.trim()}
+            disabled={isPending || !title.trim() || isRichTextEmpty(body)}
             className="inline-flex h-10 items-center justify-center rounded-full bg-gold px-6 text-sm font-semibold text-black transition-colors hover:bg-gold-light disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? (

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
+import { UserLink } from "@/components/shared/user-link";
 import { CommunityForm } from "./community-form";
 import { ArchiveCommunityButton } from "./archive-button";
 
@@ -26,7 +27,7 @@ export default async function AdminCommunitiesPage() {
 
   const pendingRequests = await db.communityJoinRequest.findMany({
     where: { status: "PENDING" },
-    include: { user: { select: { name: true, email: true } }, subCommunity: { select: { name: true } } },
+    include: { user: { select: { id: true, name: true, email: true } }, subCommunity: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -105,13 +106,13 @@ export default async function AdminCommunitiesPage() {
   );
 }
 
-function JoinRequestRow({ request }: { request: { id: string; user: { name: string; email: string }; subCommunity: { name: string } } }) {
+function JoinRequestRow({ request }: { request: { id: string; user: { id: string; name: string; email: string }; subCommunity: { name: string } } }) {
   const [pending, startTransition] = React.useState(false);
 
   return (
     <div className="flex items-center justify-between rounded-lg border p-3">
       <div>
-        <p className="font-medium">{request.user.name}</p>
+        <UserLink userId={request.user.id} name={request.user.name} className="font-medium" />
         <p className="text-xs text-muted-foreground">
           wants to join <strong>{request.subCommunity.name}</strong>
         </p>

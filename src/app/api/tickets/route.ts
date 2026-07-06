@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { validateRichTextBody } from "@/lib/rich-text";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -9,8 +10,13 @@ export async function POST(request: Request) {
   const userId = session.user!.id;
   const { category, priority, subject, description } = await request.json();
 
-  if (!category || !subject || !description) {
+  if (!category || !subject) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const parsedDescription = validateRichTextBody(description);
+  if (!parsedDescription.ok) {
+    return NextResponse.json({ error: parsedDescription.error }, { status: 400 });
   }
 
   const membership = await db.unitMembership.findFirst({
@@ -25,7 +31,7 @@ export async function POST(request: Request) {
       category,
       priority: priority || "MEDIUM",
       subject,
-      description,
+      description: parsedDescription.html,
     },
   });
 

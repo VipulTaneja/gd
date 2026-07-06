@@ -69,6 +69,7 @@ model User {
   facilityWaitlist      FacilityWaitlist[]
   lostFoundItems        LostFoundItem[]
   pets                  Pet[]
+  vehicles              Vehicle[]
   designations          Designation[]
   ticketComments        TicketComment[]
   domesticHelps         DomesticHelp[]
@@ -81,7 +82,19 @@ model User {
   forumReports          ForumReport[]   @relation("ForumReportReporter")
   forumSubscriptions    ForumSubscription[]
   forumReactions        ForumReaction[]
+  importantContacts     ImportantContact[]
+  createdContacts       ImportantContact[]   @relation("ContactCreator")
+  staffReviews          StaffReview[]
+  contactReviews        ContactReview[]
+  staffAssociations     StaffAssociation[]   @relation("StaffAssociationRegistrar")
   forumResolvedReports  ForumReport[]   @relation("ForumReportResolver")
+  ledUnit               Unit?           @relation("UnitLeader")
+  unitLeaderAssignments Unit[]          @relation("UnitLeaderAssigner")
+  facilityLeaderRoles   FacilityLeader[]
+  facilityLeaderAssignments FacilityLeader[] @relation("FacilityLeaderAssigner")
+  membershipRequests    UnitMembershipRequest[] @relation("MembershipRequestInvitee")
+  membershipInvitesSent UnitMembershipRequest[] @relation("MembershipRequestInviter")
+  reviewedBookings      FacilityBooking[] @relation("BookingReviewer")
 }
 
 // ─── NEXTAUTH ACCOUNTS & SESSIONS ───────────────────────────────
@@ -140,14 +153,22 @@ model Unit {
   unitType     UnitType   @default(APARTMENT)
   areaSqFt     Float?     @default(2783)
   parkingSlots Int        @default(2)
+  leaderUserId String?    @unique
+  leaderAssignedAt   DateTime?
+  leaderAssignedById String?
   createdAt    DateTime   @default(now())
 
+  leader       User?      @relation("UnitLeader", fields: [leaderUserId], references: [id], onDelete: SetNull)
+  leaderAssignedBy User?  @relation("UnitLeaderAssigner", fields: [leaderAssignedById], references: [id], onDelete: SetNull)
   memberships   UnitMembership[]
+  membershipRequests UnitMembershipRequest[]
   dues          Due[]
   visitorPasses VisitorPass[]
   domesticHelps DomesticHelp[]
+  staffAssociations StaffAssociation[]
   moveRequests  MoveRequest[]
   pets          Pet[]
+  vehicles      Vehicle[]
 }
 
 enum UnitRole {
@@ -185,6 +206,42 @@ model UnitMembership {
   @@index([userId, endDate])
 }
 
+enum MembershipRequestType {
+  LEADER_INVITE
+  ADMIN_INVITE
+  CLAIM
+}
+
+enum MembershipRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+model UnitMembershipRequest {
+  id            String                   @id @default(cuid())
+  unitId        String
+  userId        String
+  requestedRole UnitRole
+  type          MembershipRequestType
+  status        MembershipRequestStatus  @default(PENDING)
+  invitedById   String?
+  ownerConsent  ConsentStatus @default(NOT_REQUIRED)
+  expiresAt     DateTime?
+  reviewedAt    DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  unit    Unit  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  user    User  @relation("MembershipRequestInvitee", fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy User? @relation("MembershipRequestInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@index([unitId, status])
+  @@index([userId, status])
+}
+
 // ─── SUB-COMMUNITIES ────────────────────────────────────────────
 
 model SubCommunity {
@@ -192,6 +249,8 @@ model SubCommunity {
   name        String   @unique
   description String?
   coverImage  String?
+  /// When set, all active residents in this tower are auto-enrolled as members.
+  targetBlock String?  @unique
   isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -203,6 +262,7 @@ model SubCommunity {
   joinRequests   CommunityJoinRequest[]
   assignedTickets HelpTicket[]
   forums          Forum[]
+  notices         Notice[]
 }
 
 enum CommunityRole {
@@ -342,11 +402,15 @@ model Event {
   startsAt       DateTime
   endsAt         DateTime
   maxAttendees   Int?
+  facilityId     String?
   createdById    String
   createdAt      DateTime   @default(now())
 
   subCommunity SubCommunity? @relation(fields: [subCommunityId], references: [id])
+  facility     Facility?     @relation(fields: [facilityId], references: [id], onDelete: SetNull)
   rsvps        RSVP[]
+
+  @@index([facilityId])
 }
 
 enum RSVPStatus {
@@ -414,6 +478,87 @@ model DomesticHelp {
   @@index([userId, status])
 }
 
+// ─── STAFF REGISTRY (v2) ─────────────────────────────────────────
+
+enum StaffRole {
+  MAID
+  NANNY
+  COOK
+  DRIVER
+  GARDENER
+  GUARD
+  FACILITY
+  ELECTRICIAN
+  PLUMBER
+  OTHER
+}
+
+enum StaffScope {
+  UNIT
+  SOCIETY
+}
+
+enum StaffAssociationStatus {
+  ACTIVE
+  ENDED
+  SUSPENDED
+}
+
+model StaffPerson {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  photoUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  associations StaffAssociation[]
+  reviews      StaffReview[]
+  visitorPasses VisitorPass[]
+
+  @@index([name])
+}
+
+model StaffAssociation {
+  id             String                 @id @default(cuid())
+  staffPersonId  String
+  scope          StaffScope
+  unitId         String?
+  role           StaffRole
+  recurrenceDays String[]
+  startDate      DateTime               @default(now())
+  endDate        DateTime?
+  status         StaffAssociationStatus @default(ACTIVE)
+  registeredById String
+  needsReview    Boolean                @default(false)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  staffPerson  StaffPerson @relation(fields: [staffPersonId], references: [id], onDelete: Cascade)
+  unit         Unit?       @relation(fields: [unitId], references: [id])
+  registeredBy User        @relation("StaffAssociationRegistrar", fields: [registeredById], references: [id])
+
+  @@index([staffPersonId, status])
+  @@index([unitId, status])
+}
+
+model StaffReview {
+  id            String   @id @default(cuid())
+  staffPersonId String
+  authorId      String
+  rating        Int
+  comment       String?
+  isHidden      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  staffPerson StaffPerson @relation(fields: [staffPersonId], references: [id], onDelete: Cascade)
+  author      User        @relation(fields: [authorId], references: [id])
+
+  @@unique([staffPersonId, authorId])
+  @@index([staffPersonId, isHidden])
+}
+
 // ─── VISITOR MANAGEMENT ─────────────────────────────────────────
 
 enum VisitorType {
@@ -434,7 +579,8 @@ enum PassStatus {
 model VisitorPass {
   id             String      @id @default(cuid())
   userId         String
-  unitId         String
+  unitId         String?
+  staffPersonId  String?
   visitorName    String
   visitorPhone   String?
   visitorType    VisitorType
@@ -448,11 +594,13 @@ model VisitorPass {
   usedAt         DateTime?
   createdAt      DateTime    @default(now())
 
-  user User @relation(fields: [userId], references: [id])
-  unit Unit @relation(fields: [unitId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  unit        Unit?        @relation(fields: [unitId], references: [id])
+  staffPerson StaffPerson? @relation(fields: [staffPersonId], references: [id])
 
   @@index([unitId, status])
   @@index([otp, status])
+  @@index([staffPersonId, status])
 }
 
 // ─── HELPDESK & TICKETING ───────────────────────────────────────
@@ -555,19 +703,40 @@ model Facility {
   bookings  FacilityBooking[]
   blackouts FacilityBlackout[]
   waitlist  FacilityWaitlist[]
+  leaders   FacilityLeader[]
+  events    Event[]
+}
+
+model FacilityLeader {
+  id           String   @id @default(cuid())
+  facilityId   String
+  userId       String
+  assignedAt   DateTime @default(now())
+  assignedById String?
+
+  facility   Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User?    @relation("FacilityLeaderAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([facilityId, userId])
+  @@index([userId])
 }
 
 model FacilityBooking {
-  id         String        @id @default(cuid())
-  facilityId String
-  userId     String
-  startsAt   DateTime
-  endsAt     DateTime
-  status     BookingStatus @default(CONFIRMED)
-  createdAt  DateTime      @default(now())
+  id              String        @id @default(cuid())
+  facilityId      String
+  userId          String
+  startsAt        DateTime
+  endsAt          DateTime
+  status          BookingStatus @default(CONFIRMED)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime      @default(now())
 
-  facility Facility @relation(fields: [facilityId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  facility   Facility @relation(fields: [facilityId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+  reviewedBy User?    @relation("BookingReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([facilityId, startsAt, endsAt])
   @@index([userId, startsAt])
@@ -645,18 +814,22 @@ enum NoticePriority {
 }
 
 model Notice {
-  id          String         @id @default(cuid())
-  title       String
-  body        String
-  priority    NoticePriority @default(NORMAL)
-  targetBlock String?
-  publishedAt DateTime       @default(now())
-  expiresAt   DateTime?
-  createdById String
-  createdAt   DateTime       @default(now())
+  id             String         @id @default(cuid())
+  title          String
+  body           String
+  priority       NoticePriority @default(NORMAL)
+  targetBlock    String?
+  subCommunityId String?
+  publishedAt    DateTime       @default(now())
+  expiresAt      DateTime?
+  createdById    String
+  createdAt      DateTime       @default(now())
 
+  subCommunity    SubCommunity? @relation(fields: [subCommunityId], references: [id], onDelete: SetNull)
   acknowledgments NoticeAcknowledgment[]
   readReceipts    NoticeRead[]
+
+  @@index([subCommunityId])
 }
 
 model NoticeAcknowledgment {
@@ -716,21 +889,73 @@ model DueLineItem {
 
 // ─── PET REGISTRATION ───────────────────────────────────────────
 
+enum PetType {
+  DOG
+  CAT
+  BIRD
+  FISH
+  OTHER
+}
+
+enum PetGender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
 model Pet {
-  id                String    @id @default(cuid())
+  id                String     @id @default(cuid())
   userId            String
   unitId            String
   name              String
+  petType           PetType    @default(DOG)
   breed             String?
+  color             String?
+  ageYears          Int?
+  gender            PetGender  @default(UNKNOWN)
   photoUrl          String?
   vaccinationExpiry DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  notes             String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   user User @relation(fields: [userId], references: [id])
   unit Unit @relation(fields: [unitId], references: [id])
 
   @@index([unitId])
+}
+
+// ─── UNIT VEHICLES ──────────────────────────────────────────────
+
+enum VehicleType {
+  CAR
+  SUV
+  HATCHBACK
+  SEDAN
+  MOTORCYCLE
+  SCOOTER
+  BICYCLE
+  EV
+  OTHER
+}
+
+model Vehicle {
+  id                 String      @id @default(cuid())
+  unitId             String
+  registeredByUserId String
+  vehicleType        VehicleType @default(CAR)
+  registrationNumber String
+  make               String?
+  model              String?
+  color              String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  unit             Unit @relation(fields: [unitId], references: [id])
+  registeredByUser User @relation(fields: [registeredByUserId], references: [id])
+
+  @@index([unitId])
+  @@index([registrationNumber])
 }
 
 // ─── LOST & FOUND ───────────────────────────────────────────────
@@ -798,6 +1023,10 @@ enum NotificationType {
   COMMUNITY_JOIN_APPROVED
   FORUM_REPLY
   FORUM_MODERATION
+  UNIT_INVITE
+  UNIT_INVITE_ACCEPTED
+  BOOKING_APPROVED
+  BOOKING_REJECTED
   GENERAL
 }
 
@@ -911,6 +1140,7 @@ model ForumPost {
   thread  ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   author  User        @relation(fields: [authorId], references: [id])
   reactions ForumReaction[]
+  reports  ForumReport[]
 
   @@index([threadId, createdAt(sort: Asc)])
   @@index([authorId])
@@ -934,6 +1164,7 @@ model ForumReport {
 
   reporter User           @relation("ForumReportReporter", fields: [reporterId], references: [id])
   resolver User?          @relation("ForumReportResolver", fields: [resolvedById], references: [id])
+  post     ForumPost      @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([status, createdAt])
 }
@@ -963,4 +1194,41 @@ model ForumReaction {
 
   @@unique([postId, userId, emoji])
   @@index([postId])
+}
+
+model ImportantContact {
+  id             String   @id @default(cuid())
+  category       String
+  typeOfService  String
+  name           String?
+  contactNo      String
+  remarks        String?
+  createdById    String?
+  lastEditedById String?
+  lastEditedAt   DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  createdBy    User? @relation("ContactCreator", fields: [createdById], references: [id])
+  lastEditedBy User? @relation(fields: [lastEditedById], references: [id])
+  reviews      ContactReview[]
+
+  @@index([category])
+  @@index([lastEditedAt(sort: Desc)])
+}
+
+model ContactReview {
+  id        String   @id @default(cuid())
+  contactId String
+  authorId  String
+  rating    Int
+  comment   String?
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contact ImportantContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  author  User             @relation(fields: [authorId], references: [id])
+
+  @@unique([contactId, authorId])
+  @@index([contactId, isHidden])
 }

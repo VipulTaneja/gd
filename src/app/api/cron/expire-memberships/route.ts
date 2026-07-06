@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authorizeCronRequest } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
+import { syncAllTowerCommunities } from "@/lib/tower-communities";
 
 async function expireMemberships() {
   const expiredMemberships = await db.unitMembership.updateMany({
@@ -12,9 +13,12 @@ async function expireMemberships() {
     },
   });
 
+  const towerSync = await syncAllTowerCommunities();
+
   return NextResponse.json({
     success: true,
     expired: expiredMemberships.count,
+    towerCommunitiesSynced: towerSync.length,
   });
 }
 
