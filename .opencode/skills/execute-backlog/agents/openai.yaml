@@ -1,0 +1,4 @@
+interface:
+  display_name: "Execute Backlog"
+  short_description: "Execute pending remediation tasks from markdown backlog"
+  default_prompt: "Execute the backlog at [file path]"

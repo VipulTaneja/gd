@@ -1,0 +1,4 @@
+interface:
+  display_name: "Summarize Backlog"
+  short_description: "Parse backlog, calc metrics, report deferred, optionally clean"
+  default_prompt: "Summarize [file path]"

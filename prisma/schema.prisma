@@ -1,0 +1,934 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── AUTH & USERS ───────────────────────────────────────────────
+
+enum GlobalRole {
+  SUPER_ADMIN
+  ADMIN
+  RESIDENT
+  NON_RESIDENT
+  SECURITY_STAFF
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                    String          @id @default(cuid())
+  name                  String
+  email                 String          @unique
+  phone                 String?
+  organization          String?
+  avatarUrl             String?
+  globalRole            GlobalRole      @default(RESIDENT)
+  approvalStatus        ApprovalStatus  @default(PENDING)
+  isActive              Boolean         @default(true)
+  approvedBy            String?
+  approvedAt            DateTime?
+  termsAcceptedAt       DateTime?
+  claimedUnitId         String?
+  claimStatus           ClaimStatus?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  vehiclePlates         String[]
+  allowDeliveriesToday  Boolean      @default(false)
+  notificationPrefs     Json?
+  staffPin              String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  accounts              Account[]
+  sessions              Session[]
+  unitMemberships       UnitMembership[]
+  communityMemberships  CommunityMembership[]
+  votes                 Vote[]
+  rsvps                 RSVP[]
+  visitorPasses         VisitorPass[]
+  helpTickets           HelpTicket[]       @relation("TicketCreator")
+  assignedTickets       HelpTicket[]       @relation("TicketAssignee")
+  auditLogs             AuditLog[]
+  notifications         Notification[]
+  joinRequests          CommunityJoinRequest[]
+  facilityBookings      FacilityBooking[]
+  facilityWaitlist      FacilityWaitlist[]
+  lostFoundItems        LostFoundItem[]
+  pets                  Pet[]
+  designations          Designation[]
+  ticketComments        TicketComment[]
+  domesticHelps         DomesticHelp[]
+  createdDomesticHelps  DomesticHelp[]       @relation("DomesticHelpCreator")
+  moveRequests          MoveRequest[]       @relation("MoveRequestRequester")
+  proxyTargets          PollProxy[]         @relation("PollProxyTarget")
+  proxyGrants           PollProxy[]         @relation("PollProxyGrantor")
+  forumThreads          ForumThread[]
+  forumPosts            ForumPost[]
+  forumReports          ForumReport[]   @relation("ForumReportReporter")
+  forumResolvedReports  ForumReport[]   @relation("ForumReportResolver")
+}
+
+// ─── NEXTAUTH ACCOUNTS & SESSIONS ───────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── UNITS & TIME-BOUND RBAC ────────────────────────────────────
+
+enum UnitType {
+  APARTMENT
+  DUPLEX
+  VILLA
+  SHOP
+  OFFICE
+}
+
+model Unit {
+  id           String     @id @default(cuid())
+  unitNumber   String     @unique
+  block        String
+  floor        Int?
+  unitType     UnitType   @default(APARTMENT)
+  areaSqFt     Float?     @default(2783)
+  parkingSlots Int        @default(2)
+  createdAt    DateTime   @default(now())
+
+  memberships   UnitMembership[]
+  dues          Due[]
+  visitorPasses VisitorPass[]
+  domesticHelps DomesticHelp[]
+  moveRequests  MoveRequest[]
+  pets          Pet[]
+}
+
+enum UnitRole {
+  OWNER
+  JOINT_OWNER
+  TENANT
+  OWNER_FAMILY
+  TENANT_FAMILY
+}
+
+enum ConsentStatus {
+  NOT_REQUIRED
+  PENDING
+  GRANTED
+  REVOKED
+}
+
+model UnitMembership {
+  id            String        @id @default(cuid())
+  userId        String
+  unitId        String
+  role          UnitRole
+  startDate     DateTime
+  endDate       DateTime?
+  isPrimary     Boolean       @default(false)
+  ownerConsent  ConsentStatus @default(NOT_REQUIRED)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@unique([userId, unitId, role, startDate])
+  @@index([unitId, endDate])
+  @@index([userId, endDate])
+}
+
+// ─── SUB-COMMUNITIES ────────────────────────────────────────────
+
+model SubCommunity {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  coverImage  String?
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships    CommunityMembership[]
+  polls          Poll[]
+  events         Event[]
+  files          FileEntry[]
+  joinRequests   CommunityJoinRequest[]
+  assignedTickets HelpTicket[]
+  forums          Forum[]
+}
+
+enum CommunityRole {
+  ADMIN
+  MEMBER
+}
+
+model CommunityMembership {
+  id             String        @id @default(cuid())
+  userId         String
+  subCommunityId String
+  role           CommunityRole @default(MEMBER)
+  joinedAt       DateTime      @default(now())
+
+  user         User         @relation(fields: [userId], references: [id])
+  subCommunity SubCommunity @relation(fields: [subCommunityId], references: [id])
+
+  @@unique([userId, subCommunityId])
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model CommunityJoinRequest {
+  id             String            @id @default(cuid())
+  userId         String
+  subCommunityId String
+  status         JoinRequestStatus @default(PENDING)
+  reviewedById   String?
+  createdAt      DateTime          @default(now())
+  reviewedAt     DateTime?
+
+  user         User         @relation(fields: [userId], references: [id])
+  subCommunity SubCommunity @relation(fields: [subCommunityId], references: [id])
+
+  @@unique([userId, subCommunityId, status])
+}
+
+// ─── POLLS & VOTING ─────────────────────────────────────────────
+
+enum PollScope {
+  GLOBAL
+  SUB_COMMUNITY
+}
+
+enum ResultVisibility {
+  LIVE
+  AFTER_CLOSE
+}
+
+enum PollEligibility {
+  ALL_RESIDENTS
+  OWNERS_ONLY
+  ONE_PER_UNIT
+}
+
+model Poll {
+  id               String           @id @default(cuid())
+  title            String
+  description      String?
+  scope            PollScope
+  subCommunityId   String?
+  isAnonymous      Boolean          @default(false)
+  resultVisibility ResultVisibility @default(LIVE)
+  maxChoices       Int              @default(1)
+  eligibility      PollEligibility  @default(ALL_RESIDENTS)
+  isResolution     Boolean          @default(false)
+  quorumPercentage Int?
+  opensAt          DateTime
+  closesAt         DateTime
+  createdById      String
+  createdAt        DateTime         @default(now())
+
+  subCommunity SubCommunity? @relation(fields: [subCommunityId], references: [id])
+  options      PollOption[]
+  votes        Vote[]
+  proxies      PollProxy[]
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  pollId String
+  label  String
+  order  Int    @default(0)
+
+  poll  Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes Vote[]
+}
+
+model Vote {
+  id       String   @id @default(cuid())
+  pollId   String
+  optionId String
+  userId   String
+  votedAt  DateTime @default(now())
+
+  poll   Poll       @relation(fields: [pollId], references: [id])
+  option PollOption @relation(fields: [optionId], references: [id])
+  user   User       @relation(fields: [userId], references: [id])
+
+  @@unique([pollId, optionId, userId])
+  @@index([pollId, userId])
+}
+
+model PollProxy {
+  id            String   @id @default(cuid())
+  pollId        String
+  proxyUserId   String
+  targetUnitId  String
+  grantedBy     String
+  grantedAt     DateTime @default(now())
+
+  poll        Poll @relation(fields: [pollId], references: [id])
+  proxyUser   User @relation("PollProxyTarget", fields: [proxyUserId], references: [id])
+  grantor     User @relation("PollProxyGrantor", fields: [grantedBy], references: [id])
+
+  @@unique([pollId, targetUnitId])
+}
+
+// ─── EVENTS & CALENDAR ──────────────────────────────────────────
+
+enum EventScope {
+  GLOBAL
+  SUB_COMMUNITY
+}
+
+model Event {
+  id             String     @id @default(cuid())
+  title          String
+  description    String?
+  location       String?
+  scope          EventScope
+  subCommunityId String?
+  startsAt       DateTime
+  endsAt         DateTime
+  maxAttendees   Int?
+  createdById    String
+  createdAt      DateTime   @default(now())
+
+  subCommunity SubCommunity? @relation(fields: [subCommunityId], references: [id])
+  rsvps        RSVP[]
+}
+
+enum RSVPStatus {
+  ACCEPTED
+  DECLINED
+  MAYBE
+}
+
+model RSVP {
+  id        String     @id @default(cuid())
+  eventId   String
+  userId    String
+  status    RSVPStatus
+  createdAt DateTime   @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+// ─── FILE VAULT ─────────────────────────────────────────────────
+
+model FileEntry {
+  id             String    @id @default(cuid())
+  subCommunityId String?
+  name           String
+  mimeType       String
+  sizeBytes      Int
+  storageKey     String
+  uploadedById   String
+  createdAt      DateTime  @default(now())
+
+  subCommunity SubCommunity? @relation(fields: [subCommunityId], references: [id])
+}
+
+// ─── DOMESTIC HELP REGISTRY ──────────────────────────────────────
+
+enum DomesticHelpStatus {
+  ACTIVE
+  REVOKED
+}
+
+model DomesticHelp {
+  id               String             @id @default(cuid())
+  userId           String
+  unitId           String
+  name             String
+  phone            String?
+  photoUrl         String?
+  helpType         String             @default("OTHER")
+  recurrenceDays   String[]
+  status           DomesticHelpStatus @default(ACTIVE)
+  validFrom        DateTime           @default(now())
+  validUntil       DateTime?
+  createdById      String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  user    User @relation(fields: [userId], references: [id])
+  unit    Unit @relation(fields: [unitId], references: [id])
+  creator User @relation("DomesticHelpCreator", fields: [createdById], references: [id])
+
+  @@index([unitId, status])
+  @@index([userId, status])
+}
+
+// ─── VISITOR MANAGEMENT ─────────────────────────────────────────
+
+enum VisitorType {
+  GUEST
+  DELIVERY
+  DAILY_HELP
+  CAB
+  OTHER
+}
+
+enum PassStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  CANCELLED
+}
+
+model VisitorPass {
+  id             String      @id @default(cuid())
+  userId         String
+  unitId         String
+  visitorName    String
+  visitorPhone   String?
+  visitorType    VisitorType
+  otp            String
+  validFrom      DateTime
+  validUntil     DateTime
+  status         PassStatus  @default(ACTIVE)
+  isRecurring    Boolean     @default(false)
+  recurrenceDays String[]
+  parkingSlot    String?
+  usedAt         DateTime?
+  createdAt      DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@index([unitId, status])
+  @@index([otp, status])
+}
+
+// ─── HELPDESK & TICKETING ───────────────────────────────────────
+
+enum TicketCategory {
+  PLUMBING
+  ELECTRICAL
+  CIVIL
+  HOUSEKEEPING
+  SECURITY
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model HelpTicket {
+  id                    String         @id @default(cuid())
+  userId                String
+  unitId                String?
+  category              TicketCategory
+  priority              TicketPriority @default(MEDIUM)
+  subject               String
+  description           String
+  status                TicketStatus   @default(OPEN)
+  assignedToUserId      String?
+  assignedToCommunityId String?
+  satisfactionRating    Int?
+  satisfactionComment   String?
+  resolvedAt            DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  user                User            @relation("TicketCreator", fields: [userId], references: [id])
+  assignedToUser      User?           @relation("TicketAssignee", fields: [assignedToUserId], references: [id])
+  assignedToCommunity SubCommunity?   @relation(fields: [assignedToCommunityId], references: [id])
+  comments            TicketComment[]
+  attachments         TicketAttachment[]
+
+  @@index([status, createdAt])
+  @@index([assignedToUserId])
+}
+
+model TicketComment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  ticket HelpTicket @relation(fields: [ticketId], references: [id])
+  author User       @relation(fields: [authorId], references: [id])
+}
+
+model TicketAttachment {
+  id         String   @id @default(cuid())
+  ticketId   String
+  name       String
+  mimeType   String
+  sizeBytes  Int
+  storageKey String
+  createdAt  DateTime @default(now())
+
+  ticket HelpTicket @relation(fields: [ticketId], references: [id])
+}
+
+// ─── FACILITY BOOKING ───────────────────────────────────────────
+
+enum BookingStatus {
+  PENDING_APPROVAL
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+model Facility {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  description        String?
+  location           String?
+  slotMinutes        Int      @default(60)
+  maxAdvDays         Int      @default(7)
+  capacity           Int      @default(1)
+  maxBookingsPerUser Int      @default(2)
+  minCancelMinutes   Int      @default(60)
+  requiresApproval   Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  bookings  FacilityBooking[]
+  blackouts FacilityBlackout[]
+  waitlist  FacilityWaitlist[]
+}
+
+model FacilityBooking {
+  id         String        @id @default(cuid())
+  facilityId String
+  userId     String
+  startsAt   DateTime
+  endsAt     DateTime
+  status     BookingStatus @default(CONFIRMED)
+  createdAt  DateTime      @default(now())
+
+  facility Facility @relation(fields: [facilityId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([facilityId, startsAt, endsAt])
+  @@index([userId, startsAt])
+  @@unique([facilityId, startsAt])
+}
+
+model FacilityBlackout {
+  id         String   @id @default(cuid())
+  facilityId String
+  reason     String
+  startsAt   DateTime
+  endsAt     DateTime
+  createdAt  DateTime @default(now())
+
+  facility Facility @relation(fields: [facilityId], references: [id])
+
+  @@index([facilityId, startsAt, endsAt])
+}
+
+model FacilityWaitlist {
+  id         String   @id @default(cuid())
+  facilityId String
+  userId     String
+  preferredDate DateTime?
+  status     String   @default("WAITING")
+  createdAt  DateTime @default(now())
+
+  facility Facility @relation(fields: [facilityId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([facilityId, status])
+}
+
+// ─── MOVE-IN / MOVE-OUT WORKFLOW ────────────────────────────────
+
+enum MoveType {
+  MOVE_IN
+  MOVE_OUT
+}
+
+enum MoveStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+model MoveRequest {
+  id          String     @id @default(cuid())
+  type        MoveType
+  unitId      String
+  requestedBy String
+  requestedAt DateTime   @default(now())
+  scheduledAt DateTime?
+  completedAt DateTime?
+  status      MoveStatus @default(PENDING)
+  checklist   Json?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  unit     Unit @relation(fields: [unitId], references: [id])
+  requester User @relation("MoveRequestRequester", fields: [requestedBy], references: [id])
+
+  @@index([unitId, status])
+  @@index([requestedBy, status])
+}
+
+// ─── NOTICE BOARD ───────────────────────────────────────────────
+
+enum NoticePriority {
+  NORMAL
+  IMPORTANT
+  EMERGENCY
+}
+
+model Notice {
+  id          String         @id @default(cuid())
+  title       String
+  body        String
+  priority    NoticePriority @default(NORMAL)
+  targetBlock String?
+  publishedAt DateTime       @default(now())
+  expiresAt   DateTime?
+  createdById String
+  createdAt   DateTime       @default(now())
+
+  acknowledgments NoticeAcknowledgment[]
+  readReceipts    NoticeRead[]
+}
+
+model NoticeAcknowledgment {
+  id        String   @id @default(cuid())
+  noticeId  String
+  userId    String
+  ackAt     DateTime @default(now())
+
+  notice Notice @relation(fields: [noticeId], references: [id])
+
+  @@unique([noticeId, userId])
+}
+
+model NoticeRead {
+  id        String   @id @default(cuid())
+  noticeId  String
+  userId    String
+  readAt    DateTime @default(now())
+
+  notice Notice @relation(fields: [noticeId], references: [id])
+
+  @@unique([noticeId, userId])
+}
+
+// ─── DUES & PAYMENTS ────────────────────────────────────────────
+
+enum DueStatus {
+  PENDING
+  PAID
+  OVERDUE
+  WAIVED
+}
+
+model Due {
+  id         String    @id @default(cuid())
+  unitId     String
+  label      String
+  amount     Decimal   @db.Decimal(10, 2)
+  dueDate    DateTime
+  status     DueStatus @default(PENDING)
+  paidAt     DateTime?
+  receiptUrl String?
+  createdAt  DateTime  @default(now())
+
+  unit      Unit           @relation(fields: [unitId], references: [id])
+  lineItems DueLineItem[]
+}
+
+model DueLineItem {
+  id       String  @id @default(cuid())
+  dueId    String
+  label    String
+  amount   Decimal @db.Decimal(10, 2)
+
+  due Due @relation(fields: [dueId], references: [id], onDelete: Cascade)
+}
+
+// ─── PET REGISTRATION ───────────────────────────────────────────
+
+model Pet {
+  id                String    @id @default(cuid())
+  userId            String
+  unitId            String
+  name              String
+  breed             String?
+  photoUrl          String?
+  vaccinationExpiry DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@index([unitId])
+}
+
+// ─── LOST & FOUND ───────────────────────────────────────────────
+
+enum LostFoundType {
+  LOST
+  FOUND
+}
+
+enum LostFoundStatus {
+  ACTIVE
+  CLAIMED
+  EXPIRED
+}
+
+model LostFoundItem {
+  id          String           @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  type        LostFoundType
+  location    String?
+  imageUrl    String?
+  status      LostFoundStatus  @default(ACTIVE)
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([type, status])
+  @@index([status, expiresAt])
+}
+
+// ─── AUDIT LOG ──────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+}
+
+// ─── NOTIFICATIONS ──────────────────────────────────────────────
+
+enum NotificationType {
+  APPROVAL_GRANTED
+  APPROVAL_REJECTED
+  NEW_POLL
+  POLL_CLOSED
+  NEW_EVENT
+  EVENT_REMINDER
+  TICKET_UPDATE
+  VISITOR_ARRIVED
+  DUE_REMINDER
+  NOTICE_PUBLISHED
+  COMMUNITY_JOIN_APPROVED
+  FORUM_REPLY
+  FORUM_MODERATION
+  GENERAL
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String?
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt])
+}
+
+// ─── RWA COMMITTEE ──────────────────────────────────────────────
+
+model Designation {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, endDate])
+}
+
+// ─── ENQUIRIES ──────────────────────────────────────────────────
+
+model Enquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ─── DISCUSSION FORUMS ─────────────────────────────────────────
+
+enum ForumScope {
+  GLOBAL
+  SUB_COMMUNITY
+}
+
+enum ForumThreadStatus {
+  OPEN
+  LOCKED
+  HIDDEN
+}
+
+model Forum {
+  id              String      @id @default(cuid())
+  slug            String      @unique
+  name            String
+  description     String?
+  scope           ForumScope  @default(GLOBAL)
+  subCommunityId  String?
+  isReadOnly      Boolean     @default(false)
+  sortOrder       Int         @default(0)
+  isArchived      Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  subCommunity SubCommunity?  @relation(fields: [subCommunityId], references: [id])
+  threads      ForumThread[]
+
+  @@index([scope, sortOrder])
+}
+
+model ForumThread {
+  id              String            @id @default(cuid())
+  forumId         String
+  authorId        String
+  title           String
+  body            String
+  status          ForumThreadStatus @default(OPEN)
+  isPinned        Boolean           @default(false)
+  viewCount       Int               @default(0)
+  lastActivityAt  DateTime          @default(now())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  forum  Forum       @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  author User        @relation(fields: [authorId], references: [id])
+  posts  ForumPost[]
+
+  @@index([forumId, lastActivityAt(sort: Desc)])
+  @@index([authorId])
+}
+
+model ForumPost {
+  id            String    @id @default(cuid())
+  threadId      String
+  authorId      String
+  body          String
+  replyToPostId String?
+  isHidden      Boolean   @default(false)
+  editedAt      DateTime?
+  createdAt     DateTime  @default(now())
+
+  thread  ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author  User        @relation(fields: [authorId], references: [id])
+
+  @@index([threadId, createdAt(sort: Asc)])
+  @@index([authorId])
+}
+
+enum ForumReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model ForumReport {
+  id           String             @id @default(cuid())
+  postId       String
+  reporterId   String
+  reason       String
+  status       ForumReportStatus  @default(OPEN)
+  resolvedById String?
+  createdAt    DateTime           @default(now())
+  resolvedAt   DateTime?
+
+  reporter User           @relation("ForumReportReporter", fields: [reporterId], references: [id])
+  resolver User?          @relation("ForumReportResolver", fields: [resolvedById], references: [id])
+
+  @@index([status, createdAt])
+}

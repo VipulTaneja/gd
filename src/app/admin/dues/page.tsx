@@ -1,0 +1,131 @@
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { DashboardLayout } from "@/components/dashboard/layout";
+import { GenerateDuesForm } from "@/components/dues/generate-dues-form";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminDuesPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true, globalRole: true },
+  });
+  if (!user) redirect("/login");
+
+  const [totalDues, paidDues, pendingDues, overdueDues] = await Promise.all([
+    db.due.aggregate({ _sum: { amount: true }, _count: true }),
+    db.due.aggregate({ _sum: { amount: true }, where: { status: "PAID" } }),
+    db.due.aggregate({ _sum: { amount: true }, where: { status: "PENDING" } }),
+    db.due.aggregate({ _sum: { amount: true }, where: { status: "OVERDUE" } }),
+  ]);
+
+  const recentDues = await db.due.findMany({
+    include: { unit: { select: { unitNumber: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+
+  const formatCurrency = (val: number | null) => `₹${(val ?? 0).toLocaleString()}`;
+  const totalAmount = totalDues._sum.amount ? Number(totalDues._sum.amount) : 0;
+  const paidAmount = paidDues._sum.amount ? Number(paidDues._sum.amount) : 0;
+  const pendingAmount = pendingDues._sum.amount ? Number(pendingDues._sum.amount) : 0;
+  const overdueAmount = overdueDues._sum.amount ? Number(overdueDues._sum.amount) : 0;
+
+  return (
+    <DashboardLayout user={user}>
+      <div className="space-y-6">
+        <h1 className="font-heading text-2xl font-bold">Dues Management</h1>
+
+        <div className="rounded-xl border bg-card p-6">
+          <h2 className="font-heading text-lg font-semibold mb-4">Generate Dues</h2>
+          <GenerateDuesForm />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-sm text-muted-foreground">Total Dues</p>
+            <p className="font-heading text-2xl font-bold">{formatCurrency(totalAmount)}</p>
+            <p className="text-xs text-muted-foreground">{totalDues._count} records</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-sm text-muted-foreground">Collected</p>
+            <p className="font-heading text-2xl font-bold text-green-600">{formatCurrency(paidAmount)}</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-sm text-muted-foreground">Pending</p>
+            <p className="font-heading text-2xl font-bold text-amber-600">{formatCurrency(pendingAmount)}</p>
+          </div>
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-sm text-muted-foreground">Overdue</p>
+            <p className="font-heading text-2xl font-bold text-red-600">{formatCurrency(overdueAmount)}</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border bg-card">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium">Unit</th>
+                  <th className="px-4 py-3 text-left font-medium">Label</th>
+                  <th className="px-4 py-3 text-left font-medium">Amount</th>
+                  <th className="px-4 py-3 text-left font-medium">Due Date</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-right font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentDues.map((due) => (
+                  <tr key={due.id} className="border-b last:border-0">
+                    <td className="px-4 py-3 font-medium">{due.unit.unitNumber}</td>
+                    <td className="px-4 py-3">{due.label}</td>
+                    <td className="px-4 py-3">{formatCurrency(Number(due.amount))}</td>
+                    <td className="px-4 py-3">{due.dueDate.toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        due.status === "PAID" ? "bg-green-100 text-green-800" :
+                        due.status === "OVERDUE" ? "bg-red-100 text-red-800" :
+                        "bg-amber-100 text-amber-800"
+                      }`}>
+                        {due.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {due.status !== "PAID" && (
+                        <MarkPaidButton dueId={due.id} />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+function MarkPaidButton({ dueId }: { dueId: string }) {
+  return (
+    <button
+      onClick={() => {
+        if (confirm("Mark as paid?")) {
+          fetch("/api/dues/mark-paid", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dueId }),
+          }).then(() => window.location.reload());
+        }
+      }}
+      className="inline-flex h-8 items-center justify-center rounded-lg bg-green-600 px-3 text-xs font-medium text-white hover:bg-green-700"
+    >
+      Mark Paid
+    </button>
+  );
+}
+

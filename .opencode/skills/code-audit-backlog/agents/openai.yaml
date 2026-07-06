@@ -1,0 +1,4 @@
+interface:
+  display_name: "Code Audit Backlog"
+  short_description: "Audit code, find bugs, build sprint backlog"
+  default_prompt: "Audit my code for [FOCUS AREA]"
