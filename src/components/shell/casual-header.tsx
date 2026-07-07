@@ -20,9 +20,6 @@ import { cn } from "@/lib/utils";
 
 const headerNav: { feature: FeatureKey; href: string }[] = [
   { feature: "notices", href: "/notices" },
-  { feature: "events", href: "/events" },
-  { feature: "polls", href: "/polls" },
-  { feature: "forums", href: "/forums" },
   { feature: "communities", href: "/communities" },
   { feature: "contacts", href: "/contacts" },
   { feature: "staff", href: "/staff" },

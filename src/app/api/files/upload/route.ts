@@ -40,6 +40,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ url, key });
   }
 
+  if (namespace === "hub-hero") {
+    const { canManageHubHero } = await import("@/lib/hub-hero-auth");
+    if (!(await canManageHubHero(session.user.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (!FAQ_IMAGE_TYPES.includes(contentType)) {
+      return NextResponse.json({ error: "Only images are allowed for hero slides" }, { status: 400 });
+    }
+    if (size > FAQ_MAX_SIZE) {
+      return NextResponse.json({ error: "Image must be under 5 MB" }, { status: 400 });
+    }
+    const key = generateFileKey(session.user.id, filename, "hub-hero");
+    const url = await getPresignedUploadUrl(key);
+    return NextResponse.json({ url, key });
+  }
+
   if (!ALLOWED_TYPES.includes(contentType)) {
     return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
   }

@@ -17,7 +17,8 @@
     "db:seed:directory": "npx tsx prisma/seed-directory.ts",
     "db:seed:staff": "npx tsx prisma/seed-staff.ts",
     "db:seed:contacts": "npx tsx prisma/seed-contacts.ts",
-    "db:seed:faq": "npx tsx prisma/seed-faq.ts"
+    "db:seed:faq": "npx tsx prisma/seed-faq.ts",
+    "db:seed:hub-hero": "npx tsx prisma/seed-hub-hero.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts --prod"

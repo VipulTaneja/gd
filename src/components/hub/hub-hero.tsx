@@ -1,15 +1,18 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Home, Building2, Leaf, MapPin } from "lucide-react";
+import { Home, Building2, Leaf, MapPin, Settings2 } from "lucide-react";
 import { UnitLink } from "@/components/shared/unit-link";
 import { FadeIn } from "@/components/shared/animated";
+import { HubHeroCarousel } from "@/components/hub/hub-hero-carousel";
 import { actions, greetings } from "@/lib/microcopy";
 import { cn } from "@/lib/utils";
-import { defaultHeroTint, hubHero, towerHeroTint } from "@/lib/hub-images";
+import { defaultHeroTint, towerHeroTint } from "@/lib/hub-images";
+import type { HubHeroSlideDto } from "@/lib/hub-hero";
 import type { HubUser } from "@/types/hub";
 
 interface HubHeroProps {
   user: HubUser | null;
+  slides: HubHeroSlideDto[];
+  canManage?: boolean;
 }
 
 function getGreeting(): string {
@@ -25,21 +28,14 @@ const statChips = [
   { icon: Leaf, label: "IGBC Platinum" },
 ];
 
-export function HubHero({ user }: HubHeroProps) {
+export function HubHero({ user, slides, canManage = false }: HubHeroProps) {
   const tower = user?.primaryUnit?.block;
   const overlayTint = tower ? (towerHeroTint[tower] ?? defaultHeroTint) : defaultHeroTint;
 
   return (
     <section className="relative w-full overflow-hidden">
       <div className="relative h-[220px] sm:h-[280px] md:h-[320px]">
-        <Image
-          src={hubHero.src}
-          alt={hubHero.alt}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
+        <HubHeroCarousel slides={slides} />
         <div
           className={cn(
             "absolute inset-0 bg-gradient-to-t",
@@ -47,6 +43,16 @@ export function HubHero({ user }: HubHeroProps) {
           )}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent" />
+
+        {canManage && (
+          <Link
+            href="/hub/hero/manage"
+            className="absolute right-4 top-4 z-10 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/30 bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/55"
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+            Edit carousel
+          </Link>
+        )}
 
         <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8">
           <FadeIn className="max-w-2xl text-white">
