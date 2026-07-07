@@ -1,4 +1,4 @@
-import { PrismaClient, GlobalRole, ApprovalStatus, UnitRole, TicketCategory, TicketStatus, TicketPriority, PollScope, PollEligibility, ResultVisibility, EventScope, VisitorType, PassStatus, BookingStatus, MoveType, MoveStatus, NoticePriority, DueStatus, DomesticHelpStatus, LostFoundType, LostFoundStatus, NotificationType, CommunityRole, RSVPStatus } from "../src/generated/prisma/client";
+import { PrismaClient, GlobalRole, ApprovalStatus, UnitRole, TicketCategory, TicketStatus, TicketPriority, PollScope, PollEligibility, ResultVisibility, EventScope, VisitorType, PassStatus, BookingStatus, MoveType, MoveStatus, NoticePriority, DueStatus, DomesticHelpStatus, LostFoundType, LostFoundStatus, NotificationType, CommunityRole, RSVPStatus, DesignationTitle } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -349,15 +349,17 @@ async function seedDev() {
 
   // ─── DESIGNATIONS (RWA COMMITTEE) ─────────────────────────────
   console.log("\n🏛️ Creating RWA committee designations...");
-  const designationData = [
-    { userId: vipul?.id!, title: "President", startDate: daysAgo(365) },
-    { userId: rajesh?.id!, title: "Vice President", startDate: daysAgo(365) },
-    { userId: deepakSapra?.id!, title: "Infrastructure & Fire Safety Head", startDate: daysAgo(365) },
-    { userId: sumitTayal?.id!, title: "Sports & Recreation Head", startDate: daysAgo(365) },
-    { userId: meenalKumar?.id!, title: "Cultural Activities Head", startDate: daysAgo(180) },
-    { userId: anita?.id!, title: "Garden & Environment Head", startDate: daysAgo(365) },
-    { userId: amit?.id!, title: "Treasurer", startDate: daysAgo(365) },
-  ].filter(d => d.userId);
+  const designationData = (
+    [
+      { userId: vipul?.id, title: "PRESIDENT" as DesignationTitle, startDate: daysAgo(365) },
+      { userId: rajesh?.id, title: "VICE_PRESIDENT" as DesignationTitle, startDate: daysAgo(365) },
+      { userId: deepakSapra?.id, title: "COMMITTEE_MEMBER" as DesignationTitle, startDate: daysAgo(365) },
+      { userId: sumitTayal?.id, title: "COMMITTEE_MEMBER" as DesignationTitle, startDate: daysAgo(365) },
+      { userId: meenalKumar?.id, title: "COMMITTEE_MEMBER" as DesignationTitle, startDate: daysAgo(180) },
+      { userId: anita?.id, title: "COMMITTEE_MEMBER" as DesignationTitle, startDate: daysAgo(365) },
+      { userId: amit?.id, title: "TREASURER" as DesignationTitle, startDate: daysAgo(365) },
+    ] as { userId: string | undefined; title: DesignationTitle; startDate: Date }[]
+  ).filter((d): d is { userId: string; title: DesignationTitle; startDate: Date } => !!d.userId);
 
   for (const d of designationData) {
     const existing = await prisma.designation.findFirst({

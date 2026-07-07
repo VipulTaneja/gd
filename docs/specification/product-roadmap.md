@@ -1,10 +1,10 @@
 # Gulshan Dynasty Community Portal — Product Roadmap
 
 **Document type:** Product Roadmap (stakeholder view)  
-**Version:** 1.1  
-**Date:** 5 July 2026  
+**Version:** 1.2  
+**Date:** 7 July 2026  
 **Audience:** RWA committee, product team, residents (summary sections)  
-**Related docs:** [Functional Spec](./functional-spec.md) · [Implementation backlog](../dev/archive/backlog-product-improvements.md)
+**Related docs:** [Specification index](./README.md) · [Functional Spec](./functional-spec.md) · [Roles & Permissions](./roles-and-permissions.md) · [Dev backlog](../dev/backlog.md)
 
 ---
 
@@ -26,50 +26,51 @@ This is a **resident community platform**, not a property sales website. It is b
 
 ## 2. Where We Are Today (v1 — Shipped)
 
-The portal is **live and functional** for core society operations:
+The portal is **live and functional** for core society operations.
 
-| Capability | Resident benefit | Status |
-|---|---|---|
-| Community Hub home page | One-screen access to notices, events, and shortcuts | Live |
-| Login (Google, Apple, email, dev credentials) | Easy sign-in; admin approves new accounts | Live |
-| Notices & emergency alerts | Official society announcements by tower | Live |
-| Events & RSVP | Community gatherings, tower meetings | Live |
-| Polls & voting | Feedback surveys and society decisions | Live |
-| Visitor passes + gate OTP | Digital gate entry for guests and deliveries | Live |
-| Amenity booking | Pool, theatre, cricket pitch, spa, etc. | Live |
-| Helpdesk tickets | Report plumbing, electrical, housekeeping issues | Live |
-| Dues ledger | View maintenance bills; admin tracks payments | Live (ledger only) |
-| Sub-communities (clubs) | Sports Club, Book Club, and similar groups | Live |
-| File vault | Bylaws, AGM minutes, society documents | Live |
-| User & unit profiles | Know who lives where; linked across the portal | Live |
-| RWA committee page | Current office bearers | Live |
-| In-app notifications | Alerts for approvals, polls, tickets | Live |
-| Onboarding enforcement | Terms → unit claim → approval flow | **New** |
-| Admin role guard | Non-admins blocked from admin pages | **New** |
-| Poll eligibility | Owners-only and one-vote-per-unit enforcement | **New** |
-| Ticket photos | Attach images to maintenance requests | **New** |
-| Privacy & Terms pages | Legal compliance | **New** |
-| Launch readiness dashboard | Admin sees onboarding progress (X/204 units) | **New** |
-| Domestic help registry | Register staff once; auto-generate daily passes | **New** |
-| Delivery management | Package notifications; guard logs received | **New** |
-| Parking & vehicle registry | Vehicles linked to units | **New** |
-| Move-in/out workflow | Structured flat handover with checklist | **New** |
-| Emergency broadcast | One-click alerts with acknowledgment | **New** |
-| AGM digital pack | Event + resolution polls + quorum dashboard | **New** |
-| Ticket SLAs | Expected response time; escalation on breach | **New** |
-| Visitor arrival notifications | "Guest has arrived" alerts | **New** |
-| Gate staff PIN login | Dedicated gate access without personal accounts | **New** |
-| Gate offline cache | Service worker for brief internet outages | **New** |
-| Dues with UPI QR | Scan to pay offline | **New** |
-| Defaulter aging report | 30/60/90 day buckets for treasurer | **New** |
-| Facility waitlist | Join queue when slot full | **New** |
-| Ticket satisfaction rating | Post-resolution feedback | **New** |
-| Lost & Found board | Community bulletin | **New** |
-| Pet registration | Pets linked to units | **New** |
-| Facility usage analytics | Booking trends for admin | **New** |
-| Search (Cmd+K) | Quick search users and units | **New** |
+**Authoritative shipped list:** [Functional Spec §13.1](./functional-spec.md#131-shipped--stable) (modules, gaps, NFR targets).
 
-**v1 gaps fixed:** Onboarding enforcement, AGM vote rules, admin security, ticket photos, and all daily-life features are now implemented.
+**v1 gaps fixed:** Onboarding, AGM rules, admin security, ticket photos, daily-life features, staff/contacts reputation systems, and Help & FAQ are implemented.
+
+---
+
+## 2.1 July 2026 — Staff Registry & Reputation (Shipped)
+
+**Theme:** *Stop registering the same maid three times.*
+
+The biggest Q3 delivery after launch stabilization:
+
+| Initiative | Who benefits | What shipped | Backlog |
+|---|---|---|---|
+| **Staff Registry v2** | All residents | `StaffPerson` + associations; search-first; `/staff` Regular Help; profiles + reviews; society vs unit roles | STAFF-010–095 (47 done) |
+| **Gate pass linkage** | Guards | Cron-generated `DAILY_HELP` passes with `staffPersonId`; multi-unit display at gate | STAFF-019, STAFF-081 |
+| **Important Contacts v2** | Residents | `/contacts/[id]` detail pages; community reviews; ContactLink pattern | CONT-010–024 (19 done) |
+| **Mobile polish** | Phone users | Facilities day-picker booking; directory single-tower on narrow screens | Ad-hoc |
+
+**Humorous but true product rule:** Guards belong to GD, not your flat. Society roles (Guard, Facility, Electrician, Plumber) are visible to everyone but not “addable” to C-1702.
+
+---
+
+## 2.2 Next Up — On Hold & Ideas (Q3–Q4 2026)
+
+Items discovered during staff/contacts implementation — not committed until RWA prioritizes:
+
+| Idea | Benefit | Effort | Backlog ID |
+|---|---|---|---|
+| Staff + contacts in Cmd+K | Find people and vendors from anywhere | M | STAFF-048, CONT-028, SRCH-* |
+| Hub widget: “Help expected today” | Home-screen glance at gate traffic | S | STAFF-049 |
+| Hub widget: top-rated contacts | Surface trusted vendors | S | CONT-031 |
+| Staff photo upload (MinIO) | Guard recognizes faces, not just initials | M | STAFF-038 |
+| Orphan staff admin queue | Clean up when flat goes vacant | M | STAFF-085, STAFF-090 |
+| Notify unit on staff add/remove | “Priya added Kamla to C-302” | S | STAFF-077 |
+| Admin merge duplicate staff | Same phone, two records — merge | M | STAFF-071 |
+| Short-term trades visit (≤7 days) | Electrician for one visit without permanent link | M | STAFF-045 |
+| Dues UPI block mobile layout | Treasurer QR readable on phone | S | Mobile audit |
+| Review moderation policy | Defamation / dispute process doc | S | STAFF-078, CONT-030 |
+| Hindi gate UI | Guards prefer Hindi labels | L | IMP-504 |
+| Global search remaining entities | Forums, files, lost & found in Cmd+K | M | SRCH-014–050 |
+
+**Deferred product bets (Phase 3+):** Staff portal login (`NON_RESIDENT`), attendance/shift scheduling for guards, vendor marketplace with in-app booking (STAFF-D03).
 
 ---
 
@@ -88,6 +89,10 @@ The portal is **live and functional** for core society operations:
 ---
 
 ## 4. Product KPIs (How We Measure Success)
+
+Operational KPI definitions (SLA compliance, poll participation, dues collection, etc.): **[Functional Spec §14](./functional-spec.md#14-product-kpis)**.
+
+Stakeholder rollout targets:
 
 | KPI | Baseline (launch) | 6-month target | 12-month target |
 |---|---|---|---|
@@ -319,12 +324,15 @@ Every roadmap item maps to the implementation backlog:
 | Phase 1A — Daily life | IMP-101–116 | 16 | **DONE** |
 | Phase 1B — Govern | IMP-201–211, IMP-301–306 | 14 | **DONE** |
 | Phase 2 — Polish | IMP-401–417 | 13 | **10 DONE, 1 BLOCKED, 2 DEFERRED** |
+| Staff & Contacts | STAFF-*, CONT-* | 113 | **68 DONE, 28 ON HOLD** |
+| Global Search v2 | SRCH-* | 32 | **22 DONE, 10 REMAINING** |
+| FAQ | FAQ-* | 45 | **41 DONE, 4 ON HOLD/DEFERRED** |
 | Phase 3 — Evaluate | IMP-501–507 | 7 | **DEFERRED** |
 | Documentation | IMP-D01–D05 | 5 | **DONE** |
 
-**Detailed tracking:** [`dev/archive/backlog-product-improvements.md`](../dev/archive/backlog-product-improvements.md)
+**Detailed tracking:** [Dev backlog index](../dev/backlog.md)
 
-**Functional specification:** [`functional-spec.md`](./functional-spec.md)
+**Functional specification:** [functional-spec.md](./functional-spec.md) · **Permissions:** [roles-and-permissions.md](./roles-and-permissions.md) · **Architecture:** [architecture.md](./architecture.md)
 
 ---
 
@@ -332,7 +340,9 @@ Every roadmap item maps to the implementation backlog:
 
 | Version | Date | Changes |
 |---|---|---|
-| 1.1 | 2026-07-05 | Updated status of all completed features; marked Phase 0–1B and most of Phase 2 as DONE |
+| 1.3 | 2026-07-07 | Spec docs reorganized; §2 deduplicated; FAQ traceability; KPI cross-link to functional-spec §14 |
+| 1.2 | 2026-07-07 | Staff Registry v2 + contacts reviews shipped (§2.1); on-hold ideas catalog (§2.2) |
+| 1.1 | 2026-07-05 | Updated status of completed features; Phase 0–1B and most of Phase 2 marked DONE |
 | 1.0 | 2026-07-05 | Initial roadmap from PM review and v1 codebase assessment |
 
 ---

@@ -95,6 +95,13 @@ model User {
   membershipRequests    UnitMembershipRequest[] @relation("MembershipRequestInvitee")
   membershipInvitesSent UnitMembershipRequest[] @relation("MembershipRequestInviter")
   reviewedBookings      FacilityBooking[] @relation("BookingReviewer")
+  faqSectionsCreated    FaqSection[]      @relation("FaqSectionCreatedBy")
+  faqSectionsEdited     FaqSection[]      @relation("FaqSectionEditedBy")
+  faqItemsCreated       FaqItem[]         @relation("FaqItemCreatedBy")
+  faqItemsEdited        FaqItem[]         @relation("FaqItemEditedBy")
+
+  @@index([name])
+  @@index([email])
 }
 
 // ─── NEXTAUTH ACCOUNTS & SESSIONS ───────────────────────────────
@@ -830,6 +837,7 @@ model Notice {
   readReceipts    NoticeRead[]
 
   @@index([subCommunityId])
+  @@index([title])
 }
 
 model NoticeAcknowledgment {
@@ -923,6 +931,8 @@ model Pet {
   unit Unit @relation(fields: [unitId], references: [id])
 
   @@index([unitId])
+  @@index([name])
+  @@index([breed])
 }
 
 // ─── UNIT VEHICLES ──────────────────────────────────────────────
@@ -956,6 +966,7 @@ model Vehicle {
 
   @@index([unitId])
   @@index([registrationNumber])
+  @@index([make])
 }
 
 // ─── LOST & FOUND ───────────────────────────────────────────────
@@ -1047,13 +1058,21 @@ model Notification {
 
 // ─── RWA COMMITTEE ──────────────────────────────────────────────
 
+enum DesignationTitle {
+  PRESIDENT
+  VICE_PRESIDENT
+  SECRETARY
+  TREASURER
+  COMMITTEE_MEMBER
+}
+
 model Designation {
-  id        String    @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
-  title     String
+  title     DesignationTitle
   startDate DateTime
   endDate   DateTime?
-  createdAt DateTime  @default(now())
+  createdAt DateTime         @default(now())
 
   user User @relation(fields: [userId], references: [id])
 
@@ -1124,6 +1143,7 @@ model ForumThread {
 
   @@index([forumId, lastActivityAt(sort: Desc)])
   @@index([authorId])
+  @@index([title])
 }
 
 model ForumPost {
@@ -1214,6 +1234,8 @@ model ImportantContact {
 
   @@index([category])
   @@index([lastEditedAt(sort: Desc)])
+  @@index([typeOfService])
+  @@index([name])
 }
 
 model ContactReview {
@@ -1231,4 +1253,47 @@ model ContactReview {
 
   @@unique([contactId, authorId])
   @@index([contactId, isHidden])
+}
+
+// ─── FAQ ────────────────────────────────────────────────────────
+
+model FaqSection {
+  id             String    @id @default(cuid())
+  title          String
+  slug           String    @unique
+  description    String?
+  sortOrder      Int       @default(0)
+  isPublished    Boolean   @default(false)
+  createdById    String
+  lastEditedById String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  items        FaqItem[]
+  createdBy    User  @relation("FaqSectionCreatedBy", fields: [createdById], references: [id])
+  lastEditedBy User? @relation("FaqSectionEditedBy", fields: [lastEditedById], references: [id])
+
+  @@index([isPublished, sortOrder])
+}
+
+model FaqItem {
+  id             String   @id @default(cuid())
+  sectionId      String
+  question       String
+  slug           String
+  answer         String
+  sortOrder      Int      @default(0)
+  isPublished    Boolean  @default(false)
+  createdById    String
+  lastEditedById String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  section      FaqSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  createdBy    User       @relation("FaqItemCreatedBy", fields: [createdById], references: [id])
+  lastEditedBy User?      @relation("FaqItemEditedBy", fields: [lastEditedById], references: [id])
+
+  @@unique([sectionId, slug])
+  @@index([sectionId, isPublished, sortOrder])
+  @@index([question])
 }

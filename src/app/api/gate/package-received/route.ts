@@ -27,10 +27,12 @@ export async function POST(request: NextRequest) {
     data: { status: "USED", usedAt: new Date() },
   });
 
+  const unitLabel = pass.unit?.unitNumber ?? unitNumber;
+
   await createNotification(
     pass.userId,
     "VISITOR_ARRIVED",
-    `Package received for ${pass.unit.unitNumber}`,
+    `Package received for ${unitLabel}`,
     `A package has been received for your unit from ${pass.visitorName}. Please collect from the gate.`,
     "/visitors"
   );

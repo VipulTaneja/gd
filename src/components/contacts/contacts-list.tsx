@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Phone, Pencil, Loader2, Search, Users, Home, Wrench, Heart, Truck, Leaf, ShoppingBasket, Flower2, Pill, UtensilsCrossed, Scissors, Sparkles, Stethoscope, Building, Dumbbell, Plus } from "lucide-react";
+import Link from "next/link";
+import { Phone, Loader2, Search, Users, Home, Wrench, Heart, Truck, Leaf, ShoppingBasket, Flower2, Pill, UtensilsCrossed, Scissors, Sparkles, Stethoscope, Building, Dumbbell, Plus, Star } from "lucide-react";
+import { contacts as contactsCopy } from "@/lib/microcopy";
 
 interface Contact {
   id: string;
@@ -13,6 +15,8 @@ interface Contact {
   lastEditedById: string | null;
   lastEditedAt: string;
   lastEditedBy?: { name: string } | null;
+  avgRating: number | null;
+  reviewCount: number;
 }
 
 interface ContactsPageProps {
@@ -59,11 +63,22 @@ const categoryColors: Record<string, string> = {
   "Sports": "bg-indigo-100 text-indigo-700",
 };
 
-export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageProps) {
+function RatingBadge({ avgRating, reviewCount }: { avgRating: number | null; reviewCount: number }) {
+  if (avgRating == null) {
+    return <span className="text-xs text-muted-foreground">{contactsCopy.noRating}</span>;
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium">
+      <Star className="h-3.5 w-3.5 fill-gold text-gold" />
+      {avgRating}
+      <span className="text-muted-foreground font-normal">({reviewCount})</span>
+    </span>
+  );
+}
+
+export function ContactsList({ contacts }: ContactsPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<{ name: string; contactNo: string; remarks: string }>({ name: "", contactNo: "", remarks: "" });
   const [showAddForm, setShowAddForm] = useState(false);
   const [addData, setAddData] = useState<{ category: string; typeOfService: string; name: string; contactNo: string; remarks: string }>({
     category: "",
@@ -91,29 +106,6 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
     return acc;
   }, {} as Record<string, Contact[]>);
 
-  const startEdit = (contact: Contact) => {
-    setEditingId(contact.id);
-    setEditData({
-      name: contact.name || "",
-      contactNo: contact.contactNo,
-      remarks: contact.remarks || "",
-    });
-  };
-
-  const saveEdit = (id: string) => {
-    startTransition(async () => {
-      const res = await fetch("/api/contacts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...editData }),
-      });
-      if (res.ok) {
-        setEditingId(null);
-        window.location.reload();
-      }
-    });
-  };
-
   const saveAdd = () => {
     startTransition(async () => {
       const res = await fetch("/api/contacts", {
@@ -131,7 +123,6 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
 
   return (
     <div className="space-y-6">
-      {/* Search + Add button */}
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -140,19 +131,18 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
             placeholder="Search contacts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border bg-card pl-10 pr-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            className="w-full rounded-xl border bg-card pl-10 pr-4 py-3 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold min-h-11"
           />
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="inline-flex h-12 items-center gap-2 rounded-xl bg-gold px-4 text-sm font-medium text-black hover:bg-gold-light transition-colors shrink-0"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gold px-4 text-sm font-medium text-black hover:bg-gold-light transition-colors shrink-0"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Add Contact</span>
         </button>
       </div>
 
-      {/* Add Contact Form */}
       {showAddForm && (
         <div className="rounded-xl border bg-card p-4 space-y-3">
           <h3 className="font-heading text-sm font-semibold">New Contact</h3>
@@ -162,7 +152,7 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
               <select
                 value={addData.category}
                 onChange={(e) => setAddData({ ...addData, category: e.target.value })}
-                className="mt-1 w-full h-11 rounded-lg border bg-transparent px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                className="mt-1 w-full min-h-11 rounded-lg border bg-transparent px-3 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
               >
                 <option value="">Select category</option>
                 {categories.map((cat) => (
@@ -178,7 +168,7 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
                 value={addData.typeOfService}
                 onChange={(e) => setAddData({ ...addData, typeOfService: e.target.value })}
                 placeholder="e.g. Plumber, Electrician"
-                className="mt-1 w-full h-11 rounded-lg border bg-transparent px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                className="mt-1 w-full min-h-11 rounded-lg border bg-transparent px-3 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
               />
             </div>
             <div>
@@ -188,7 +178,7 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
                 value={addData.name}
                 onChange={(e) => setAddData({ ...addData, name: e.target.value })}
                 placeholder="Contact person name"
-                className="mt-1 w-full h-11 rounded-lg border bg-transparent px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                className="mt-1 w-full min-h-11 rounded-lg border bg-transparent px-3 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
               />
             </div>
             <div>
@@ -198,7 +188,7 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
                 value={addData.contactNo}
                 onChange={(e) => setAddData({ ...addData, contactNo: e.target.value })}
                 placeholder="Phone number"
-                className="mt-1 w-full h-11 rounded-lg border bg-transparent px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                className="mt-1 w-full min-h-11 rounded-lg border bg-transparent px-3 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
               />
             </div>
           </div>
@@ -209,21 +199,21 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
               value={addData.remarks}
               onChange={(e) => setAddData({ ...addData, remarks: e.target.value })}
               placeholder="Optional notes"
-              className="mt-1 w-full h-11 rounded-lg border bg-transparent px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+              className="mt-1 w-full min-h-11 rounded-lg border bg-transparent px-3 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
             />
           </div>
           <div className="flex gap-2">
             <button
               onClick={saveAdd}
               disabled={pending || !addData.category || !addData.typeOfService || !addData.contactNo}
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black hover:bg-gold-light transition-colors disabled:opacity-50"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black hover:bg-gold-light transition-colors disabled:opacity-50"
             >
               {pending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
               Add Contact
             </button>
             <button
               onClick={() => setShowAddForm(false)}
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-input px-4 text-sm font-medium hover:bg-muted transition-colors"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-input px-4 text-sm font-medium hover:bg-muted transition-colors"
             >
               Cancel
             </button>
@@ -231,11 +221,10 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
         </div>
       )}
 
-      {/* Category filters */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto flex-nowrap snap-x snap-mandatory scrollbar-hide pb-1">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors shrink-0 ${
+          className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center rounded-full px-4 text-sm font-medium transition-colors ${
             selectedCategory === null ? "bg-gold text-black" : "border border-input hover:bg-muted"
           }`}
         >
@@ -247,7 +236,7 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
             <button
               key={cat}
               onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
-              className={`inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-colors shrink-0 ${
+              className={`inline-flex min-h-11 shrink-0 snap-start items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-colors ${
                 selectedCategory === cat ? "bg-gold text-black" : "border border-input hover:bg-muted"
               }`}
             >
@@ -258,7 +247,6 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
         })}
       </div>
 
-      {/* Contact groups */}
       {Object.entries(groupedContacts).map(([category, items]) => {
         const Icon = categoryIcons[category] || Phone;
         const colorClass = categoryColors[category] || "bg-muted text-muted-foreground";
@@ -275,85 +263,29 @@ export function ContactsList({ contacts, currentUserId, isAdmin }: ContactsPageP
 
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((contact) => (
-                <div
+                <Link
                   key={contact.id}
-                  className="rounded-xl border bg-card p-4 transition-all hover:shadow-md"
+                  href={`/contacts/${contact.id}`}
+                  className="group rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:ring-1 hover:ring-gold/30 min-h-11"
                 >
-                  {editingId === contact.id ? (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={editData.name}
-                        onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                        placeholder="Name"
-                        className="w-full rounded-lg border bg-transparent px-3 py-1.5 text-sm"
-                      />
-                      <input
-                        type="tel"
-                        value={editData.contactNo}
-                        onChange={(e) => setEditData({ ...editData, contactNo: e.target.value })}
-                        placeholder="Contact number"
-                        className="w-full rounded-lg border bg-transparent px-3 py-1.5 text-sm"
-                      />
-                      <input
-                        type="text"
-                        value={editData.remarks}
-                        onChange={(e) => setEditData({ ...editData, remarks: e.target.value })}
-                        placeholder="Remarks"
-                        className="w-full rounded-lg border bg-transparent px-3 py-1.5 text-sm"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => saveEdit(contact.id)}
-                          disabled={pending}
-                          className="flex-1 h-9 rounded-lg bg-gold text-black text-sm font-medium hover:bg-gold-light transition-colors"
-                        >
-                          {pending ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Save"}
-                        </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="h-9 px-3 rounded-lg border text-sm hover:bg-muted transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate group-hover:text-gold">{contact.typeOfService}</p>
+                      {contact.name && (
+                        <p className="text-xs text-muted-foreground truncate">{contact.name}</p>
+                      )}
                     </div>
-                  ) : (
-                    <>
-                      <div className="flex items-start justify-between">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{contact.typeOfService}</p>
-                          {contact.name && (
-                            <p className="text-xs text-muted-foreground truncate">{contact.name}</p>
-                          )}
-                        </div>
-                        {(contact.lastEditedById === currentUserId || isAdmin) && (
-                          <button
-                            onClick={() => startEdit(contact)}
-                            className="h-6 w-6 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors shrink-0"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                      <a
-                        href={`tel:${contact.contactNo.replace(/[^0-9+]/g, "")}`}
-                        className="mt-2 flex items-center gap-2 text-sm text-gold font-medium hover:text-gold-dark transition-colors"
-                      >
-                        <Phone className="h-3.5 w-3.5" />
-                        {contact.contactNo}
-                      </a>
-                      {contact.remarks && (
-                        <p className="mt-1 text-xs text-muted-foreground">{contact.remarks}</p>
-                      )}
-                      {contact.lastEditedBy && (
-                        <p className="mt-2 text-[10px] text-muted-foreground">
-                          Last edited by {contact.lastEditedBy.name} · {new Date(contact.lastEditedAt).toLocaleDateString("en-IN")}
-                        </p>
-                      )}
-                    </>
+                    <RatingBadge avgRating={contact.avgRating} reviewCount={contact.reviewCount} />
+                  </div>
+                  {contact.remarks && (
+                    <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{contact.remarks}</p>
                   )}
-                </div>
+                  {contact.lastEditedBy && (
+                    <p className="mt-2 text-[10px] text-muted-foreground">
+                      Updated {new Date(contact.lastEditedAt).toLocaleDateString("en-IN")}
+                    </p>
+                  )}
+                </Link>
               ))}
             </div>
           </div>

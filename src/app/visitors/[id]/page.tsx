@@ -5,6 +5,7 @@ import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
 import { PhoneLink } from "@/components/shared/phone-link";
 import { UnitLink } from "@/components/shared/unit-link";
+import { StaffLink } from "@/components/staff/staff-link";
 import { QRCodeDisplay } from "./qr-display";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,10 @@ export default async function VisitorPassDetailPage({
 
   const pass = await db.visitorPass.findUnique({
     where: { id },
-    include: { unit: { select: { unitNumber: true } } },
+    include: {
+      unit: { select: { unitNumber: true } },
+      staffPerson: { select: { id: true, name: true } },
+    },
   });
 
   if (!pass) notFound();
@@ -40,8 +44,10 @@ export default async function VisitorPassDetailPage({
     CANCELLED: "bg-red-100 text-red-800",
   };
 
+  const unitLabel = pass.unit?.unitNumber ?? "Multiple units";
+
   const whatsappText = encodeURIComponent(
-    `Your visitor pass for Gulshan Dynasty:\n\nVisitor: ${pass.visitorName}\nOTP: ${pass.otp}\nUnit: ${pass.unit.unitNumber}\nValid: ${pass.validFrom.toLocaleDateString()} — ${pass.validUntil.toLocaleDateString()}${pass.parkingSlot ? `\nParking: ${pass.parkingSlot}` : ""}`,
+    `Your visitor pass for Gulshan Dynasty:\n\nVisitor: ${pass.visitorName}\nOTP: ${pass.otp}\nUnit: ${unitLabel}\nValid: ${pass.validFrom.toLocaleDateString()} — ${pass.validUntil.toLocaleDateString()}${pass.parkingSlot ? `\nParking: ${pass.parkingSlot}` : ""}`,
   );
 
   return (
@@ -64,10 +70,17 @@ export default async function VisitorPassDetailPage({
             <p className="font-mono text-3xl sm:text-4xl font-bold tracking-widest break-all">{pass.otp}</p>
           </div>
 
-          <QRCodeDisplay passId={pass.id} otp={pass.otp} unitNumber={pass.unit.unitNumber} />
+          <QRCodeDisplay passId={pass.id} otp={pass.otp} unitNumber={unitLabel} />
 
           <div className="text-sm text-muted-foreground space-y-1">
-            <p>Unit: <UnitLink unitNumber={pass.unit.unitNumber} /></p>
+            {pass.unit?.unitNumber ? (
+              <p>Unit: <UnitLink unitNumber={pass.unit.unitNumber} /></p>
+            ) : (
+              <p>Unit: {unitLabel}</p>
+            )}
+            {pass.staffPerson && (
+              <p>Staff: <StaffLink staffId={pass.staffPerson.id} name={pass.staffPerson.name} /></p>
+            )}
             {pass.visitorPhone && (
               <p>
                 Phone: <PhoneLink phone={pass.visitorPhone} />

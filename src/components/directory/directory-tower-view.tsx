@@ -170,7 +170,18 @@ export function DirectoryTowerView({
   sideBySide = false,
 }: DirectoryTowerViewProps) {
   if (sideBySide && alignedGrid) {
-    return <AlignedDirectoryView grid={alignedGrid} />;
+    return (
+      <>
+        <div className="hidden lg:block">
+          <AlignedDirectoryView grid={alignedGrid} />
+        </div>
+        <div className="space-y-4 lg:hidden">
+          {towers.map((tower) => (
+            <TowerCard key={tower.block} tower={tower} />
+          ))}
+        </div>
+      </>
+    );
   }
 
   return (

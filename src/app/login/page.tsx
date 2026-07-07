@@ -11,7 +11,8 @@ import { greetings } from "@/lib/microcopy";
 const POST_LOGIN_URL = "/";
 
 const DEV_EMAILS = [
-  { label: "Super Admin", email: "admin+dev-setup-secret@gulshandynasty.com" },
+  { label: "Vipul (Super Admin)", email: "noemail-919891777078@gulshandynasty.local" },
+  { label: "Super Admin (setup)", email: "admin+dev-setup-secret@gulshandynasty.com" },
   { label: "Rajesh (Admin)", email: "rajesh@example.com" },
   { label: "Priya (Resident)", email: "priya@example.com" },
   { label: "Amit (Resident)", email: "amit@example.com" },
@@ -260,6 +261,10 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
+          <Link href="/faq" className="underline hover:text-foreground">
+            Help & FAQ
+          </Link>
+          {" · "}
           By signing in, you agree to our{" "}
           <Link href="/terms" className="underline hover:text-foreground">
             Terms of Use

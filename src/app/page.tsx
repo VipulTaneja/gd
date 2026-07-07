@@ -29,6 +29,7 @@ export default async function Home() {
         <HubShortcuts
           isAuthenticated={hubData.isResident}
           badges={hubData.badges}
+          showFaq={hubData.showFaqShortcut}
         />
       }
       feed={

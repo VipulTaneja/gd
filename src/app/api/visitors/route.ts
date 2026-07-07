@@ -19,9 +19,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // Rate limit: max 10 active passes per user
+  // Rate limit: max 10 active passes per user (staff cron passes exempt — STAFF-080)
   const activeCount = await db.visitorPass.count({
-    where: { userId, status: "ACTIVE" },
+    where: { userId, status: "ACTIVE", staffPersonId: null },
   });
   if (activeCount >= 10) {
     return NextResponse.json({ error: "Maximum 10 active passes allowed" }, { status: 400 });

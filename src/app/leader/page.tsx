@@ -6,6 +6,7 @@ import { LeaderHub, LeaderHubHeader } from "@/components/leader/leader-hub";
 import { AmenityLeaderQueue } from "@/components/facilities/my-bookings";
 import { getLeaderScopes, hasAnyLeaderScope } from "@/lib/leader-scopes";
 import { isAdmin } from "@/lib/rbac";
+import { canManageFaq } from "@/lib/faq-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,11 @@ export default async function LeaderPage() {
   if (!user) redirect("/login");
 
   const scopes = await getLeaderScopes(session.user.id);
-  if (!hasAnyLeaderScope(scopes) && !(await isAdmin(session.user.id))) {
+  const [canEditFaq, isUserAdmin] = await Promise.all([
+    canManageFaq(session.user.id),
+    isAdmin(session.user.id),
+  ]);
+  if (!hasAnyLeaderScope(scopes) && !isUserAdmin && !canEditFaq) {
     redirect("/");
   }
 
@@ -87,6 +92,7 @@ export default async function LeaderPage() {
             name: f.name,
             pendingCount: pendingMap.get(f.id) ?? 0,
           }))}
+          canManageFaq={canEditFaq}
         />
       </div>
     </DashboardLayout>

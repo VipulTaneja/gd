@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { countPublishedFaqItems } from "@/lib/faq";
 import type { HubData } from "@/types/hub";
 
 export async function getHubData(
@@ -11,7 +12,7 @@ export async function getHubData(
 }
 
 async function getGuestHubData(): Promise<HubData> {
-  const [notices, events, polls, facilities, forumThreads] = await Promise.all([
+  const [notices, events, polls, facilities, forumThreads, publishedFaqCount] = await Promise.all([
     db.notice.findMany({
       where: {
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
@@ -42,6 +43,7 @@ async function getGuestHubData(): Promise<HubData> {
       take: 3,
       include: { forum: { select: { slug: true } }, _count: { select: { posts: true } } },
     }),
+    countPublishedFaqItems(),
   ]);
 
   return {
@@ -59,6 +61,7 @@ async function getGuestHubData(): Promise<HubData> {
     })),
     facilities,
     badges: { openTickets: 0, pendingDues: 0, unreadNotifications: 0, activePolls: polls.length },
+    showFaqShortcut: publishedFaqCount > 0,
   };
 }
 
@@ -90,7 +93,7 @@ async function getResidentHubData(userId: string): Promise<HubData> {
     : null;
   const towerBlock = primaryUnit?.block ?? null;
 
-  const [notices, events, polls, facilities, forumThreads, openTickets, pendingDues, unreadNotifications, activePolls] =
+  const [notices, events, polls, facilities, forumThreads, openTickets, pendingDues, unreadNotifications, activePolls, publishedFaqCount] =
     await Promise.all([
       db.notice.findMany({
         where: {
@@ -147,6 +150,7 @@ async function getResidentHubData(userId: string): Promise<HubData> {
           closesAt: { gte: new Date() },
         },
       }),
+      countPublishedFaqItems(),
     ]);
 
   return {
@@ -172,5 +176,6 @@ async function getResidentHubData(userId: string): Promise<HubData> {
       unreadNotifications,
       activePolls,
     },
+    showFaqShortcut: publishedFaqCount > 0,
   };
 }

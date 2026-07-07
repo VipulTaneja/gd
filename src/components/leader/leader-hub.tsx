@@ -1,22 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, Users, Sparkles } from "lucide-react";
+import { Building2, Users, Sparkles, HelpCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
+import { faq as faqCopy } from "@/lib/microcopy";
 
 interface LeaderHubProps {
   ledUnitNumber: string | null;
   communityLeaders: { id: string; name: string }[];
   amenityFacilities: { id: string; name: string; pendingCount: number }[];
+  canManageFaq?: boolean;
 }
 
 export function LeaderHub({
   ledUnitNumber,
   communityLeaders,
   amenityFacilities,
+  canManageFaq = false,
 }: LeaderHubProps) {
   const hasAny =
-    ledUnitNumber || communityLeaders.length > 0 || amenityFacilities.length > 0;
+    canManageFaq ||
+    ledUnitNumber ||
+    communityLeaders.length > 0 ||
+    amenityFacilities.length > 0;
 
   if (!hasAny) {
     return (
@@ -28,6 +34,21 @@ export function LeaderHub({
 
   return (
     <div className="space-y-6">
+      {canManageFaq && (
+        <Link
+          href="/faq/manage"
+          className="flex min-h-11 flex-col gap-1 rounded-xl border bg-card p-4 hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <HelpCircle className="h-5 w-5 text-violet-600" />
+            <div>
+              <p className="font-medium">{faqCopy.editFaq}</p>
+              <p className="text-sm text-muted-foreground">Update help articles for residents and guests</p>
+            </div>
+          </div>
+        </Link>
+      )}
+
       {ledUnitNumber && (
         <Link
           href={`/units/${ledUnitNumber}`}

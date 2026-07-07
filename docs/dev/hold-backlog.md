@@ -170,6 +170,93 @@ These items were moved from `backlog.md` on 2026-07-06. They require manual test
 
 ---
 
+## Staff Registry & Contacts Deferred Items
+
+Moved from `backlog-staff-registry.md` on 2026-07-07.
+
+### Staff — On Hold (28 items)
+
+| ID | Description | Priority | Status |
+|---|---|---|---|
+| STAFF-025 | Society-scoped associations (scope = SOCIETY) — guards, facility | P1 | ON HOLD |
+| STAFF-028 | Gate: "On duty today" panel for society staff | P1 | ON HOLD |
+| STAFF-030 | Admin CSV export — active staff roster | P2 | ON HOLD |
+| STAFF-031 | Clarify admin UI copy: Gate login users vs Staff registry | P1 | ON HOLD |
+| STAFF-037 | Optional ID fields on StaffPerson (last-4 Aadhaar, police verify date) | P2 | ON HOLD |
+| STAFF-038 | Photo upload for staff (MinIO) — resident + admin | P1 | ON HOLD |
+| STAFF-039 | Validation: warn if same phone registered with conflicting name | P2 | ON HOLD |
+| STAFF-041 | Unit leader can view (not edit) household staff for led unit | P2 | ON HOLD |
+| STAFF-045 | Short-term unit association for electrician/plumber visit (≤7 days) | P2 | ON HOLD |
+| STAFF-046 | /contacts — cross-link "Regular help" vs vendor contacts | P2 | ON HOLD |
+| STAFF-047 | "Request vendor visit" → pre-filled ticket or one-day pass | P2 | ON HOLD |
+| STAFF-048 | Global search: staff names → /staff/[id] | P1 | ON HOLD |
+| STAFF-049 | Hub widget: help expected today (count) | P2 | ON HOLD |
+| STAFF-051 | Notify resident 3 days before association endDate | P2 | ON HOLD |
+| STAFF-052 | FriendlyBadge mapping for staff association status | P2 | ON HOLD |
+| STAFF-054 | Seed v2 sample data (multi-unit maid, society guard) | P2 | ON HOLD |
+| STAFF-077 | Notify all active unit members when staff associated or ended | P1 | ON HOLD |
+| STAFF-078 | Review policy doc: defamation, dispute process, society staff moderation | P1 | ON HOLD |
+| STAFF-085 | Admin queue: associations flagged when unit has zero active members | P2 | ON HOLD |
+| STAFF-090 | Detect vacant units (cron or on membership end): set needsReview | P2 | ON HOLD |
+| STAFF-020 | Deprecate DomesticHelp after migration | P1 | ON HOLD |
+
+### Staff — Deferred (4 items)
+
+| ID | Description | Notes |
+|---|---|---|
+| STAFF-D01 | Staff portal login (NON_RESIDENT or dedicated role) | Needs product decision |
+| STAFF-D02 | Hindi gate UI | hold-backlog.md IMP-504 |
+| STAFF-D03 | Vendor marketplace / in-app booking | hold-backlog.md vendor directory |
+| STAFF-D04 | Attendance / shift scheduling for guards | Phase 3+ society ops |
+
+### Contacts — On Hold (6 items)
+
+| ID | Description | Priority | Status |
+|---|---|---|---|
+| CONT-025 | Seed sample reviews in prisma/seed-contacts.ts | P2 | ON HOLD |
+| CONT-026 | Admin hide/unhide review; recalc aggregate | P1 | ON HOLD |
+| CONT-027 | Audit: CONTACT_REVIEW_CREATED, CONTACT_REVIEW_HIDDEN | P2 | ON HOLD |
+| CONT-028 | Global search → /contacts/[id] | P1 | ON HOLD |
+| CONT-030 | Review policy doc (defamation, disputes) | P2 | ON HOLD |
+| CONT-031 | Hub widget: top-rated contacts | P2 | ON HOLD |
+
+### Contacts — Deferred (3 items)
+
+| ID | Description | Notes |
+|---|---|---|
+| CONT-D01 | "Request visit" → ticket | See STAFF-047 |
+| CONT-D02 | Vendor marketplace | hold-backlog.md |
+| CONT-D03 | Photo/logo upload | MinIO; post-MVP |
+
+---
+
+## FAQ Deferred Items
+
+Moved from `backlog-faq.md` on 2026-07-07.
+
+### FAQ — On Hold (2 items)
+
+| ID | Description | Priority | Status |
+|---|---|---|---|
+| FAQ-045 | Draft preview on public URL (?preview=1 + session) | P2 | ON HOLD |
+| FAQ-060 | Global search → FAQ entries (SRCH-*) | P2 | ON HOLD |
+
+### FAQ — Deferred (1 item)
+
+| ID | Description | Notes |
+|---|---|---|
+| FAQ-061 | View analytics (popular questions) | P3; post-MVP |
+
+### FAQ — Shipped (2026-07-07)
+
+| ID | Description | Status |
+|---|---|---|
+| FAQ-029 | Rate limit write routes (~30/min/user) | DONE |
+| FAQ-033 | Open Graph + optional FAQPage JSON-LD | DONE |
+| FAQ-044 | Reorder UI — up/down buttons | DONE |
+
+---
+
 ## Summary Statistics
 
 | Category | Count |
@@ -179,7 +266,10 @@ These items were moved from `backlog.md` on 2026-07-06. They require manual test
 | Deployment-time tasks | 3 |
 | Product Improvements deferrals | 9 |
 | UI/UX & Forum deferred | 10 |
-| **Total** | **51** |
+| Staff Registry deferrals | 32 |
+| Contacts deferrals | 9 |
+| FAQ deferrals | 6 |
+| **Total** | **98** |
 
 ---
 

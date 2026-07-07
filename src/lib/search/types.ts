@@ -9,6 +9,12 @@ export type SearchResultType =
   | "file"
   | "community"
   | "ticket"
+  | "staff"
+  | "contact"
+  | "faq"
+  | "pet"
+  | "vehicle"
+  | "lost_found"
   | "navigation";
 
 export interface SearchResultItem {
@@ -57,4 +63,7 @@ export const NAVIGATION_SHORTCUTS: { keywords: string[]; href: string; label: st
   { keywords: ["forum", "discussion"], href: "/forums", label: "Forums" },
   { keywords: ["team", "committee", "gdwa"], href: "/team", label: "Meet Our Team" },
   { keywords: ["file", "document", "bylaw"], href: "/files", label: "File vault" },
+  { keywords: ["maid", "cook", "guard", "regular help", "staff"], href: "/visitors?tab=help", label: "Regular help" },
+  { keywords: ["contact", "vendor", "electrician", "plumber", "phone"], href: "/contacts", label: "Contacts" },
+  { keywords: ["faq", "question", "how to"], href: "/faq", label: "FAQ" },
 ];

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { UserLink } from "@/components/shared/user-link";
+import { designationTitleLabel } from "@/lib/designation-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ export default async function PublicCommitteePage() {
                 <h3 className="mt-4 font-heading text-lg font-semibold">
                   <UserLink userId={d.user.id} name={d.user.name} className="hover:text-gold" />
                 </h3>
-                <p className="mt-1 text-sm font-medium text-gold">{d.title}</p>
+                <p className="mt-1 text-sm font-medium text-gold">{designationTitleLabel(d.title)}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   Since {d.startDate.toLocaleDateString("en-IN", { year: "numeric", month: "long" })}
                 </p>

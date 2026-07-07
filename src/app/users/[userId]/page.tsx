@@ -10,6 +10,7 @@ import { UnitLink } from "@/components/shared/unit-link";
 import { UserLink } from "@/components/shared/user-link";
 import { UserProfileEdit } from "@/components/shared/user-profile-edit";
 import { PhoneLink } from "@/components/shared/phone-link";
+import { designationTitleLabel } from "@/lib/designation-labels";
 import { AdminUserActions } from "@/components/shared/admin-user-actions";
 import {
   updateUserProfile,
@@ -364,7 +365,7 @@ export default async function UserProfilePage({
               <CardContent className="space-y-2">
                 {user.designations.map((d) => (
                   <div key={d.id} className="text-sm">
-                    <p className="font-medium">{d.title}</p>
+                    <p className="font-medium">{designationTitleLabel(d.title)}</p>
                     <p className="text-xs text-muted-foreground">
                       Since {new Date(d.startDate).toLocaleDateString("en-IN")}
                     </p>

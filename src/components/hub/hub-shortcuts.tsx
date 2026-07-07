@@ -9,6 +9,7 @@ import type { FeatureKey } from "@/lib/feature-colors";
 interface HubShortcutsProps {
   isAuthenticated: boolean;
   badges: HubBadgeCounts;
+  showFaq?: boolean;
 }
 
 const shortcuts: {
@@ -27,13 +28,30 @@ const shortcuts: {
   { feature: "dues", href: "/dues", guestHref: "/login?callbackUrl=/dues", badgeKey: "pendingDues" },
 ];
 
-export function HubShortcuts({ isAuthenticated, badges }: HubShortcutsProps) {
+export function HubShortcuts({ isAuthenticated, badges, showFaq = false }: HubShortcutsProps) {
+  const faqShortcut: {
+    feature: FeatureKey;
+    href: string;
+    guestHref: string;
+    badgeKey?: keyof HubBadgeCounts;
+  }[] = showFaq
+    ? [
+        {
+          feature: "faq",
+          href: isAuthenticated ? "/faq/app" : "/faq",
+          guestHref: "/faq",
+        },
+      ]
+    : [];
+
+  const allShortcuts = [...shortcuts, ...faqShortcut];
+
   return (
     <StaggerChildren
       className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-3"
       staggerMs={50}
     >
-      {shortcuts.map((s) => {
+      {allShortcuts.map((s) => {
         const href = isAuthenticated ? s.href : s.guestHref;
         const count = s.badgeKey ? badges[s.badgeKey] : 0;
 

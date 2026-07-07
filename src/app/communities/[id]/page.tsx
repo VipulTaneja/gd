@@ -93,7 +93,7 @@ export default async function CommunityDetailPage({
     <DashboardLayout user={user}>
       <div className="space-y-6">
         <Link href="/communities" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Communities
+          ← Teams and Communities
         </Link>
 
         <div className="flex items-start justify-between">

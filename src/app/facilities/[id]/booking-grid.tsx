@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { cn } from "@/lib/utils";
 
 interface Booking {
   id: string;
@@ -12,6 +13,51 @@ interface Booking {
 interface Blackout {
   startsAt: string;
   endsAt: string;
+}
+
+type SlotStatus = "past" | "available" | "full" | "blackout" | "unavailable";
+
+function startOfWeekMonday(date: Date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay() + 1);
+  return d;
+}
+
+function sameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function slotLabels(slotMinutes: number) {
+  const slotsPerDay = Math.floor(24 * 60 / slotMinutes);
+  return Array.from({ length: slotsPerDay }, (_, i) => {
+    const h = Math.floor((i * slotMinutes) / 60);
+    const m = (i * slotMinutes) % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  });
+}
+
+function BookingLegend() {
+  return (
+    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+      <span className="flex items-center gap-1">
+        <span className="inline-block h-3 w-3 rounded border bg-green-50" /> Available
+      </span>
+      <span className="flex items-center gap-1">
+        <span className="inline-block h-3 w-3 rounded border bg-red-50" /> Full
+      </span>
+      <span className="flex items-center gap-1">
+        <span className="inline-block h-3 w-3 rounded border bg-amber-50" /> Maintenance
+      </span>
+      <span className="flex items-center gap-1">
+        <span className="inline-block h-3 w-3 rounded border bg-muted/30" /> Past
+      </span>
+    </div>
+  );
 }
 
 export function BookingGrid({
@@ -31,33 +77,31 @@ export function BookingGrid({
   blackouts: Blackout[];
   userUnitId: string | null;
 }) {
-  const [weekStart, setWeekStart] = useState(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - d.getDay() + 1); // Monday
-    return d;
-  });
+  const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()));
+  const [selectedDay, setSelectedDay] = useState(() => new Date());
   const [, startTransition] = useTransition();
   const [result, setResult] = useState<{ success?: boolean; error?: string } | null>(null);
 
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
+  const hours = useMemo(() => slotLabels(slotMinutes), [slotMinutes]);
 
-  const slotsPerDay = Math.floor(24 * 60 / slotMinutes);
-  const hours = Array.from({ length: slotsPerDay }, (_, i) => {
-    const h = Math.floor((i * slotMinutes) / 60);
-    const m = (i * slotMinutes) % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  });
+  const days = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + i);
+        return d;
+      }),
+    [weekStart],
+  );
 
   const now = new Date();
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + maxAdvDays);
+  const maxDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + maxAdvDays);
+    return d;
+  }, [maxAdvDays]);
 
-  const getSlotStatus = (day: Date, slotIndex: number) => {
+  const getSlotStatus = (day: Date, slotIndex: number): SlotStatus => {
     const slotStart = new Date(day);
     const [h, m] = hours[slotIndex].split(":").map(Number);
     slotStart.setHours(h, m, 0, 0);
@@ -67,12 +111,10 @@ export function BookingGrid({
     if (slotEnd <= now) return "past";
     if (slotStart > maxDate) return "unavailable";
 
-    // Check blackouts
     for (const b of blackouts) {
       if (slotStart < new Date(b.endsAt) && slotEnd > new Date(b.startsAt)) return "blackout";
     }
 
-    // Check bookings
     const booked = existingBookings.filter((booking) => {
       const bStart = new Date(booking.startsAt);
       const bEnd = new Date(booking.endsAt);
@@ -80,8 +122,6 @@ export function BookingGrid({
     });
 
     if (booked.length >= capacity) return "full";
-    if (booked.length > 0) return "available";
-
     return "available";
   };
 
@@ -112,7 +152,23 @@ export function BookingGrid({
     });
   };
 
-  const cellColors: Record<string, string> = {
+  const shiftWeek = (delta: number) => {
+    const next = new Date(weekStart);
+    next.setDate(next.getDate() + delta * 7);
+    setWeekStart(next);
+    const nextDays = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(next);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+    const stillInWeek = nextDays.some((d) => sameDay(d, selectedDay));
+    if (!stillInWeek) {
+      const todayInWeek = nextDays.find((d) => sameDay(d, new Date()));
+      setSelectedDay(todayInWeek ?? nextDays[0]);
+    }
+  };
+
+  const cellColors: Record<SlotStatus, string> = {
     past: "bg-muted/30",
     available: "bg-green-50 hover:bg-green-100 cursor-pointer",
     full: "bg-red-50",
@@ -120,62 +176,138 @@ export function BookingGrid({
     unavailable: "bg-muted/20",
   };
 
+  const mobileSlotClass = (status: SlotStatus) =>
+    cn(
+      "flex min-h-11 w-full items-center justify-between rounded-lg border px-4 text-sm transition-colors",
+      status === "available" && "border-green-200 bg-green-50 hover:bg-green-100 active:bg-green-100",
+      status === "full" && "border-red-100 bg-red-50 text-red-700",
+      status === "blackout" && "border-amber-100 bg-amber-50 text-amber-800",
+      status === "past" && "border-transparent bg-muted/30 text-muted-foreground",
+      status === "unavailable" && "border-transparent bg-muted/20 text-muted-foreground",
+    );
+
   return (
     <div className="space-y-4">
-      {result?.error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{result.error}</div>}
+      {result?.error && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{result.error}</div>
+      )}
 
-      <div className="flex items-center justify-between">
-        <button onClick={() => { const d = new Date(weekStart); d.setDate(d.getDate() - 7); setWeekStart(d); }}
-          className="inline-flex h-8 items-center justify-center rounded-lg border border-input px-3 text-sm hover:bg-muted">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => shiftWeek(-1)}
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-input px-3 text-sm hover:bg-muted"
+        >
           ← Prev
         </button>
-        <span className="text-sm font-medium">
+        <span className="text-center text-sm font-medium">
           {weekStart.toLocaleDateString()} — {days[6].toLocaleDateString()}
         </span>
-        <button onClick={() => { const d = new Date(weekStart); d.setDate(d.getDate() + 7); setWeekStart(d); }}
-          className="inline-flex h-8 items-center justify-center rounded-lg border border-input px-3 text-sm hover:bg-muted">
+        <button
+          type="button"
+          onClick={() => shiftWeek(1)}
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-input px-3 text-sm hover:bg-muted"
+        >
           Next →
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="grid grid-cols-8 gap-px bg-border min-w-[600px]">
+      {/* Mobile / tablet: pick a day, then tap a slot */}
+      <div className="space-y-3 lg:hidden">
+        <div className="flex gap-2 overflow-x-auto flex-nowrap snap-x snap-mandatory scrollbar-hide pb-1">
+          {days.map((day) => {
+            const isSelected = sameDay(day, selectedDay);
+            return (
+              <button
+                key={day.toISOString()}
+                type="button"
+                onClick={() => setSelectedDay(day)}
+                className={cn(
+                  "inline-flex min-h-11 shrink-0 snap-start flex-col items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors",
+                  isSelected
+                    ? "border-gold bg-gold text-black"
+                    : "border-input hover:bg-muted",
+                )}
+              >
+                <span className="text-[10px] uppercase tracking-wide opacity-80">
+                  {day.toLocaleDateString("en-IN", { weekday: "short" })}
+                </span>
+                <span>{day.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="space-y-2">
+          {hours.map((label, slotIndex) => {
+            const status = getSlotStatus(selectedDay, slotIndex);
+            const end = new Date(selectedDay);
+            const [h, m] = label.split(":").map(Number);
+            end.setHours(h, m, 0, 0);
+            end.setMinutes(end.getMinutes() + slotMinutes);
+            const endLabel = end.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+            return (
+              <button
+                key={label}
+                type="button"
+                disabled={status !== "available" || !userUnitId}
+                onClick={() => status === "available" && handleBook(selectedDay, slotIndex)}
+                className={mobileSlotClass(status)}
+              >
+                <span className="font-medium">{label} – {endLabel}</span>
+                <span className="text-xs">
+                  {status === "available" && "Tap to book"}
+                  {status === "full" && "Full"}
+                  {status === "blackout" && "Maintenance"}
+                  {status === "past" && "Past"}
+                  {status === "unavailable" && "Unavailable"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop: week grid */}
+      <div className="hidden overflow-x-auto lg:block">
+        <div className="grid min-w-[600px] grid-cols-8 gap-px bg-border">
           <div className="bg-card p-2 text-xs font-medium text-muted-foreground">Time</div>
           {days.map((d) => (
-            <div key={d.toISOString()} className="bg-card p-2 text-xs font-medium text-center">
+            <div key={d.toISOString()} className="bg-card p-2 text-center text-xs font-medium">
               {d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" })}
             </div>
           ))}
 
           {hours.map((h, si) => (
-            <React.Fragment key={h}>
+            <div key={h} className="contents">
               <div className="bg-card p-2 text-xs text-muted-foreground">{h}</div>
               {days.map((d) => {
                 const status = getSlotStatus(d, si);
                 return (
                   <div
                     key={`${d.toISOString()}-${si}`}
-                    className={`bg-card p-1 min-h-[32px] ${cellColors[status]} transition-colors`}
+                    role={status === "available" ? "button" : undefined}
+                    tabIndex={status === "available" ? 0 : undefined}
+                    className={cn("bg-card p-1 min-h-[36px]", cellColors[status], "transition-colors")}
                     onClick={() => status === "available" && handleBook(d, si)}
+                    onKeyDown={(e) => {
+                      if (status === "available" && (e.key === "Enter" || e.key === " ")) {
+                        handleBook(d, si);
+                      }
+                    }}
                   >
                     {status === "full" && <span className="text-[10px] text-red-600">Full</span>}
                     {status === "blackout" && <span className="text-[10px] text-amber-600">Mnt</span>}
                   </div>
                 );
               })}
-            </React.Fragment>
+            </div>
           ))}
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-green-50 border" /> Available</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-red-50 border" /> Full</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-amber-50 border" /> Maintenance</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-muted/30 border" /> Past</span>
-      </div>
+      <BookingLegend />
     </div>
   );
 }
-
-import React from "react";

@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
   }
 
   const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(user.globalRole);
-  const towerBlocks = [...new Set(user.unitMemberships.map((m) => m.unit.block))];
   const communityIds = user.communityMemberships.map((cm) => cm.subCommunityId);
 
   const unitQuery = normalizeUnitQuery(q);
@@ -286,6 +285,110 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Forum posts (SRCH-014)
+  if (!types || types.includes("forum_posts")) {
+    searches.push(
+      (async () => {
+        const results = await db.forumPost.findMany({
+          where: {
+            AND: [
+              { body: { contains: q, mode: "insensitive" } },
+              { isHidden: false },
+              { thread: { status: { not: "HIDDEN" } } },
+            ],
+          },
+          select: {
+            id: true,
+            body: true,
+            thread: { select: { id: true, title: true, forum: { select: { slug: true } } } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+        });
+
+        const items: SearchResultItem[] = results.map((p) => ({
+          id: p.id,
+          type: "forum_thread",
+          title: p.thread.title,
+          subtitle: stripHtmlForSearch(p.body).slice(0, 80) + (p.body.length > 80 ? "…" : ""),
+          href: `/forums/${p.thread.forum.slug}/threads/${p.thread.id}#${p.id}`,
+        }));
+
+        return items.length > 0 ? { type: "forum_thread", label: "Forum posts", results: items } : null;
+      })()
+    );
+  }
+
+  // File vault (SRCH-016)
+  if (!types || types.includes("files")) {
+    searches.push(
+      (async () => {
+        const results = await db.fileEntry.findMany({
+          where: {
+            AND: [
+              { name: { contains: q, mode: "insensitive" } },
+              {
+                OR: [
+                  { subCommunityId: null },
+                  { subCommunityId: { in: communityIds } },
+                ],
+              },
+            ],
+          },
+          select: { id: true, name: true, mimeType: true, sizeBytes: true },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+        });
+
+        const items: SearchResultItem[] = results.map((f) => ({
+          id: f.id,
+          type: "file",
+          title: f.name,
+          subtitle: f.mimeType,
+          href: "/files",
+          meta: `${(f.sizeBytes / 1024).toFixed(0)} KB`,
+        }));
+
+        return items.length > 0 ? { type: "file", label: "Files", results: items } : null;
+      })()
+    );
+  }
+
+  // Lost & found (SRCH-018)
+  if (!types || types.includes("lost_found")) {
+    searches.push(
+      (async () => {
+        const results = await db.lostFoundItem.findMany({
+          where: {
+            AND: [
+              {
+                OR: [
+                  { title: { contains: q, mode: "insensitive" } },
+                  { description: { contains: q, mode: "insensitive" } },
+                ],
+              },
+              { status: "ACTIVE", expiresAt: { gt: new Date() } },
+            ],
+          },
+          select: { id: true, title: true, description: true, status: true, type: true },
+          orderBy: { createdAt: "desc" },
+          take: limit,
+        });
+
+        const items: SearchResultItem[] = results.map((lf) => ({
+          id: lf.id,
+          type: "lost_found",
+          title: lf.title,
+          subtitle: lf.description ? stripHtmlForSearch(lf.description).slice(0, 60) : undefined,
+          href: `/lost-found`,
+          meta: lf.type === "LOST" ? "Lost" : "Found",
+        }));
+
+        return items.length > 0 ? { type: "lost_found", label: "Lost & Found", results: items } : null;
+      })()
+    );
+  }
+
   // Facilities
   if (!types || types.includes("facilities")) {
     searches.push(
@@ -343,15 +446,18 @@ export async function GET(request: NextRequest) {
           href: `/communities/${c.id}`,
         }));
 
-        return items.length > 0 ? { type: "community", label: "Communities", results: items } : null;
+        return items.length > 0 ? { type: "community", label: "Teams and Communities", results: items } : null;
       })()
     );
   }
 
-  // Tickets (own only for residents, all for admin) — fixed: use AND
+  // Tickets (own only for residents, all for admin) — includes closed from last 90 days (SRCH-078)
   if (!types || types.includes("tickets")) {
     searches.push(
       (async () => {
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
         const AND: Record<string, unknown>[] = [
           {
             OR: [
@@ -363,6 +469,13 @@ export async function GET(request: NextRequest) {
 
         if (!isAdmin) {
           AND.push({ userId: user.id });
+          // For residents: show active tickets + closed from last 90 days
+          AND.push({
+            OR: [
+              { status: { in: ["OPEN", "IN_PROGRESS"] } },
+              { status: { in: ["RESOLVED", "CLOSED"] }, resolvedAt: { gte: ninetyDaysAgo } },
+            ],
+          });
         }
 
         const results = await db.helpTicket.findMany({
@@ -405,6 +518,192 @@ export async function GET(request: NextRequest) {
         })),
       });
     }
+  }
+
+  // Staff registry (SRCH-070)
+  if (!types || types.includes("staff")) {
+    searches.push(
+      (async () => {
+        const results = await db.staffPerson.findMany({
+          where: {
+            name: { contains: q, mode: "insensitive" },
+          },
+          select: {
+            id: true,
+            name: true,
+            associations: {
+              where: { status: "ACTIVE" },
+              select: { unit: { select: { unitNumber: true } }, role: true },
+              take: 3,
+            },
+          },
+          take: limit,
+        });
+
+        const items: SearchResultItem[] = results.map((s) => ({
+          id: s.id,
+          type: "staff",
+          title: s.name,
+          subtitle: s.associations[0]?.unit
+            ? `${s.associations[0].role.replace("_", " ")} · ${s.associations[0].unit.unitNumber}`
+            : undefined,
+          href: `/staff/${s.id}`,
+        }));
+
+        return items.length > 0 ? { type: "staff", label: "Staff", results: items } : null;
+      })()
+    );
+  }
+
+  // Important contacts (SRCH-071)
+  if (!types || types.includes("contacts")) {
+    searches.push(
+      (async () => {
+        const results = await db.importantContact.findMany({
+          where: {
+            OR: [
+              { typeOfService: { contains: q, mode: "insensitive" } },
+              { name: { contains: q, mode: "insensitive" } },
+              { category: { contains: q, mode: "insensitive" } },
+            ],
+          },
+          select: { id: true, typeOfService: true, name: true, category: true, contactNo: true },
+          take: limit,
+        });
+
+        const items: SearchResultItem[] = results.map((c) => ({
+          id: c.id,
+          type: "contact",
+          title: c.typeOfService,
+          subtitle: c.name || undefined,
+          href: `/contacts/${c.id}`,
+          meta: c.category,
+        }));
+
+        return items.length > 0 ? { type: "contact", label: "Contacts", results: items } : null;
+      })()
+    );
+  }
+
+  // FAQ (SRCH-072)
+  if (!types || types.includes("faq")) {
+    searches.push(
+      (async () => {
+        const sections = await db.faqSection.findMany({
+          where: {
+            isPublished: true,
+            OR: [
+              { title: { contains: q, mode: "insensitive" } },
+              { items: { some: { question: { contains: q, mode: "insensitive" }, isPublished: true } } },
+            ],
+          },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            items: {
+              where: { isPublished: true, question: { contains: q, mode: "insensitive" } },
+              select: { id: true, question: true, slug: true },
+              take: 2,
+            },
+          },
+          take: limit,
+        });
+
+        const items: SearchResultItem[] = [];
+        for (const section of sections) {
+          if (section.items.length > 0) {
+            for (const item of section.items) {
+              items.push({
+                id: item.id,
+                type: "faq",
+                title: item.question,
+                subtitle: section.title,
+                href: `/faq#${section.slug}-${item.slug}`,
+              });
+            }
+          } else {
+            items.push({
+              id: section.id,
+              type: "faq",
+              title: section.title,
+              href: `/faq#${section.slug}`,
+            });
+          }
+        }
+
+        return items.length > 0 ? { type: "faq", label: "FAQ", results: items.slice(0, limit) } : null;
+      })()
+    );
+  }
+
+  // Pet (SRCH-076) — all units (approved residents)
+  if (!types || types.includes("pets")) {
+    searches.push(
+      (async () => {
+        const results = await db.pet.findMany({
+          where: {
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { breed: { contains: q, mode: "insensitive" } },
+            ],
+          },
+          select: { id: true, name: true, breed: true, unit: { select: { unitNumber: true } } },
+          orderBy: { name: "asc" },
+          take: limit,
+        });
+
+        const items: SearchResultItem[] = results.map((p) => ({
+          id: p.id,
+          type: "pet",
+          title: p.name,
+          subtitle: [p.breed, p.unit.unitNumber].filter(Boolean).join(" · ") || undefined,
+          href: `/units/${p.unit.unitNumber}`,
+          meta: p.unit.unitNumber,
+        }));
+
+        return items.length > 0 ? { type: "pet", label: "Pets", results: items } : null;
+      })()
+    );
+  }
+
+  // Vehicle (SRCH-077) — all units (approved residents)
+  if (!types || types.includes("vehicles")) {
+    searches.push(
+      (async () => {
+        const results = await db.vehicle.findMany({
+          where: {
+            OR: [
+              { registrationNumber: { contains: q, mode: "insensitive" } },
+              { make: { contains: q, mode: "insensitive" } },
+              { model: { contains: q, mode: "insensitive" } },
+            ],
+          },
+          select: {
+            id: true,
+            registrationNumber: true,
+            make: true,
+            model: true,
+            unit: { select: { unitNumber: true } },
+          },
+          orderBy: { registrationNumber: "asc" },
+          take: limit,
+        });
+
+        const items: SearchResultItem[] = results.map((v) => ({
+          id: v.id,
+          type: "vehicle",
+          title: v.registrationNumber,
+          subtitle: [v.make && v.model ? `${v.make} ${v.model}` : v.make || v.model, v.unit.unitNumber]
+            .filter(Boolean)
+            .join(" · ") || undefined,
+          href: `/units/${v.unit.unitNumber}`,
+          meta: v.unit.unitNumber,
+        }));
+
+        return items.length > 0 ? { type: "vehicle", label: "Vehicles", results: items } : null;
+      })()
+    );
   }
 
   const resolvedGroups = (await Promise.all(searches)).filter(Boolean) as SearchResultGroup[];

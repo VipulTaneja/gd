@@ -2,7 +2,7 @@
 
 > **Source:** [`backlog-delegated-leadership.md`](../backlog-delegated-leadership.md)
 > **Archived:** 2026-07-07
-> **Count:** 77 completed items (v1 core implementation)
+> **Count:** 95 completed items (77 v1 core + 18 follow-on)
 
 ---
 
@@ -112,6 +112,39 @@
 |---|---|---|---|---|
 | LEAD-022 | Seed: leaders + sample invites | P1 | S | LEAD-002, LEAD-007 |
 | LEAD-023 | Update `design-profiles.md` | P1 | S | UL-012 |
+
+## Follow-on — P2 Performance & polish (12 items)
+
+| ID | Description | P | Cplx | Deps |
+|---|---|---|---|---|
+| LEAD-009 | Cache leader scope in JWT session | P2 | M | LEAD-006 |
+| LEAD-020 | Leader hub (`/leader` or More menu) | P2 | M | UL-012, CL-013, AL-012 |
+| LEAD-021 | Admin audit filters by leader actions | P2 | M | LEAD-001 |
+| LEAD-024 | Global search + community notices (SRCH-010) | P2 | M | CL-030 |
+| LEAD-025 | Leader dashboards mobile checklist | P1 | S | UL-019, CL-013 |
+| UL-017 | Notify on invite + on accept/decline (extended) | P2 | M | UL-043, UL-014 |
+| UL-028 | E3-S12 owner consent before tenant invite acceptance | P2 | M | UL-014 |
+| UL-029b | Auto-process invite when account later approved | P2 | M | UL-029 |
+| UL-034 | Multi-unit invite warning in UI | P1 | S | UL-014 |
+| UL-042 | Rate-limit invite/search endpoints | P2 | S | UL-014 |
+| UL-048 | Optional admin invite via `UnitMembershipRequest` for audit parity | P2 | M | UL-014 |
+| AL-019 | `requiresApproval: true` when leaders assigned | P2 | XS | AL-011 |
+
+## Follow-on — v1.1 (3 items)
+
+| ID | Description | P | Cplx | Deps |
+|---|---|---|---|---|
+| CL-019 | Notify leaders on join request | P1 | S | CL-014 |
+| CL-023 | Leader create scoped poll | P1 | M | CL-025 |
+| AL-018 | Reject requires reason (visible to requester) | P1 | S | AL-013, LEAD-008 |
+
+## Follow-on — Phase 5 Event ↔ facility (3 items)
+
+| ID | Description | P | Cplx | Deps |
+|---|---|---|---|---|
+| LEAD-005 | `Event.facilityId` FK | P2 | M | LEAD-003 |
+| AL-016b | Event + facility linked booking | P2 | L | LEAD-005 |
+| AL-017 | Unified amenity leader queue | P2 | L | AL-016b |
 
 ---
 

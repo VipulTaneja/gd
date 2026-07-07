@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/expire-passes",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/generate-staff-passes",
+      "schedule": "30 0 * * *"
     }
   ]
 }

@@ -16,8 +16,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 | Topic | Location |
 |---|---|
+| Specification index | `docs/specification/README.md` |
 | Functional spec | `docs/specification/functional-spec.md` |
-| Architecture & data model | `docs/dev/architecture.md` |
+| Roles & permissions | `docs/specification/roles-and-permissions.md` |
+| Architecture & data model | `docs/specification/architecture.md` |
 | Profile linking rules | `docs/specification/design-profiles.md` |
 | Active backlog | `docs/dev/backlog.md` |
 | Deferred items | `docs/dev/hold-backlog.md` |

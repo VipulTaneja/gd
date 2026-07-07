@@ -45,6 +45,43 @@ function normalizeUnitNumber(tower: string, unit: string): string {
   return `${tower}-${unitNum}`;
 }
 
+/** URL-safe slug for synthetic email local parts */
+function slugifyForEmail(text: string, maxLen = 48): string {
+  const slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return (slug || "resident").slice(0, maxLen);
+}
+
+function placeholderEmail(unitNumber: string, name: string): string {
+  return `noemail-${unitNumber.toLowerCase()}-${slugifyForEmail(name)}@gulshandynasty.local`;
+}
+
+function resolveUserIdentity(
+  unitNumber: string,
+  name: string,
+  email: string | null,
+  phone: string | null,
+): { userKey: string; email: string; usedPlaceholder: boolean } {
+  if (email) {
+    return { userKey: email, email, usedPlaceholder: false };
+  }
+  if (phone) {
+    return {
+      userKey: phone,
+      email: `noemail-${phone.replace(/[^0-9+]/g, "")}@gulshandynasty.local`,
+      usedPlaceholder: false,
+    };
+  }
+  const synthetic = placeholderEmail(unitNumber, name);
+  return {
+    userKey: `placeholder:${unitNumber}:${slugifyForEmail(name)}`,
+    email: synthetic,
+    usedPlaceholder: true,
+  };
+}
+
 async function main() {
   console.log("🏢 Seeding Gulshan Dynasty Directory...\n");
 
@@ -62,6 +99,7 @@ async function main() {
   const membershipsList: Array<{ userKey: string; unitNumber: string; role: string; isPrimary: boolean }> = [];
 
   let skippedCount = 0;
+  let placeholderCount = 0;
 
   for (const row of data) {
     const tower = row.T?.toString().trim();
@@ -78,18 +116,16 @@ async function main() {
       continue;
     }
 
-    if (!email && !phone) {
-      skippedCount++;
-      continue;
-    }
-
     const unitNumber = normalizeUnitNumber(tower, unitNum);
-    const userKey = email || phone || name.toLowerCase();
+    const identity = resolveUserIdentity(unitNumber, name, email, phone);
+    if (identity.usedPlaceholder) placeholderCount++;
+
+    const userKey = identity.userKey;
 
     if (!usersMap.has(userKey)) {
       usersMap.set(userKey, {
         name,
-        email: email || `noemail-${phone || name.toLowerCase().replace(/\s+/g, "-")}@gulshandynasty.local`,
+        email: identity.email,
         phone,
         organization: orgName,
       });
@@ -220,7 +256,8 @@ async function main() {
   console.log(`   Users: ${userEntries.length}`);
   console.log(`   Units: ${unitEntries.length}`);
   console.log(`   Memberships: ${membershipCount}`);
-  console.log(`   Rows skipped: ${skippedCount}`);
+  console.log(`   Rows skipped (missing T/Unit/Name): ${skippedCount}`);
+  console.log(`   Placeholder emails (no contact in sheet): ${placeholderCount}`);
   console.log("\n🎉 Directory seeding complete!");
 }
 

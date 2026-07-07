@@ -129,11 +129,13 @@ docs/                       # Documentation
 
 | Doc | Location | Audience |
 |---|---|---|
+| **Specification index** | `docs/specification/README.md` | All — start here |
 | **Functional Spec** | `docs/specification/functional-spec.md` | Product team, developers |
+| **Roles & Permissions** | `docs/specification/roles-and-permissions.md` | Developers, support |
 | **Design Profiles** | `docs/specification/design-profiles.md` | Frontend developers |
 | **Product Roadmap** | `docs/specification/product-roadmap.md` | RWA committee, stakeholders |
-| **Architecture** | `docs/dev/architecture.md` | Developers |
-| **Active Backlog** | `docs/dev/backlog.md` | Developers |
+| **Architecture** | `docs/specification/architecture.md` | Developers |
+| **Dev Backlog** | `docs/dev/backlog.md` | Developers |
 | **Deployment Guide** | `docs/deploy/vercel-neon-r2.md` | DevOps, deployers |
 
 ---
@@ -154,7 +156,7 @@ docs/                       # Documentation
 
 See [docs/deploy/vercel-neon-r2.md](docs/deploy/vercel-neon-r2.md) for free-tier deployment (Vercel + Neon + Cloudflare R2).
 
-For self-hosted deployment on Oracle Cloud Free Tier, see the [Architecture doc](docs/dev/architecture.md).
+For self-hosted deployment on Oracle Cloud Free Tier, see the [Architecture doc](docs/specification/architecture.md).
 
 ---
 

@@ -23,9 +23,30 @@ const headerNav: { feature: FeatureKey; href: string }[] = [
   { feature: "events", href: "/events" },
   { feature: "polls", href: "/polls" },
   { feature: "forums", href: "/forums" },
+  { feature: "communities", href: "/communities" },
   { feature: "contacts", href: "/contacts" },
+  { feature: "staff", href: "/staff" },
   { feature: "team", href: "/team" },
 ];
+
+/** Icon-only shortcuts on mobile — contacts, regular help, teams */
+const mobileQuickNav: { feature: FeatureKey; href: string }[] = [
+  { feature: "staff", href: "/staff" },
+  { feature: "contacts", href: "/contacts" },
+  { feature: "communities", href: "/communities" },
+];
+
+function isNavActive(
+  feature: FeatureKey,
+  href: string,
+  pathname: string,
+): boolean {
+  if (feature === "staff") {
+    return pathname === "/staff" || pathname.startsWith("/staff/");
+  }
+  const base = href.split("?")[0];
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
 
 interface CasualHeaderProps {
   user: { name: string; email: string; id?: string; avatarUrl?: string | null } | null;
@@ -53,9 +74,37 @@ export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProp
     .toUpperCase()
     .slice(0, 2) ?? "";
 
+  const renderNavLink = (
+    { feature, href }: { feature: FeatureKey; href: string },
+    opts?: { iconOnly?: boolean },
+  ) => {
+    const { icon: Icon, label, bg, text } = featureColors[feature];
+    const active = isNavActive(feature, href, pathname);
+    return (
+      <Link
+        key={href}
+        href={href}
+        aria-label={label}
+        title={label}
+        className={cn(
+          "flex items-center gap-1.5 rounded-full transition-all",
+          opts?.iconOnly
+            ? "min-h-11 min-w-11 justify-center"
+            : "px-3 py-1.5 text-sm font-medium",
+          active
+            ? cn(bg, text, "shadow-sm")
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        {!opts?.iconOnly && <span className="whitespace-nowrap">{label}</span>}
+      </Link>
+    );
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-lg pt-[env(safe-area-inset-top)]">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="rounded-lg bg-zinc-800 px-3 py-2">
             <Image
@@ -69,29 +118,17 @@ export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProp
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
-          {headerNav.map(({ feature, href }) => {
-            const { icon: Icon, label, bg, text } = featureColors[feature];
-            const active = pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all",
-                  active
-                    ? cn(bg, text, "shadow-sm")
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{label}</span>
-              </Link>
-            );
-          })}
+        {/* Mobile: regular help, contacts, teams & communities */}
+        <nav className="flex md:hidden items-center gap-0.5">
+          {mobileQuickNav.map((item) => renderNavLink(item, { iconOnly: true }))}
         </nav>
 
-        <div className="flex items-center gap-1">
+        {/* Desktop: full header nav */}
+        <nav className="hidden md:flex items-center gap-1 overflow-x-auto scrollbar-hide">
+          {headerNav.map((item) => renderNavLink(item))}
+        </nav>
+
+        <div className="flex items-center gap-1 shrink-0">
           <GlobalSearchDialog
             open={searchOpen}
             onOpenChange={setSearchOpen}

@@ -36,7 +36,7 @@ const tabs = [
   },
 ];
 
-const moreLinks: { feature: FeatureKey; href: string }[] = [
+const moreLinks: { feature: FeatureKey; href: string; publicHref?: string }[] = [
   { feature: "notices", href: "/notices" },
   { feature: "events", href: "/events" },
   { feature: "polls", href: "/polls" },
@@ -44,8 +44,11 @@ const moreLinks: { feature: FeatureKey; href: string }[] = [
   { feature: "directory", href: "/directory" },
   { feature: "notifications", href: "/notifications" },
   { feature: "forums", href: "/forums" },
-  { feature: "team", href: "/team" },
+  { feature: "communities", href: "/communities" },
+  { feature: "staff", href: "/staff" },
   { feature: "contacts", href: "/contacts" },
+  { feature: "faq", href: "/faq/app", publicHref: "/faq" },
+  { feature: "team", href: "/team" },
 ];
 
 interface MobileBottomNavProps {
@@ -139,15 +142,20 @@ export function MobileBottomNav({
                     <span>Leader hub</span>
                   </Link>
                 )}
-                {moreLinks.map(({ feature, href }) => {
+                {moreLinks.map(({ feature, href, publicHref }) => {
                   const style = featureColors[feature];
                   if (!style) return null;
                   const { icon: Icon, label } = style;
-                  const active = pathname === href || pathname.startsWith(`${href}/`);
+                  const linkHref = publicHref
+                    ? isAuthenticated
+                      ? href
+                      : publicHref
+                    : getHref(href);
+                  const active = pathname === linkHref || pathname.startsWith(`${linkHref}/`);
                   return (
                     <Link
                       key={feature}
-                      href={getHref(href)}
+                      href={linkHref}
                       onClick={() => setSheetOpen(false)}
                       className={cn(
                         "flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 text-xs font-medium transition-colors",

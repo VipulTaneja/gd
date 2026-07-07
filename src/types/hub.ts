@@ -85,4 +85,5 @@ export interface HubData {
   forumThreads: HubForumThread[];
   facilities: HubFacility[];
   badges: HubBadgeCounts;
+  showFaqShortcut: boolean;
 }

@@ -30,6 +30,7 @@ interface RichTextEditorProps {
   minHeight?: string;
   id?: string;
   className?: string;
+  uploadNamespace?: string;
 }
 
 function ToolbarButton({
@@ -88,6 +89,7 @@ export function RichTextEditor({
   minHeight = "160px",
   id,
   className,
+  uploadNamespace,
 }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<Editor | null>(null);
@@ -104,7 +106,7 @@ export function RichTextEditor({
 
     try {
       for (const file of files) {
-        const url = await uploadRichTextImage(file);
+        const url = await uploadRichTextImage(file, { namespace: uploadNamespace });
         editor.chain().focus().setImage({ src: url, alt: file.name }).run();
       }
     } catch (err) {

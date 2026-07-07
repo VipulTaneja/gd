@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
+import { parseDesignationTitle } from "@/lib/designation-labels";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -13,6 +14,10 @@ export async function POST(request: Request) {
   }
 
   const { email, title, startDate, endDate } = await request.json();
+  const parsedTitle = parseDesignationTitle(title);
+  if (!parsedTitle) {
+    return NextResponse.json({ error: "Invalid committee title" }, { status: 400 });
+  }
 
   const targetUser = await db.user.findUnique({ where: { email } });
   if (!targetUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -20,13 +25,16 @@ export async function POST(request: Request) {
   const designation = await db.designation.create({
     data: {
       userId: targetUser.id,
-      title,
+      title: parsedTitle,
       startDate: new Date(startDate),
       endDate: endDate ? new Date(endDate) : null,
     },
   });
 
-  await logAction(user.id, "DESIGNATION_CREATED", "Designation", designation.id, { email, title });
+  await logAction(user.id, "DESIGNATION_CREATED", "Designation", designation.id, {
+    email,
+    title: parsedTitle,
+  });
 
   return NextResponse.json({ success: true });
 }

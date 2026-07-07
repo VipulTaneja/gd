@@ -19,6 +19,10 @@ export function HubFooter() {
               Contact RWA
             </button>
             <span aria-hidden="true">·</span>
+            <a href="/faq" className="hover:text-foreground transition-colors">
+              FAQ
+            </a>
+            <span aria-hidden="true">·</span>
             <a href="/privacy" className="hover:text-foreground transition-colors">
               Privacy
             </a>

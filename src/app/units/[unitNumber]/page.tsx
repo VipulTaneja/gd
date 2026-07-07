@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserLink } from "@/components/shared/user-link";
 import { MembershipTimeline } from "@/components/shared/membership-timeline";
 import { AdminUnitActions } from "@/components/shared/admin-unit-actions";
+import { UnitHouseholdStaff } from "@/components/units/unit-household-staff";
 import { UnitPetsSection } from "@/components/units/unit-pets-section";
 import { UnitVehiclesSection } from "@/components/units/unit-vehicles-section";
 import { UnitLeaderPanel } from "@/components/units/unit-leader-panel";
@@ -245,6 +246,8 @@ export default async function UnitProfilePage({
               />
             </CardContent>
           </Card>
+
+          <UnitHouseholdStaff unitId={unit.id} />
 
           <UnitPetsSection
             unitNumber={unitNumber}

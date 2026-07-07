@@ -76,8 +76,9 @@ export async function deleteFile(key: string) {
   await getClient().removeObject(BUCKET, key);
 }
 
-export function generateFileKey(userId: string, filename: string): string {
+export function generateFileKey(userId: string, filename: string, namespace?: string): string {
   const ext = filename.split(".").pop();
   const timestamp = Date.now();
-  return `uploads/${userId}/${timestamp}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const prefix = namespace ? `uploads/${namespace}/${userId}` : `uploads/${userId}`;
+  return `${prefix}/${timestamp}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 }

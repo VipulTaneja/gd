@@ -1,10 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { PhoneLink } from "@/components/shared/phone-link";
+import { UnitLink } from "@/components/shared/unit-link";
+
+interface ValidationResult {
+  valid: boolean;
+  error?: string;
+  visitorName?: string;
+  unitNumber?: string;
+  unitNumbers?: string[];
+  visitorType?: string;
+  parkingSlot?: string;
+  recurring?: boolean;
+  staffPhone?: string | null;
+  isStaffPass?: boolean;
+}
 
 export function GateValidation() {
   const [otp, setOtp] = useState("");
-  const [result, setResult] = useState<{ valid: boolean; error?: string; visitorName?: string; unitNumber?: string; visitorType?: string; parkingSlot?: string; recurring?: boolean } | null>(null);
+  const [result, setResult] = useState<ValidationResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleValidate = async () => {
@@ -24,6 +39,12 @@ export function GateValidation() {
       setLoading(false);
     }
   };
+
+  const displayUnits = result?.unitNumbers?.length
+    ? result.unitNumbers
+    : result?.unitNumber
+      ? result.unitNumber.split(",").map((u) => u.trim()).filter(Boolean)
+      : [];
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
@@ -59,9 +80,21 @@ export function GateValidation() {
                 <div className="text-4xl">✅</div>
                 <p className="font-heading text-xl font-bold text-green-800">Valid Pass</p>
                 <p className="text-green-700"><strong>{result.visitorName}</strong></p>
-                <p className="text-sm text-green-600">Unit {result.unitNumber} · {result.visitorType?.replace(/_/g, " ")}</p>
+                {displayUnits.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1">
+                    {displayUnits.map((unit) => (
+                      <UnitLink key={unit} unitNumber={unit} className="text-green-800 border-green-300" />
+                    ))}
+                  </div>
+                )}
+                <p className="text-sm text-green-600">{result.visitorType?.replace(/_/g, " ")}</p>
                 {result.parkingSlot && <p className="text-sm text-green-600">Parking: {result.parkingSlot}</p>}
                 {result.recurring && <p className="text-sm text-purple-600">Recurring pass</p>}
+                {result.staffPhone && (
+                  <div className="pt-2">
+                    <PhoneLink phone={result.staffPhone} className="text-green-700 justify-center" />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -76,7 +109,7 @@ export function GateValidation() {
         {result && (
           <button
             onClick={() => { setOtp(""); setResult(null); }}
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="min-h-11 text-sm text-muted-foreground hover:text-foreground"
           >
             Validate another
           </button>

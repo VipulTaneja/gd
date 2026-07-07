@@ -1,18 +1,20 @@
 # Gulshan Dynasty Community Portal — Functional Specification
 
 **Document type:** Functional Specification (FSD)  
-**Version:** 1.1  
-**Date:** 5 July 2026  
+**Version:** 2.0  
+**Date:** 7 July 2026  
 **Audience:** Product team, RWA committee, developers, residents (end-user sections)  
-**Related docs:** [Architecture](../dev/architecture.md) · [Design Profiles](./design-profiles.md) · [Active Backlog](../dev/backlog.md)
+**Related docs:** [Specification index](./README.md) · [Roles & Permissions](./roles-and-permissions.md) · [Product Roadmap](./product-roadmap.md) · [Architecture](./architecture.md) · [Design Profiles](./design-profiles.md) · [Dev backlog](../dev/backlog.md)
 
 ---
 
 ## 1. Executive Summary
 
-The **Gulshan Dynasty Community Portal** is a web-based platform for the Residents' Welfare Association (RWA) of Gulshan Dynasty, a gated community in Sector 144, Noida. It serves **204 homes** across **3 towers** (A, B, C) and supports day-to-day community operations: notices, events, polls, maintenance tickets, amenity booking, visitor passes, dues tracking, document storage, and sub-community groups.
+The **Gulshan Dynasty Community Portal** is a web-based platform for the Residents' Welfare Association (RWA) of Gulshan Dynasty, a gated community in Sector 144, Noida. It serves **204 homes** across **3 towers** (A, B, C) and supports day-to-day community operations: notices, events, polls, maintenance tickets, amenity booking, visitor passes, **staff & vendor directories**, dues tracking, document storage, sub-community groups, and discussion forums.
 
-**This is a resident portal, not a sales website.** It is designed for people who already live in the community.
+**This is a resident portal, not a sales website.** It is designed for people who already live in the community — not for convincing anyone to buy a flat here. (That’s what the sales site is for.)
+
+**July 2026 highlight:** The **Staff Registry v2** ships — one profile per person (Kamla the maid, not “Kamla at C-302” and “Kamla at B-1201” as strangers), community-wide visibility, star reviews, and gate passes that actually link to the right human.
 
 | Attribute | Detail |
 |---|---|
@@ -29,14 +31,15 @@ The **Gulshan Dynasty Community Portal** is a web-based platform for the Residen
 
 | Section | Primary audience | Purpose |
 |---|---|---|
-| §3–§5 | Product team | Personas, scope, module specifications |
+| §3 | Product + dev | Personas and role overview (details → [Roles doc](./roles-and-permissions.md)) |
+| §4–§5 | Product team | Scope and module specifications |
 | §6 | Product + QA | Business rules and workflows |
-| §7 | Product team | User journey diagrams (onboarding, visitor, AGM, ticket) |
-| §8–§11 | End users (residents) | How to use each feature |
-| §12 | Product team | Implementation status and gaps |
-| §13 | Product team | Product KPIs and success metrics |
-| §14 | Product team | Phase 2 roadmap |
-| §15 | All | Glossary |
+| §7 | Product team | User journey diagrams |
+| §8–§12 | End users | How to use each feature |
+| §13 | Product + QA | **Implementation status** (authoritative shipped list) |
+| §14 | Product team | Operational KPIs |
+| §15 | Product team | Pointers to roadmap and dev backlogs |
+| §16 | All | Glossary |
 
 ---
 
@@ -56,34 +59,23 @@ The **Gulshan Dynasty Community Portal** is a web-based platform for the Residen
 | **Vendor / Contractor** | External service provider (electrician, plumber, AC repair) | View contact requests from residents; listed in RWA-vetted directory |
 | **Treasurer** | RWA finance officer | Track dues collection, view defaulter aging reports, generate receipts, manage UPI payments |
 
-### 3.2 System roles (product perspective)
+### 3.2 System roles (summary)
 
 | Role | Code | Description |
 |---|---|---|
-| Super Admin | `SUPER_ADMIN` | First bootstrap user; full system access including assigning other admins |
-| Admin | `ADMIN` | RWA operations: users, units, notices, dues, tickets, audit |
+| Super Admin | `SUPER_ADMIN` | Bootstrap user; full system access |
+| Admin | `ADMIN` | RWA operations (`/admin/*`) |
 | Resident | `RESIDENT` | Default role after registration |
-| Non-Resident | `NON_RESIDENT` | External stakeholder with limited access (assignable) |
-| Security Staff | `SECURITY_STAFF` | Gate validation only (partially implemented) |
+| Non-Resident | `NON_RESIDENT` | External stakeholder (limited UI today) |
+| Security Staff | `SECURITY_STAFF` | Gate validation via PIN login |
 
-**Unit-level roles** (time-bound, per flat):
+> **Full permission matrix** (action × role, staff, contacts, FAQ): [Roles & Permissions](./roles-and-permissions.md)
 
-| Role | Meaning |
-|---|---|
-| Owner | Primary flat owner |
-| Joint Owner | Co-owner with equal rights |
-| Tenant | Rented occupant |
-| Owner's Family | Family of owner |
-| Tenant's Family | Family of tenant |
+**Unit-level roles** (time-bound, per flat): Owner, Joint Owner, Tenant, Owner's Family, Tenant's Family — a user may hold multiple memberships. See [Roles doc §1](./roles-and-permissions.md#1-role-hierarchy-quick-map).
 
-A user may hold **multiple unit memberships** (e.g. owner of A-0302 and tenant of B-1201). Each membership has a **start date** and optional **end date**; access expires automatically when the end date passes.
+**Sub-community roles:** Admin (club lead), Member.
 
-**Sub-community roles:**
-
-| Role | Meaning |
-|---|---|
-| Admin | Manages a specific club/group |
-| Member | Participant in the group |
+**Delegated leadership** (assigned by Super Admin — not separate accounts): unit leader, community admin, facility leader. See §3.3 below and [Roles doc §1](./roles-and-permissions.md#1-role-hierarchy-quick-map).
 
 ### 3.3 Delegated leadership (v1)
 
@@ -95,69 +87,75 @@ Super Admin assigns operational leaders without creating new accounts:
 | Sub-community | `CommunityRole.ADMIN` | Super Admin | Approve joins (non-tower); scoped events/notices; forum moderation |
 | Facility | `FacilityLeader` | Super Admin | Approve/reject bookings (RWA Admin always has override) |
 
-Unit leaders cannot assign owners, remove members, or approve onboarding claims (v1). See `docs/dev/archive/delegated-leadership-archived-2026-07-07.md` for v1 implementation details; active follow-on in `docs/dev/backlog-delegated-leadership.md`.
+Unit leaders cannot assign owners, remove members, or approve onboarding claims (v1). See [`delegated-leadership-archived-2026-07-07.md`](../dev/archive/delegated-leadership-archived-2026-07-07.md).
 
 ---
 
 ## 4. Product Scope
 
-### 4.1 In scope (v1 — implemented or largely implemented)
+### 4.1 In scope (v1 — implemented)
 
-| Module | Status |
-|---|---|
-| Community Hub (home page) | Implemented |
-| Authentication (Google, Apple, email magic link, dev credentials) | Implemented |
-| User registration & admin approval | Implemented |
-| Onboarding enforcement (terms → unit claim → approval) | Implemented |
-| Units & time-bound RBAC | Implemented |
-| User & unit profile pages | Implemented |
-| Unit claim admin approval workflow | Implemented |
-| Resident directory | Implemented |
-| Dashboard with launch readiness checklist | Implemented |
-| Notice board with emergency templates | Implemented |
-| Events & RSVP | Implemented (list view) |
-| Polls & voting with eligibility enforcement | Implemented |
-| AGM digital pack (event + resolution polls + quorum) | Implemented |
-| Sub-communities (clubs/groups) | Implemented |
-| Helpdesk & ticketing with SLAs and satisfaction ratings | Implemented |
-| Ticket photo attachments | Implemented |
-| Facility / amenity booking with waitlist and approval | Implemented |
-| Visitor management (pass + gate validation) | Implemented |
-| Domestic help registry (auto-generate daily passes) | Implemented |
-| Delivery management (package notifications) | Implemented |
-| Parking & vehicle registry | Implemented |
-| Move-in / move-out workflow | Implemented |
-| Emergency broadcast with acknowledgment | Implemented |
-| Dues ledger with UPI QR payment | Implemented |
-| Defaulter aging report | Implemented |
-| File vault (global documents) | Implemented |
-| RWA committee page | Implemented |
-| In-app notifications with preferences | Implemented |
-| Notification preferences per category | Implemented |
-| Global search (Cmd+K) | Implemented |
-| Admin role guard on all /admin/* routes | Implemented |
-| Security staff PIN login | Implemented |
-| Gate offline cache (service worker) | Implemented |
-| Lost & Found board | Implemented |
-| Pet registration | Implemented |
-| Facility usage analytics | Implemented |
-| Ticket satisfaction ratings | Implemented |
-| User journey diagrams | Implemented |
+| Module | Status | Notes |
+|---|---|---|
+| Community Hub (home page) | ✅ Live | Single-viewport resident home |
+| Authentication (Google, Apple, email magic link, dev credentials) | ✅ Live | |
+| User registration & admin approval | ✅ Live | |
+| Onboarding enforcement (terms → unit claim → approval) | ✅ Live | Middleware redirect chain |
+| Units & time-bound RBAC | ✅ Live | Hourly membership expiry cron |
+| User & unit profile pages | ✅ Live | UserLink / UnitLink everywhere |
+| Unit claim admin approval workflow | ✅ Live | |
+| Resident directory | ✅ Live | Mobile: single-tower view below 1024px |
+| Dashboard with launch readiness checklist | ✅ Live | |
+| Notice board with emergency templates | ✅ Live | Acknowledgment required for emergency |
+| Events & RSVP | ✅ Live | Card list (no calendar grid yet) |
+| Polls & voting with eligibility enforcement | ✅ Live | Owners-only, one-per-unit |
+| AGM digital pack | ✅ Live | Event + resolution polls + quorum |
+| Sub-communities (clubs/groups) | ✅ Live | |
+| Discussion forums | ✅ Live | Global + sub-community scoped |
+| Helpdesk & ticketing with SLAs and satisfaction ratings | ✅ Live | Photo attachments (max 3) |
+| Facility booking with waitlist and approval | ✅ Live | Mobile day-picker below `lg` breakpoint |
+| Visitor management (pass + gate validation) | ✅ Live | |
+| **Staff registry & Regular Help** (`/staff`) | ✅ Live | **New Jul 2026** — see §5.11 |
+| **Important contacts with reviews** (`/contacts/[id]`) | ✅ Live | **New Jul 2026** — see §5.12 |
+| Delivery management | ✅ Live | |
+| Parking & vehicle registry | ✅ Live | |
+| Move-in / move-out workflow | ✅ Live | |
+| Emergency broadcast with acknowledgment | ✅ Live | |
+| Dues ledger with UPI QR payment | ✅ Live | Ledger + QR; no payment gateway |
+| Defaulter aging report | ✅ Live | |
+| File vault (global documents) | ✅ Live | |
+| RWA committee page | ✅ Live | |
+| **Help & FAQ** (`/faq`, `/faq/app`) | ✅ Live | **New Jul 2026** — see §5.19 |
+| In-app notifications with preferences | ✅ Live | Per-category toggles |
+| Global search (Cmd+K) | ✅ Live | 11 entity types; staff/contacts search deferred |
+| Admin role guard on `/admin/*` | ✅ Live | |
+| Security staff PIN login | ✅ Live | 30-day gate session |
+| Gate offline cache (service worker) | ✅ Live | |
+| Lost & Found board | ✅ Live | |
+| Pet registration | ✅ Live | |
+| Facility usage analytics | ✅ Live | |
+| Delegated leadership (unit / club / facility leaders) | ✅ Live | v1 — see §3.3 |
+| Privacy & Terms pages | ✅ Live | |
+| Contact RWA enquiry form | ✅ Live | |
 
-### 4.2 Out of scope / Phase 2
+### 4.2 Out of scope / deferred
 
 | Feature | Notes |
 |---|---|
 | Online payment gateway (Razorpay) | UPI QR implemented; Razorpay deferred pending RWA approval |
 | GST-compliant receipt PDF | BLOCKED — needs RWA GSTIN |
-| Email notifications (bulk) | In-app notifications work; email templates deferred |
+| Email notifications (bulk) | In-app + preferences work; React Email templates deferred |
 | SMS / push notifications | Not in v1 |
 | Real-time chat | WhatsApp used informally |
 | Recurring events (weekly yoga) | Manual event creation only |
 | Tenant owner consent (NOC) workflow | Deferred — see hold-backlog.md |
-| Vendor / contractor directory | Deferred — see hold-backlog.md |
-| Event calendar grid view (FullCalendar) | Deferred — see hold-backlog.md |
+| Event calendar grid view (FullCalendar) | Deferred — card list implemented |
 | Sustainability dashboard | Deferred — see hold-backlog.md |
+| Staff photos (MinIO upload) | Initials placeholder only — STAFF-038 |
+| Staff in global search | STAFF-048 on hold |
+| Admin staff orphan queue | STAFF-085 on hold |
+| Hindi gate UI | hold-backlog.md IMP-504 |
+| Legacy `DomesticHelp` model | Migrated to Staff Registry; deprecation cleanup on hold |
 
 ---
 
@@ -220,7 +218,7 @@ Redirect to /dashboard (or home)
 - Registration is **not automatic** — admin must approve every new account
 - Email is the unique identifier; same email across Google/Apple is linked to one account
 - Deactivated users (`isActive = false`) cannot access the portal
-- Terms acceptance and unit claim screens exist but are **not yet enforced** as mandatory redirects after login
+- Terms acceptance and unit claim are **enforced** via middleware redirect chain after login
 
 #### Admin approval actions
 
@@ -254,6 +252,7 @@ Redirect to /dashboard (or home)
 **Resident capabilities:**
 - View own unit(s) and role(s) on profile
 - Browse **directory** — search by tower; see who lives in each flat (**names only**, no phone/email for privacy)
+- **Mobile:** “All towers” hidden below 1024px; defaults to Tower A — portrait mode and three side-by-side tower grids were not getting along
 
 **Automatic expiry:** Cron job runs hourly; memberships past `endDate` are deactivated.
 
@@ -401,9 +400,8 @@ Assignee adds comments, updates status
 RESOLVED → CLOSED
 ```
 
-**Resident:** Track own tickets, add comments, view status timeline.  
-**Admin:** View all tickets, filter by status/category, update status.  
-**Note:** Photo attachments and ticket assignment to specific users are Phase 2.
+**Resident:** Track own tickets, add comments, attach up to 3 photos, view status timeline and SLA indicator.  
+**Admin:** View all tickets, filter by status/category, update status, assign (Phase 2).
 
 ---
 
@@ -436,9 +434,76 @@ RESOLVED → CLOSED
 
 **Admin:** Create facilities, set blackout periods (maintenance closures).
 
+**Mobile UX (Jul 2026):** Below the `lg` breakpoint, booking uses a **day picker + scrollable slot list** with full-width touch targets (`min-h-11`). The week grid remains on desktop — because squinting at 7 columns on a phone helps no one.
+
 ---
 
-### 5.11 Visitor Management
+### 5.11 Staff Registry & Regular Help
+
+**URLs:** `/staff` · `/staff/[id]` · `/staff/search` (associate flow)  
+**Nav:** Header “Help” pill · Mobile bottom nav “Help” · Unit profile household staff section
+
+**Purpose:** One canonical record per non-resident person who regularly enters the society — maids, cooks, drivers, society guards, facility crew. Residents discover, associate, review, and (for unit staff) manage gate access without re-typing “Kamla” seventeen times.
+
+#### Two kinds of staff (do not mix them up)
+
+| Type | Roles | Scope | Who manages |
+|---|---|---|---|
+| **Unit staff** | Maid, Nanny, Cook, Driver, Gardener, Other | Linked to one or more flats | Any active member of that unit |
+| **Society staff** | Guard, Facility, Electrician, Plumber | GD-wide (`scope = SOCIETY`) | Admin / seed data — **not** addable to your flat |
+
+Trying to associate a guard with C-1702 will politely fail. Guards work for the society, not your spare bedroom.
+
+#### Regular Help page (`/staff`)
+
+| Feature | Behavior |
+|---|---|
+| **Scope filter** | “All help” (community-wide) or “My unit” |
+| **Role filter pills** | Icon + count per role; horizontal scroll on mobile |
+| **One card per person** | Multiple unit numbers on same tile if maid works at 2 flats |
+| **Star rating** | Aggregate from `StaffReview` |
+| **Add / Remove icons** | Only when caller can associate or end a **unit** link — never for society staff |
+| **Profile link** | Name → `/staff/[id]` via `<StaffLink />` |
+
+**Search-first registration:** Before creating a duplicate, residents search by name (≥2 chars) or phone (exact, ≥10 digits). Phone is never shown in resident-facing APIs — guards see it only at validation time.
+
+#### Staff profile (`/staff/[id]`)
+
+- Role badges by unit (active + “Previously at …” for ended associations)
+- Review form — approved residents only; one review per author per staff
+- “Add to my unit” CTA when not yet linked
+
+#### Gate passes
+
+- Cron at **6 AM IST** generates `DAILY_HELP` passes linked via `staffPersonId`
+- Staff passes **exempt** from BR-07 (10 active passes per resident)
+- Gate shows all linked units + staff photo placeholder (initials until MinIO upload ships)
+
+**Permissions:** See [Roles & Permissions](./roles-and-permissions.md) §3.
+
+**Backlog (on hold):** Staff photos, global search indexing, orphan association admin queue, unit notifications on add/remove — [`backlog-staff-registry.md`](../dev/backlog-staff-registry.md).
+
+---
+
+### 5.12 Important Contacts (Vendor Directory)
+
+**URLs:** `/contacts` · `/contacts/[id]`
+
+**Purpose:** RWA-vetted **businesses and service lines** — electricians, couriers, laundry, club booking numbers. Complements staff registry: **people** live at `/staff/[id]`, **vendors** live at `/contacts/[id]`.
+
+| Feature | Behavior |
+|---|---|
+| List page | Category filters, search, ★ average on cards, tap → detail |
+| Detail page | Phone (click-to-call), reviews, “Added by” / “Last updated by” with UserLink |
+| Reviews | 1–5 stars + comment; edit/delete own; `Internal Intercom` category not reviewable |
+| Create / edit | Approved residents; creator or admin can edit |
+| Cross-link | Banner to Regular Help for individual domestic staff |
+
+**Seed data:** ~80 contacts across 15+ categories (`npm run db:seed:contacts`).
+
+---
+
+### 5.13 Visitor Management
 
 **URLs:** `/visitors`, `/visitors/new`, `/visitors/[id]`, `/gate`
 
@@ -465,15 +530,17 @@ RESOLVED → CLOSED
 - System shows: visitor name, destination unit, pass type, valid/invalid/expired
 - Valid pass marked as USED (single-use) or validated (recurring)
 
-**Limits:** Max 10 active passes per resident at any time.
+**Limits:** Max 10 active passes per resident (staff cron passes exempt — see §5.11).
+
+**Legacy note:** `/visitors?tab=help` redirects to `/staff`. Daily help is no longer a visitors tab — it grew up and moved out.
 
 ---
 
-### 5.12 Dues & Payments
+### 5.14 Dues & Payments
 
 **URLs:** `/dues`, `/admin/dues`
 
-**Purpose:** Track maintenance charges — **ledger only**, no online payment in v1.
+**Purpose:** Track maintenance charges — ledger + UPI QR; no in-app payment gateway yet.
 
 | Resident sees | Admin can do |
 |---|---|
@@ -488,7 +555,7 @@ RESOLVED → CLOSED
 
 ---
 
-### 5.13 File Vault
+### 5.15 File Vault
 
 **URL:** `/files`
 
@@ -506,7 +573,7 @@ Sub-community scoped file vaults are supported in schema; global vault is the pr
 
 ---
 
-### 5.14 RWA Committee
+### 5.16 RWA Committee
 
 **URLs:** `/committee`, `/admin/committee`
 
@@ -522,11 +589,11 @@ Public page shows current designations. Admin page manages appointments.
 
 ---
 
-### 5.15 Notifications
+### 5.17 Notifications
 
 **URL:** `/notifications` (inbox); bell icon in header
 
-**Channels (v1):** In-app only
+**Channels (v1):** In-app + user preferences per category
 
 | Trigger | Notification type |
 |---|---|
@@ -536,14 +603,16 @@ Public page shows current designations. Admin page manages appointments.
 | Ticket status changed | Ticket update |
 | Notice published | Notice published |
 | Join request approved | Community join approved |
+| Visitor / staff arrived at gate | Visitor arrived |
+| Staff associated / ended | Deferred (STAFF-077) |
 
 Unread count shown on bell icon. Mark individual or all as read.
 
-**Phase 2:** Email templates, notification preferences (toggle per category).
+**Phase 2:** Email templates for bulk/off-portal delivery.
 
 ---
 
-### 5.16 Admin Tools
+### 5.18 Admin Tools
 
 **URLs:** `/admin`, `/admin/audit`, `/admin/export`
 
@@ -553,6 +622,25 @@ Unread count shown on bell icon. Mark individual or all as read.
 | Audit log | Filterable log of admin actions (approve user, role change, file delete, etc.) |
 | CSV export | Members list, dues report, tickets summary |
 | Global search | Cmd+K — search residents by name, units by number |
+
+---
+
+### 5.19 Help & FAQ
+
+**URLs:** `/faq` (guests), `/faq/app` (logged-in), `/faq/manage` (editors)
+
+**Purpose:** Public help articles for residents and visitors — gate passes, dues, amenities, and society rules. Organized in sections with rich-text answers (images supported).
+
+| Capability | Who |
+|---|---|
+| Read published FAQs | Anyone (guest `/faq`; logged-in users redirected to `/faq/app`) |
+| In-page search | Anyone on `/faq` or `/faq/app` |
+| Create / edit / publish | Super Admin, Admin, or any active RWA committee designation |
+| Hub shortcut tile | Shown when ≥1 published FAQ exists; session-aware link |
+
+**Publishing rules:** Both section and item must be `isPublished` to appear publicly. Editors self-publish (no separate approval workflow).
+
+**Navigation:** Login footer, hub tile (conditional), mobile More menu, admin sidebar → `/faq/manage`, leader hub “Edit FAQ” for editors.
 
 ---
 
@@ -580,7 +668,12 @@ Unread count shown on bell icon. Mark individual or all as read.
 | BR-18 | Ticket satisfaction rating (1–5 stars) is only available after ticket status is CLOSED or RESOLVED |
 | BR-19 | Poll eligibility enforced: ALL_RESIDENTS = any active membership; OWNERS_ONLY = OWNER or JOINT_OWNER role; ONE_PER_UNIT = one vote per unit regardless of user |
 | BR-20 | Emergency notices require acknowledgment before user can access other portal features |
-| BR-21 | Domestic help passes auto-generated daily based on `recurrenceDays` schedule |
+| BR-21 | Staff daily passes auto-generated at 6 AM IST via cron; linked to `StaffPerson` via `staffPersonId` |
+| BR-27 | Staff phone visible to guards at gate validation only — never in resident APIs |
+| BR-28 | Max 5 active unit associations per staff person |
+| BR-29 | Society staff roles (Guard, Facility, Electrician, Plumber) cannot be unit-associated by residents |
+| BR-30 | Staff reviews require approved resident; one review per author per staff |
+| BR-31 | Contact reviews: `Internal Intercom` category not reviewable; phone shown on vendor detail page |
 | BR-22 | Move-out requests block unit access until dues are cleared (status PAID for all PENDING dues) |
 | BR-23 | Facility waitlist users are notified when a slot opens; first to confirm gets the booking |
 | BR-24 | Security staff PIN login creates a 30-day session; only gate routes accessible |
@@ -704,6 +797,9 @@ flowchart TD
 | Vote in a society poll | Polls → open poll → cast vote |
 | RSVP to an event | Events → event detail → Accept/Decline |
 | Find who lives in a flat | Directory (filter by tower) |
+| Manage maid / cook / driver | Regular Help (`/staff`) |
+| Rate a plumber or courier | Contacts → detail → review |
+| Find RWA-vetted vendor phone | Contacts |
 | Join a club | Communities → Request to Join |
 | Download society bylaws | Files |
 | See RWA office bearers | Committee |
@@ -740,7 +836,7 @@ flowchart TD
 
 ---
 
-## 8. End-User Guide — Family Members
+## 9. End-User Guide — Family Members
 
 Family members (Owner's Family / Tenant's Family) have a **subset** of resident capabilities:
 
@@ -753,7 +849,7 @@ Family members (Owner's Family / Tenant's Family) have a **subset** of resident 
 
 ---
 
-## 9. End-User Guide — Community Admins (Club Leads)
+## 10. End-User Guide — Community Admins (Club Leads)
 
 If you are assigned as **Community Admin** of a sub-community (e.g. Sports Club):
 
@@ -770,24 +866,24 @@ You cannot manage users, units, or society-wide notices — those are RWA Admin 
 
 ---
 
-## 10. End-User Guide — Security Staff
+## 11. End-User Guide — Security Staff
 
 **Primary task:** Validate visitor passes at the gate.
 
-1. Open **`/gate`** on the gate tablet/phone
+1. Open **`/gate`** on the gate tablet/phone (PIN login available at `/gate/login`)
 2. Ask visitor for their 6-digit OTP (or scan QR)
 3. Enter OTP in the validation field
 4. System shows:
-   - **Valid:** Visitor name, destination unit, pass type → allow entry
+   - **Valid:** Visitor name, destination unit, pass type, linked staff units if applicable → allow entry
    - **Invalid / Expired:** Deny entry; ask resident to generate new pass
 
-**Note:** Dedicated PIN-based login for security staff is planned for Phase 2. Currently the gate page is open (no login required for validation endpoint).
+**Note:** Staff-linked passes show all associated units and guard-only phone number for verification.
 
 ---
 
-## 11. End-User Guide — RWA Administrators
+## 12. End-User Guide — RWA Administrators
 
-### 11.1 Admin dashboard (`/admin`)
+### 12.1 Admin dashboard (`/admin`)
 
 Overview cards:
 - Pending user approvals
@@ -795,7 +891,7 @@ Overview cards:
 - Open tickets
 - Quick links to common tasks
 
-### 11.2 User management (`/admin/users`)
+### 12.2 User management (`/admin/users`)
 
 | Task | Steps |
 |---|---|
@@ -805,7 +901,7 @@ Overview cards:
 | Deactivate account | User detail → Deactivate |
 | Assign to unit | Units → unit detail → Assign Member |
 
-### 11.3 Unit management (`/admin/units`)
+### 12.3 Unit management (`/admin/units`)
 
 | Task | Steps |
 |---|---|
@@ -816,72 +912,73 @@ Overview cards:
 
 **Bulk import:** CSV import of units and residents is Phase 2. Currently use Excel seed script (`prisma/seed-directory.ts`) for initial data load.
 
-### 11.4 Publishing a notice
+### 12.4 Publishing a notice
 
 1. Admin → Notices → New
 2. Enter title, body, priority
 3. Optionally set expiry and target tower
 4. Publish — all matching residents see it immediately
 
-### 11.5 Generating maintenance dues
+### 12.5 Generating maintenance dues
 
 1. Admin → Dues
 2. Enter label (e.g. "Maintenance Q1 2026"), amount, due date
 3. Click **Generate for All Units** — creates 204 due records
 4. When payment received offline: find due → Mark Paid → attach receipt
 
-### 11.6 Other admin tasks
+### 12.6 Other admin tasks
 
 | Task | Location |
 |---|---|
 | Create sub-community | Admin → Communities → New |
 | Manage RWA committee | Admin → Committee |
+| Manage FAQ content | Admin sidebar → FAQ, or `/faq/manage` |
 | View audit log | Admin → Audit |
 | Export member/dues/ticket CSV | Admin → Export |
 | Review join requests | Admin → Communities |
 
 ---
 
-## 12. Implementation Status & Known Gaps
+## 13. Implementation Status & Known Gaps
 
-*For product team and QA — reflects codebase as of July 2026.*
+*For product team and QA — reflects codebase as of **7 July 2026**. If this section disagrees with the code, trust the code (and file a bug).*
 
-### 12.1 Fully working
+### 13.1 Shipped & stable
 
-Authentication, admin approval, hub home page, dashboard, notices, events + RSVP, polls + voting, tickets + comments, facility booking, visitor passes + gate OTP validation, dues view + admin generation, file vault, sub-communities + join requests, committee page, in-app notifications, audit log, CSV export, global search, user/unit profiles, directory, membership expiry cron.
+Authentication, onboarding enforcement, admin approval, hub, dashboard, notices (+ emergency ack), events, polls (+ eligibility), tickets (+ photos + SLAs + ratings), facilities (+ waitlist + mobile booking), visitors + gate (+ PIN + offline cache), **staff registry + Regular Help**, **contacts + reviews**, delivery, parking, move-in/out, emergency broadcast, AGM pack, dues + UPI QR + defaulter report, file vault, sub-communities, **forums**, committee, **Help & FAQ**, notifications + preferences, audit log, CSV export, global search (v1), profiles, directory (+ mobile tower UX), delegated leadership, pets, lost & found, facility analytics.
 
-### 12.2 Partial / gaps
+### 13.2 Partial / on hold
 
-| Gap | Impact | Planned fix |
+| Gap | Status | Backlog |
 |---|---|---|
-| Onboarding not enforced after login | Users can skip terms acceptance and unit claim | Middleware redirect chain |
-| Unit claim admin approval | Users claim units but admin workflow incomplete | Admin UI for `claimStatus` |
-| Admin pages lack role guard on page load | Any logged-in user can view `/admin` UI (mutations are protected) | Page-level RBAC check |
-| Poll eligibility not enforced | Owners-only / one-per-unit polls don't block ineligible voters | Vote API validation |
-| Ticket photo attachments | Residents cannot attach photos to tickets | Upload UI |
-| Contact RWA form | Dialog exists; `/api/enquiry` endpoint missing | API route + email |
-| Security staff PIN login | Gate validation works; no dedicated guard auth | Phase 2 |
-| Email notifications | In-app only | Phase 2 (Resend templates) |
-| Calendar grid for events | List view only | Phase 2 (FullCalendar) |
-| Facility booking approval | `PENDING_APPROVAL` status unused | Admin approve UI |
-| Tenant owner consent (NOC) | Schema field unused | Phase 2 workflow |
-| `/admin/notices` list page | Create works; no admin list view | Minor UI gap |
-| Privacy / Terms pages | Footer links exist; pages not built | Static pages |
+| Staff photos | Initials placeholder only | STAFF-038 |
+| Staff in global search | Not indexed | STAFF-048 |
+| Contacts in global search | Not indexed | CONT-028 |
+| Orphan staff when unit vacant | No admin queue UI | STAFF-085 |
+| Notify unit on staff add/remove | Not implemented | STAFF-077 |
+| Legacy `DomesticHelp` cleanup | Migrated; model deprecation pending | STAFF-020 |
+| Dues UPI block on small phones | Dense layout | Mobile audit |
+| Admin tables on mobile | Horizontal scroll (by design) | CAS-017 |
+| GST PDF receipts | Blocked on RWA GSTIN | IMP-402 |
+| Razorpay payments | Deferred | Phase 3 |
+| Email bulk notifications | In-app only | hold-backlog E14 |
+| Event calendar grid | List view only | E6-S2 |
+| Hindi gate UI | English only | IMP-504 |
 
-### 12.3 Non-functional requirements (target)
+### 13.3 Non-functional requirements (target)
 
 | Category | Target |
 |---|---|
 | Performance | < 2s page load; Lighthouse ≥ 90 |
-| Mobile | Responsive; mobile-first for resident features |
-| Security | HTTPS, CSRF (server actions), rate limiting on API |
+| Mobile | Responsive; touch targets ≥ 44px; 16px inputs on mobile |
+| Security | HTTPS, CSRF (server actions), rate limiting on API (100/min/IP) |
 | Availability | 99.5% uptime target |
 | Backup | Daily DB backup, 30-day retention |
 | Timezone | IST display, UTC storage |
 
 ---
 
-## 13. Product KPIs
+## 14. Product KPIs
 
 | KPI | Target | Measurement | Frequency |
 |---|---|---|---|
@@ -894,7 +991,7 @@ Authentication, admin approval, hub home page, dashboard, notices, events + RSVP
 | **Notification engagement** | ≥ 40% of notifications read within 24 hours | (notifications read within 24h) / (total notifications sent) | Weekly |
 | **Resident satisfaction** | ≥ 4.0 average ticket satisfaction rating | (sum of ratings) / (count of rated tickets) | Monthly |
 
-### 13.1 How to track KPIs
+### 14.1 How to track KPIs
 
 - **Onboarding rate:** Query `User` where `approvalStatus = APPROVED` and divide by users with both `termsAcceptedAt` set AND at least one active `UnitMembership`.
 - **SLA compliance:** Use `lib/tickets.ts` helpers (`isSLABreached`) on resolved tickets.
@@ -907,31 +1004,20 @@ Authentication, admin approval, hub home page, dashboard, notices, events + RSVP
 
 ---
 
-## 14. Phase 2 Roadmap (Product Backlog Summary)
+## 15. Deferred & Future Work
 
-> **Full implementation backlog:** [`dev/archive/backlog-product-improvements.md`](../dev/archive/backlog-product-improvements.md) — 52 trackable items (IMP-001–507).  
-> **Stakeholder roadmap:** [`product-roadmap.md`](./product-roadmap.md) — quarterly themes, KPIs, and RWA decision log.
-
-| Feature | User benefit |
+| Resource | Contents |
 |---|---|
-| Online payments (Razorpay) | Pay maintenance dues in-app |
-| Email & SMS notifications | Critical alerts reach residents off-portal |
-| Calendar view for events | Visual month/week schedule |
-| Ticket photo attachments | Show maintenance issue with photo |
-| Poll eligibility enforcement | AGM one-vote-per-unit legally correct |
-| Tenant NOC workflow | Owner approves tenant registration |
-| Security staff PIN login | Dedicated gate device auth |
-| Bulk CSV import | Faster society onboarding |
-| Notification preferences | Control what alerts you receive |
-| Notice read receipts | Admin knows who saw urgent notices |
-| Recurring events | Weekly yoga without manual re-creation |
-| Inter-flat messaging | Contact neighbour without sharing phone |
-
-Full deferred list: [`dev/hold-backlog.md`](../dev/hold-backlog.md)
+| [Product Roadmap](./product-roadmap.md) | Quarterly themes, RWA committee decisions, competitive positioning |
+| [Product Roadmap §2.2](./product-roadmap.md#22-next-up--on-hold--ideas-q3q4-2026) | Prioritized ideas not yet committed |
+| [Staff & contacts backlog](../dev/backlog-staff-registry.md) | 68 done · 28 on hold |
+| [Global search backlog](../dev/backlog-global-search.md) | 22 done · 10 remaining |
+| [FAQ backlog](../dev/backlog-faq.md) | Feature complete · 4 items in hold-backlog |
+| [Hold backlog](../dev/hold-backlog.md) | All deferred / Phase 2+ features |
 
 ---
 
-## 15. Glossary
+## 16. Glossary
 
 | Term | Definition |
 |---|---|
@@ -945,17 +1031,25 @@ Full deferred list: [`dev/hold-backlog.md`](../dev/hold-backlog.md)
 | **Resolution** | Formal poll requiring quorum (AGM decisions) |
 | **Primary contact** | Designated member of a unit who receives official communications |
 | **Hub** | The community home page (`/`) with shortcuts and live feed |
+| **StaffPerson** | Canonical record for a non-resident individual (maid, guard, etc.) |
+| **StaffAssociation** | Time-bound link between a staff person and a unit (or society scope) |
+| **Regular Help** | Resident-facing staff directory at `/staff` |
+| **Important Contact** | RWA-vetted vendor/business entry at `/contacts/[id]` |
+| **Society staff** | GD-wide roles (Guard, Facility, Electrician, Plumber) — not unit-owned |
+| **Unit staff** | Flat-specific roles (Maid, Cook, Driver, etc.) |
 | **IGBC Platinum** | Indian Green Building Council's highest green certification |
 
 ---
 
-## 16. Document History
+## 17. Document History
 
 | Version | Date | Author | Changes |
 |---|---|---|---|
-| 1.1 | 2026-07-05 | System | Updated scope, added KPIs (§13), SLA rules (BR-15–26), personas, user journey diagrams, new module status |
-| 1.0 | 2026-07-05 | System | Initial FSD from architecture docs + codebase review |
+| 2.1 | 2026-07-07 | System | Spec docs reorganized; §3.2/§15 deduplicated; architecture path fixed |
+| 2.0 | 2026-07-07 | System | Staff Registry v2 (§5.11), Important Contacts reviews (§5.12), mobile UX updates, rewritten §13 status, new Roles & Permissions doc, roadmap refresh |
+| 1.1 | 2026-07-05 | System | Updated scope, KPIs, SLA rules, personas, user journeys |
+| 1.0 | 2026-07-05 | System | Initial FSD from architecture + codebase review |
 
 ---
 
-*For technical architecture, see [Architecture](../dev/architecture.md). For development tracking, see [Backlog](../dev/backlog.md).*
+*For permissions, see [Roles & Permissions](./roles-and-permissions.md). For technical architecture, see [Architecture](./architecture.md). For development tracking, see [Dev backlog](../dev/backlog.md).*

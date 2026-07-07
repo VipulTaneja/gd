@@ -2,7 +2,7 @@
 
 > **For developers working on the Gulshan Dynasty Community Portal.**
 >
-> **Related docs:** [Functional Spec](../specification/functional-spec.md) · [Design Profiles](../specification/design-profiles.md) · [Product Roadmap](../specification/product-roadmap.md) · [Active Backlog](./backlog.md)
+> **Related docs:** [Specification index](./README.md) · [Functional Spec](./functional-spec.md) · [Roles & Permissions](./roles-and-permissions.md) · [Design Profiles](./design-profiles.md) · [Dev backlogs](../dev/backlog.md)
 
 ---
 
@@ -91,6 +91,8 @@
 | `AuditLog` with generic `entityType`/`entityId` | Polymorphic pattern; one log table for all entity types. |
 | `Facility.capacity` | Supports shared facilities (pool=20) and exclusive ones (theatre=1). |
 | `Poll.eligibility` + `isResolution` | AGM compliance: one-vote-per-unit, quorum tracking. |
+| `FaqSection` + `FaqItem` with publish flags | Public FAQ tree; section and item must both be published; cascade delete on section. |
+| `Designation.title` as `DesignationTitle` enum | Committee roles constrained for RBAC (FAQ edit access, display labels). |
 
 ### Role System
 
@@ -108,34 +110,19 @@ All `DateTime` fields stored as UTC in PostgreSQL. Displayed in `Asia/Kolkata` (
 
 ---
 
-## 3. Permission Matrix
+## 3. Authorization
 
-| Action | SUPER_ADMIN | ADMIN | COMMUNITY_ADMIN | RESIDENT | FAMILY | SECURITY_STAFF |
-|---|---|---|---|---|---|---|
-| Approve/reject users | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Manage units (CRUD) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Assign unit memberships | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Create sub-community | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Manage sub-community members | ✅ | ✅ | ✅ (own) | ❌ | ❌ | ❌ |
-| Create global poll/event | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Create scoped poll/event | ✅ | ✅ | ✅ (own) | ❌ | ❌ | ❌ |
-| Vote in poll | ✅ | ✅ | ✅ | ✅ (per eligibility) | ❌ | ❌ |
-| RSVP to event | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Upload files (scoped) | ✅ | ✅ | ✅ (own) | ❌ | ❌ | ❌ |
-| Generate visitor pass | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Validate visitor pass | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Raise help ticket | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Book facility | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Publish notice | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Manage dues | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| View audit log | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Export data | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+Permission rules are documented in **[Roles & Permissions](./roles-and-permissions.md)** — the authoritative access matrix.
 
-**Key rules:**
-- `FAMILY` members can consume content and raise tickets but cannot vote or book facilities.
-- `SECURITY_STAFF` has a single-purpose interface: validate visitor passes only.
-- `COMMUNITY_ADMIN` powers are scoped to their own sub-community.
-- `SUPER_ADMIN` can do everything `ADMIN` can, plus assign admin role to others.
+| Concern | Code location |
+|---|---|
+| Global admin | `src/lib/rbac.ts` → `isAdmin()` |
+| Unit membership | `src/lib/rbac.ts` → `hasActiveUnitRole()`, `getUserUnitMemberships()` |
+| Delegated leadership | `src/lib/rbac-leaders.ts` |
+| Staff / FAQ / forums | `src/lib/staff-auth.ts`, `src/lib/faq-auth.ts`, `src/lib/forums/rbac.ts` |
+| Route protection | `src/middleware.ts` (JWT only — no Prisma) |
+
+**Key rules (summary):** Family members can read and raise tickets but not vote or book facilities. Security staff validate passes only. Committee designation holders can edit FAQ at `/faq/manage` without admin role.
 
 ---
 
@@ -161,8 +148,18 @@ All `DateTime` fields stored as UTC in PostgreSQL. Displayed in `Asia/Kolkata` (
 /events .................... Global events
 /events/[id] ................ Event detail + RSVP
 
-/visitors ................... My visitor passes
+/visitors ................... My visitor passes (+ Regular Help tab)
 /visitors/[id] .............. Pass detail + QR + WhatsApp share
+
+/staff ...................... Regular Help directory
+/staff/[id] ................. Staff profile + reviews
+
+/contacts ................... Important contacts (vendors)
+/contacts/[id] .............. Contact detail + reviews
+
+/faq ........................ Public FAQ (guests)
+/faq/app .................... Resident FAQ (DashboardLayout)
+/faq/manage ................. FAQ editor (committee + admin)
 
 /tickets .................... My help tickets
 /tickets/new ................ Raise a ticket
@@ -194,6 +191,8 @@ All `DateTime` fields stored as UTC in PostgreSQL. Displayed in `Asia/Kolkata` (
 ---
 
 ## 5. Non-Functional Requirements
+
+Targets below match [Functional Spec §13.3](./functional-spec.md#133-non-functional-requirements-target).
 
 | Category | Target |
 |---|---|
@@ -269,6 +268,7 @@ CLOUDFLARE_R2_SECRET_KEY=
 | `/api/cron/due-reminders` | Daily 06:00 UTC | Email residents with upcoming dues |
 | `/api/cron/expire-memberships` | Daily 02:00 UTC | Deactivate expired UnitMemberships |
 | `/api/cron/expire-passes` | Every 15 minutes | Mark expired visitor passes |
+| `/api/cron/generate-staff-passes` | Daily 06:00 IST | Generate `DAILY_HELP` passes for staff |
 
 ---
 
@@ -306,48 +306,17 @@ See [deploy/vercel-neon-r2.md](../deploy/vercel-neon-r2.md) for Vercel + Neon + 
 
 ## 9. UI Architecture
 
-### Design Tokens
+Resident vs admin shells, microcopy, and profile linking are specified in:
 
-| Token | Value | Source |
-|---|---|---|
-| `--radius` | `0.75rem` | `src/app/globals.css` |
-| `--gold` | `#d4af37` | Gold accent color |
-| `--font-heading` | Plus Jakarta Sans | `src/app/layout.tsx` |
+| Topic | Document |
+|---|---|
+| Profile linking (`UserLink`, `UnitLink`, `StaffLink`, `ContactLink`) | [Design Profiles](./design-profiles.md) |
+| Resident shell, microcopy, mobile patterns | [AGENTS.md](../../AGENTS.md) |
+| Feature color keys | `src/lib/feature-colors.ts` |
+| Shared components (`PageHeader`, `SoftCard`, etc.) | `src/components/shared/` |
 
-### Navigation Pattern
-
-**Resident shell:** `CasualHeader` (sticky top) + `MobileBottomNav` (fixed bottom on mobile)
-- Header: logo, nav pills (notices/events/polls/forums), notification bell, avatar dropdown
-- Bottom nav: Home, Book, Guests, Help, More (sheet with overflow links)
-- `HorizontalNavPills`: scrollable full nav for tablet/desktop (alternative to header)
-
-**Admin shell:** Dark sidebar, utilitarian — intentional contrast with resident casual shell.
-
-### Microcopy
-
-Single source of truth: `src/lib/microcopy.ts`
-- `nav.*` — navigation labels
-- `actions.*` — button text
-- `empty.*` — empty state messages
-- `priorityLabels` — EMERGENCY→"Urgent", IMPORTANT→"Heads up"
-- `statusLabels` — OPEN→"Open", IN_PROGRESS→"We're on it"
-
-### Feature Colors
-
-`src/lib/feature-colors.ts` — one pastel per feature area:
-- notices=amber, events=sky, polls=violet, tickets=rose, facilities=emerald
-- visitors=orange, dues=gold, directory=teal, notifications=indigo, forums=cyan
-
-### Shared Components
-
-| Component | File | Usage |
-|---|---|---|
-| `PageHeader` | `src/components/shared/page-header.tsx` | Feature icon + title + subtitle + action |
-| `SoftCard` | `src/components/shared/soft-card.tsx` | Shadow-based cards (no hard border) |
-| `EmptyState` | `src/components/shared/empty-state.tsx` | Icon + title + description + CTA |
-| `FriendlyBadge` | `src/components/shared/friendly-badge.tsx` | Status/priority with icon + plain label |
-| `UserLink` / `UnitLink` | `src/components/shared/` | Clickable names/units everywhere |
-| `FadeIn` / `StaggerChildren` | `src/components/shared/animated.tsx` | Entrance animations |
+**Resident shell:** `CasualHeader` + `MobileBottomNav` via `DashboardLayout` / `ResidentShell`.  
+**Admin shell:** Dark sidebar at `/admin/*` — intentionally utilitarian.
 
 ---
 
@@ -367,4 +336,4 @@ Single source of truth: `src/lib/microcopy.ts`
 
 ---
 
-*Last updated: 2026-07-06*
+*Last updated: 2026-07-07*

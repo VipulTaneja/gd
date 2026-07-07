@@ -23,6 +23,11 @@ const typeToFeature: Record<string, FeatureKey> = {
   facility: "facilities",
   community: "communities",
   ticket: "tickets",
+  staff: "staff",
+  contact: "contacts",
+  faq: "directory",
+  pet: "directory",
+  vehicle: "directory",
   navigation: "home",
 };
 
@@ -32,7 +37,7 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
   const [query, setQuery] = useState("");
   const [groups, setGroups] = useState<SearchResultGroup[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const allResults = groups.flatMap((g) => g.results);
@@ -40,19 +45,23 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
   const search = useCallback(async (q: string) => {
     if (q.length < 2) {
       setGroups([]);
-      setError(false);
+      setError(null);
       return;
     }
     setLoading(true);
-    setError(false);
+    setError(null);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      if (res.status === 401) {
+        setError("Please log in to search");
+        return;
+      }
       if (!res.ok) throw new Error();
       const data = await res.json();
       setGroups(data.groups || []);
     } catch {
       setGroups([]);
-      setError(true);
+      setError("Search unavailable. Try again.");
     }
     setLoading(false);
   }, []);
@@ -160,7 +169,7 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
 
               {error && (
                 <p className="py-8 text-center text-sm text-rose-500">
-                  Search unavailable. Try again.
+                  {error}
                 </p>
               )}
 
@@ -214,7 +223,7 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
 
               {query.length < 2 && (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  Type to search across notices, events, neighbors, and more
+                  Type to search across notices, events, staff, contacts, FAQ, and more
                 </div>
               )}
             </div>

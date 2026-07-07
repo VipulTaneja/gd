@@ -8,6 +8,7 @@ import {
   Users,
   Home,
   FileText,
+  HelpCircle,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const adminNavIcons: Record<AdminNavIcon, LucideIcon> = {
   users: Users,
   home: Home,
   "file-text": FileText,
+  "help-circle": HelpCircle,
   settings: Settings,
 };
 

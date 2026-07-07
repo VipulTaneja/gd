@@ -11,7 +11,10 @@ function normalizeUploadFile(file: File): File {
   return new File([file], `pasted-image.${ext}`, { type: file.type });
 }
 
-export async function uploadRichTextImage(file: File): Promise<string> {
+export async function uploadRichTextImage(
+  file: File,
+  options?: { namespace?: string },
+): Promise<string> {
   const uploadFile = normalizeUploadFile(file);
   if (!IMAGE_TYPES.includes(uploadFile.type)) {
     throw new Error("Only JPEG, PNG, WebP, and GIF images are allowed");
@@ -28,6 +31,7 @@ export async function uploadRichTextImage(file: File): Promise<string> {
       filename: uploadFile.name,
       contentType: uploadFile.type,
       size: uploadFile.size,
+      namespace: options?.namespace,
     }),
   });
 

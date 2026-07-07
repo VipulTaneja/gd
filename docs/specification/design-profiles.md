@@ -1,5 +1,9 @@
 # Profile Pages Design — User Profile & Unit Profile
 
+**Document type:** UI / linking conventions  
+**Audience:** Frontend developers  
+**Related docs:** [Specification index](./README.md) · [Functional Spec](./functional-spec.md) · [Roles & Permissions](./roles-and-permissions.md) · [Architecture](./architecture.md)
+
 > **Design Principle:** Every user name and unit number in the portal is a **clickable hyperlink** to its respective profile page. This creates a fully navigable, interconnected system.
 
 ---
@@ -343,11 +347,18 @@ interface MembershipTimelineProps {
 - Every unit number → `<UnitLink />`
 - Every resident name → `<UserLink />`
 
-**Breadcrumb trail example:**
-```
-Dashboard > Units > A-0302 > Rajesh Sharma
+**Staff & vendor links:**
+
+```tsx
+// <StaffLink /> — individual staff person (maid, guard, etc.)
+<StaffLink staffId="..." name="Kamla Devi" />
+// → /staff/[id]
+
+// <ContactLink /> — vendor / service line
+<ContactLink contactId="..." name="DTDC Courier" typeOfService="Courier" />
+// → /contacts/[id]
 ```
 
 ---
 
-*Last updated: 2026-07-04*
+*Last updated: 2026-07-07*

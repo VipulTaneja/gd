@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
+import { designationTitleLabel } from "@/lib/designation-labels";
 import { CommitteeForm } from "./committee-form";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +50,7 @@ export default async function AdminCommitteePage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center rounded-full bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
-                      {d.title}
+                      {designationTitleLabel(d.title)}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       Since {d.startDate.toLocaleDateString()}

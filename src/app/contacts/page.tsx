@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { ContactsList } from "@/components/contacts/contacts-list";
+import { getContactReviewAggregates } from "@/lib/contact-reviews";
+import { contacts as contactsCopy } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
 
@@ -24,18 +26,22 @@ export default async function ContactsPage() {
     orderBy: [{ category: "asc" }, { typeOfService: "asc" }],
   });
 
+  const aggregates = await getContactReviewAggregates(contacts.map((c) => c.id));
+
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
         <PageHeader
-          feature="directory"
-          title="Important Contacts"
-          subtitle="Society services, maintenance, and vendor contacts"
+          feature="contacts"
+          title={contactsCopy.title}
+          subtitle={contactsCopy.subtitle}
         />
         <ContactsList
           contacts={contacts.map((c) => ({
             ...c,
             lastEditedAt: c.lastEditedAt.toISOString(),
+            avgRating: aggregates.get(c.id)?.avgRating ?? null,
+            reviewCount: aggregates.get(c.id)?.reviewCount ?? 0,
           }))}
           currentUserId={session.user.id}
           isAdmin={isAdmin}
