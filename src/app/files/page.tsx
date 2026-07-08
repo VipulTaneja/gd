@@ -3,9 +3,13 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/rbac";
 import { DashboardLayout } from "@/components/dashboard/layout";
+import { FileText } from "lucide-react";
+import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
 import { DocumentUpload } from "@/components/files/file-vault";
 import { FileListRow } from "@/components/shared/file-list-row";
 import { DeleteFileButton } from "./delete-action";
+import { empty } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +33,12 @@ export default async function GlobalFilesPage() {
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="font-heading text-2xl font-bold">Society Documents</h1>
-            <p className="text-muted-foreground">Bylaws, AGM minutes, and other important documents.</p>
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <PageHeader
+            feature="files"
+            title="Society Documents"
+            subtitle="Bylaws, AGM minutes, and other important documents."
+          />
           {userIsAdmin && (
             <div className="w-full sm:w-auto">
               <DocumentUpload />
@@ -41,32 +46,33 @@ export default async function GlobalFilesPage() {
           )}
         </div>
 
-        <div className="space-y-2">
-          {files.map((file) => (
-            <FileListRow
-              key={file.id}
-              id={file.id}
-              name={file.name}
-              sizeBytes={file.sizeBytes}
-              mimeType={file.mimeType}
-              createdAt={file.createdAt}
-              actions={
-                <>
-                  <a
-                    href={`/api/files/download?id=${file.id}`}
-                    className="inline-flex h-8 items-center justify-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted"
-                  >
-                    Download
-                  </a>
-                  {userIsAdmin && <DeleteFileButton fileId={file.id} />}
-                </>
-              }
-            />
-          ))}
-          {files.length === 0 && (
-            <p className="text-center py-12 text-muted-foreground">No documents uploaded yet.</p>
-          )}
-        </div>
+        {files.length === 0 ? (
+          <EmptyState icon={FileText} title={empty.files.title} description={empty.files.description} />
+        ) : (
+          <div className="space-y-2">
+            {files.map((file) => (
+              <FileListRow
+                key={file.id}
+                id={file.id}
+                name={file.name}
+                sizeBytes={file.sizeBytes}
+                mimeType={file.mimeType}
+                createdAt={file.createdAt}
+                actions={
+                  <>
+                    <a
+                      href={`/api/files/download?id=${file.id}`}
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted"
+                    >
+                      Download
+                    </a>
+                    {userIsAdmin && <DeleteFileButton fileId={file.id} />}
+                  </>
+                }
+              />
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

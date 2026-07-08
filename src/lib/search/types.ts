@@ -51,19 +51,21 @@ export function normalizeUnitQuery(input: string): string | null {
   return `${tower}-${num}`;
 }
 
+import { nav } from "@/lib/microcopy";
+
 export const NAVIGATION_SHORTCUTS: { keywords: string[]; href: string; label: string }[] = [
-  { keywords: ["book", "amenity", "pool", "theatre", "cricket"], href: "/facilities", label: "Book a spot" },
-  { keywords: ["ticket", "help", "fix", "repair", "issue"], href: "/tickets/new", label: "Get help" },
-  { keywords: ["guest", "visitor", "invite"], href: "/visitors/new", label: "Invite a guest" },
-  { keywords: ["due", "payment", "bill"], href: "/dues", label: "View dues" },
-  { keywords: ["notice", "announcement", "update"], href: "/notices", label: "What's new" },
-  { keywords: ["event", "calendar", "rsvp"], href: "/events", label: "Events" },
-  { keywords: ["poll", "vote"], href: "/polls", label: "Polls" },
-  { keywords: ["neighbor", "directory", "who"], href: "/directory", label: "Neighbors" },
+  { keywords: ["book", "amenity", "pool", "theatre", "cricket"], href: "/facilities", label: nav.facilities },
+  { keywords: ["ticket", "help", "fix", "repair", "issue"], href: "/tickets/new", label: nav.tickets },
+  { keywords: ["guest", "visitor", "invite"], href: "/visitors/new", label: nav.visitors },
+  { keywords: ["due", "payment", "bill"], href: "/dues", label: nav.dues },
+  { keywords: ["notice", "announcement", "update"], href: "/notices", label: nav.notices },
+  { keywords: ["event", "calendar", "rsvp"], href: "/events", label: nav.events },
+  { keywords: ["poll", "vote"], href: "/polls", label: nav.polls },
+  { keywords: ["neighbor", "directory", "who"], href: "/directory", label: nav.directory },
   { keywords: ["forum", "discussion"], href: "/forums", label: "Forums" },
-  { keywords: ["team", "committee", "gdwa"], href: "/team", label: "Meet Our Team" },
-  { keywords: ["file", "document", "bylaw"], href: "/files", label: "File vault" },
-  { keywords: ["maid", "cook", "guard", "regular help", "staff"], href: "/visitors?tab=help", label: "Regular help" },
-  { keywords: ["contact", "vendor", "electrician", "plumber", "phone"], href: "/contacts", label: "Contacts" },
-  { keywords: ["faq", "question", "how to"], href: "/faq", label: "FAQ" },
+  { keywords: ["team", "committee", "gdwa"], href: "/team", label: "Our Team" },
+  { keywords: ["file", "document", "bylaw"], href: "/files", label: "Documents" },
+  { keywords: ["maid", "cook", "guard", "regular help", "staff"], href: "/visitors?tab=help", label: nav.regularHelp },
+  { keywords: ["contact", "vendor", "electrician", "plumber", "phone"], href: "/contacts", label: nav.contacts },
+  { keywords: ["faq", "question", "how to"], href: "/faq", label: "Help & FAQ" },
 ];

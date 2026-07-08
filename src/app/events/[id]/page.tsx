@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
-import Link from "next/link";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { RichTextContent } from "@/components/shared/rich-text-content";
 import { RsvpButtons } from "./rsvp-buttons";
@@ -48,7 +49,7 @@ export default async function EventDetailPage({
   return (
     <DashboardLayout user={user}>
       <div className="mx-auto max-w-2xl space-y-6">
-        <Link href="/events" className="text-sm text-muted-foreground hover:text-foreground">← Events</Link>
+        <Breadcrumb items={[{ label: "Events", href: "/events" }, { label: event.title }]} />
 
         <div>
           <h1 className="font-heading text-2xl font-bold">{event.title}</h1>
@@ -88,7 +89,7 @@ export default async function EventDetailPage({
           <RsvpButtons eventId={event.id} currentStatus={myRsvp?.status ?? null} />
         </div>
 
-        {(isCreator || ["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) && (
+        {(isCreator || isAdminRole(user.globalRole)) && (
           <div className="rounded-xl border bg-card p-6">
             <h2 className="font-heading text-lg font-semibold mb-4">
               Attendees ({accepted.length} accepted, {maybe.length} maybe, {declined.length} declined)

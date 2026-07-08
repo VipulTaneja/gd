@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { logAction } from "@/lib/audit";
 import { isAdmin } from "@/lib/rbac";
 
 export async function PATCH(
@@ -23,14 +24,7 @@ export async function PATCH(
     data: { isHidden: !!isHidden },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: isHidden ? "STAFF_REVIEW_HIDDEN" : "STAFF_REVIEW_UNHIDDEN",
-      entityType: "StaffReview",
-      entityId: id,
-    },
-  });
+  await logAction(session.user.id, isHidden ? "STAFF_REVIEW_HIDDEN" : "STAFF_REVIEW_UNHIDDEN", "StaffReview", id);
 
   return NextResponse.json({ success: true });
 }

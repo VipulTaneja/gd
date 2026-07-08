@@ -41,7 +41,7 @@ export default async function ProfilePage() {
     db.facilityBooking.findMany({
       where: {
         userId: user.id,
-        startsAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        startsAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // eslint-disable-line react-hooks/purity -- Server Component, runs once per request
         status: { in: ["CONFIRMED", "PENDING_APPROVAL", "REJECTED"] },
       },
       include: { facility: { select: { id: true, name: true } } },
@@ -60,7 +60,7 @@ export default async function ProfilePage() {
     <DashboardLayout user={layoutUser}>
       <div className="mx-auto max-w-2xl space-y-6">
         <PageHeader
-          feature="directory"
+          feature="profile"
           title="My Profile"
           subtitle={`${user.globalRole} · Member since ${user.createdAt.toLocaleDateString("en-IN", { month: "short", year: "numeric" })}`}
         />

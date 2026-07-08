@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { RichTextContent } from "@/components/shared/rich-text-content";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { VoteForm } from "./vote-form";
@@ -50,6 +51,8 @@ export default async function PollDetailPage({
   return (
     <DashboardLayout user={user}>
       <div className="mx-auto max-w-2xl space-y-6">
+        <Breadcrumb items={[{ label: "Polls", href: "/polls" }, { label: poll.title }]} />
+
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h1 className="font-heading text-2xl font-bold">{poll.title}</h1>

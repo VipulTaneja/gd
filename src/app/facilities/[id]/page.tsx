@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
-import Link from "next/link";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { UserLink } from "@/components/shared/user-link";
 import { canApproveFacilityBooking } from "@/lib/rbac-leaders";
@@ -75,9 +75,7 @@ export default async function FacilityDetailPage({
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        <Link href="/facilities" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Facilities
-        </Link>
+        <Breadcrumb items={[{ label: "Facilities", href: "/facilities" }, { label: facility.name }]} />
 
         <div>
           <h1 className="font-heading text-2xl font-bold">{facility.name}</h1>

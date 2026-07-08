@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { db } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
@@ -44,8 +45,9 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(
-    (session.user as any)?.globalRole ?? ""
+  const isAdmin = isAdminRole(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (session.user as any)?.globalRole
   );
 
   const where = isAdmin ? {} : { requestedBy: session.user.id };

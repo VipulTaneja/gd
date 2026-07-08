@@ -3,12 +3,13 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Plus, Star, Loader2 } from "lucide-react";
+import { Users, Plus, Loader2 } from "lucide-react";
 import { SearchInput } from "@/components/shared/search-input";
 import { FilterPillRow } from "@/components/shared/filter-pill-row";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StaggerChildren } from "@/components/shared/animated";
 import { InlineAlert } from "@/components/shared/inline-alert";
+import { StarRatingDisplay } from "@/components/shared/star-rating-display";
 import { contacts as contactsCopy, empty } from "@/lib/microcopy";
 import { contactCategoryStyle, CONTACT_CATEGORIES } from "@/lib/contact-category-style";
 
@@ -36,13 +37,7 @@ function RatingBadge({ avgRating, reviewCount }: { avgRating: number | null; rev
   if (avgRating == null) {
     return <span className="text-xs text-muted-foreground">{contactsCopy.noRating}</span>;
   }
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium">
-      <Star className="h-3.5 w-3.5 fill-gold text-gold" />
-      {avgRating}
-      <span className="text-muted-foreground font-normal">({reviewCount})</span>
-    </span>
-  );
+  return <StarRatingDisplay rating={avgRating} reviewCount={reviewCount} />;
 }
 
 export function ContactsList({ contacts }: ContactsPageProps) {

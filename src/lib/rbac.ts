@@ -47,12 +47,16 @@ export async function getUnitMembers(unitId: string) {
   });
 }
 
+export function isAdminRole(globalRole: string | null | undefined): boolean {
+  return globalRole === "SUPER_ADMIN" || globalRole === "ADMIN";
+}
+
 export async function isAdmin(userId: string): Promise<boolean> {
   const user = await db.user.findUnique({
     where: { id: userId },
     select: { globalRole: true },
   });
-  return user?.globalRole === "SUPER_ADMIN" || user?.globalRole === "ADMIN";
+  return isAdminRole(user?.globalRole);
 }
 
 /** Active unit membership filter — endDate null or in the future. */

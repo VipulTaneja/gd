@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { logAction } from "@/lib/audit";
 import {
   syncAllTowerCommunities,
   syncTowerCommunityMemberships,
   syncTowerCommunitiesForUser,
-  isTowerCommunity,
 } from "@/lib/tower-communities";
 import type { Tower } from "@/lib/constants";
 import { UNIT_TOWERS } from "@/lib/constants";
@@ -22,7 +22,7 @@ async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
   const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
+  if (!user || !isAdminRole(user.globalRole)) {
     throw new Error("Forbidden");
   }
   return user;

@@ -2,7 +2,11 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
-import { Package, Check } from "lucide-react";
+import { Package } from "lucide-react";
+import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
+import { empty } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
 
@@ -33,37 +37,21 @@ export default async function PackagesPage() {
   return (
     <DashboardLayout user={user}>
       <div className="space-y-6">
-        <h1 className="font-heading text-2xl font-bold">Package Inbox</h1>
+        <PageHeader feature="packages" title="Package Inbox" subtitle={`${packages.length} recent delivery${packages.length === 1 ? "" : "s"}`} />
 
         {packages.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="mt-4 text-sm text-muted-foreground">No packages yet</p>
-          </div>
+          <EmptyState icon={Package} title={empty.packages.title} description={empty.packages.description} />
         ) : (
           <div className="space-y-3">
             {packages.map((pkg) => (
               <div key={pkg.id} className="flex items-center gap-4 rounded-xl border bg-card p-4">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                  pkg.status === "USED" ? "bg-green-100" : "bg-amber-100"
-                }`}>
-                  {pkg.status === "USED" ? (
-                    <Check className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <Package className="h-5 w-5 text-amber-600" />
-                  )}
-                </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="font-medium">{pkg.visitorName}</p>
                   <p className="text-xs text-muted-foreground">
                     {pkg.createdAt.toLocaleDateString()} · {pkg.createdAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                  pkg.status === "USED" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
-                }`}>
-                  {pkg.status === "USED" ? "Collected" : "Awaiting Pickup"}
-                </span>
+                <FriendlyBadge value={pkg.status} variant="status" />
               </div>
             ))}
           </div>

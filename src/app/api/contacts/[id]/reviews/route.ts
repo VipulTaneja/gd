@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { logAction } from "@/lib/audit";
 import { isAdmin } from "@/lib/rbac";
-import { requireApprovedResident } from "@/lib/staff-auth";
+import { getApprovedResident } from "@/lib/staff-auth";
 import { isContactReviewable, listContactReviews } from "@/lib/contact-reviews";
 import { checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { approvalRequiredResponse, unauthorizedResponse } from "@/lib/api-errors";
@@ -44,7 +45,7 @@ export async function POST(
     return unauthorizedResponse();
   }
 
-  const approved = await requireApprovedResident(session.user.id);
+  const approved = await getApprovedResident(session.user.id);
   if (!approved) {
     return approvalRequiredResponse();
   }
@@ -102,7 +103,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const approved = await requireApprovedResident(session.user.id);
+  const approved = await getApprovedResident(session.user.id);
   if (!approved) {
     return NextResponse.json({ error: "Approval required" }, { status: 403 });
   }
@@ -141,14 +142,7 @@ export async function PUT(
     data: { isHidden: !!isHidden },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: isHidden ? "CONTACT_REVIEW_HIDDEN" : "CONTACT_REVIEW_UNHIDDEN",
-      entityType: "ContactReview",
-      entityId: reviewId,
-    },
-  });
+  await logAction(session.user.id, isHidden ? "CONTACT_REVIEW_HIDDEN" : "CONTACT_REVIEW_UNHIDDEN", "ContactReview", reviewId);
 
   return NextResponse.json({ success: true });
 }

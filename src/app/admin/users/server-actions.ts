@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { logAction } from "@/lib/audit";
+import { isAdminRole } from "@/lib/rbac";
 import type { GlobalRole } from "@/generated/prisma/enums";
 import { createNotification } from "@/lib/notifications";
 import { syncTowerCommunitiesForUser } from "@/lib/tower-communities";
@@ -11,7 +13,7 @@ async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
   const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
+  if (!user || !isAdminRole(user.globalRole)) {
     throw new Error("Forbidden");
   }
   return user;
@@ -64,14 +66,7 @@ export async function deactivateUser(userId: string) {
 
   await db.session.deleteMany({ where: { userId } });
 
-  await db.auditLog.create({
-    data: {
-      userId: admin.id,
-      action: "USER_DEACTIVATED",
-      entityType: "User",
-      entityId: userId,
-    },
-  });
+  await logAction(admin.id, "USER_DEACTIVATED", "User", userId);
 
   revalidatePath("/admin/users");
 }
@@ -87,15 +82,7 @@ export async function changeUserRole(userId: string, role: string) {
     data: { globalRole: role as GlobalRole },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId: admin.id,
-      action: "ROLE_ASSIGNED",
-      entityType: "User",
-      entityId: userId,
-      metadata: { newRole: role },
-    },
-  });
+  await logAction(admin.id, "ROLE_ASSIGNED", "User", userId, { newRole: role });
 
   revalidatePath("/admin/users");
 }
@@ -132,15 +119,7 @@ export async function approveClaim(userId: string, unitId: string) {
     "/dashboard",
   );
 
-  await db.auditLog.create({
-    data: {
-      userId: admin.id,
-      action: "CLAIM_APPROVED",
-      entityType: "User",
-      entityId: userId,
-      metadata: { unitId },
-    },
-  });
+  await logAction(admin.id, "CLAIM_APPROVED", "User", userId, { unitId });
 
   revalidatePath("/admin/users");
 }
@@ -161,14 +140,7 @@ export async function rejectClaim(userId: string) {
     "/dashboard",
   );
 
-  await db.auditLog.create({
-    data: {
-      userId: admin.id,
-      action: "CLAIM_REJECTED",
-      entityType: "User",
-      entityId: userId,
-    },
-  });
+  await logAction(admin.id, "CLAIM_REJECTED", "User", userId);
 
   revalidatePath("/admin/users");
 }

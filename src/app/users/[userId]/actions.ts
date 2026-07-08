@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
+import { isAdminRole } from "@/lib/rbac";
 import type { GlobalRole } from "@/generated/prisma/enums";
 
 export async function updateUserProfile(userId: string, data: {
@@ -18,8 +19,8 @@ export async function updateUserProfile(userId: string, data: {
   }
 
   const isOwnProfile = session.user.id === userId;
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(
-    (session.user as { globalRole?: string }).globalRole ?? ""
+  const isAdmin = isAdminRole(
+    (session.user as { globalRole?: string }).globalRole
   );
 
   if (!isOwnProfile && !isAdmin) {
@@ -58,8 +59,8 @@ export async function updateUserRole(userId: string, role: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(
-    (session.user as { globalRole?: string }).globalRole ?? ""
+  const isAdmin = isAdminRole(
+    (session.user as { globalRole?: string }).globalRole
   );
   if (!isAdmin) throw new Error("Forbidden");
 
@@ -83,8 +84,8 @@ export async function deactivateUser(userId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(
-    (session.user as { globalRole?: string }).globalRole ?? ""
+  const isAdmin = isAdminRole(
+    (session.user as { globalRole?: string }).globalRole
   );
   if (!isAdmin) throw new Error("Forbidden");
 
@@ -102,8 +103,8 @@ export async function reactivateUser(userId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(
-    (session.user as { globalRole?: string }).globalRole ?? ""
+  const isAdmin = isAdminRole(
+    (session.user as { globalRole?: string }).globalRole
   );
   if (!isAdmin) throw new Error("Forbidden");
 

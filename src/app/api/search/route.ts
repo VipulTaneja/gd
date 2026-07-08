@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { db } from "@/lib/db";
 import {
   type SearchResultItem,
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(user.globalRole);
+  const isAdmin = isAdminRole(user.globalRole);
   const communityIds = user.communityMemberships.map((cm) => cm.subCommunityId);
 
   const unitQuery = normalizeUnitQuery(q);

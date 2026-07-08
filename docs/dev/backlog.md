@@ -17,8 +17,8 @@ Active feature backlogs and deferred work. **Product specifications** are in [`.
 
 | Backlog | Topic | Status (2026-07-08) |
 |---|---|---|
-| [`tracking/260708-ui-ux-backlog.md`](./tracking/260708-ui-ux-backlog.md) | UI/UX audit — color, spacing, consistency, bugs | **14 active** (12 open · 1 in progress · 1 deferred) · 3 done pending archive · [archive](./archive/260708-ui-ux-backlog-archived-2026-07-08.md) |
-| [`tracking/260708-refactor-backlog.md`](./tracking/260708-refactor-backlog.md) | Refactoring & shared components — extraction, API/lib DRY, security | **30 active** (27 open · 3 in progress) · 1 done pending archive · [archive](./archive/260708-refactor-backlog-archived-2026-07-08.md) |
+| [`tracking/260708-ui-ux-backlog.md`](./tracking/260708-ui-ux-backlog.md) | UI/UX audit — color, spacing, consistency, bugs | **Complete** · 136 archived · [archive](./archive/260708-ui-ux-backlog-archived-2026-07-08.md) |
+| [`tracking/260708-refactor-backlog.md`](./tracking/260708-refactor-backlog.md) | Refactoring & shared components — extraction, API/lib DRY, security | **Complete** · 60 archived · [archive](./archive/260708-refactor-backlog-archived-2026-07-08.md) |
 
 ---
 
@@ -28,8 +28,8 @@ Active feature backlogs and deferred work. **Product specifications** are in [`.
 |---|---|
 | [`archive/backlog.md`](./archive/backlog.md) | Former sprint-prioritized index |
 | [`archive/delegated-leadership-archived-2026-07-07.md`](./archive/delegated-leadership-archived-2026-07-07.md) | Delegated leadership (complete) |
-| [`archive/260708-ui-ux-backlog-archived-2026-07-08.md`](./archive/260708-ui-ux-backlog-archived-2026-07-08.md) | UI/UX audit Sprint 1–2 done (AUD-021–136, 114 items) |
-| [`archive/260708-refactor-backlog-archived-2026-07-08.md`](./archive/260708-refactor-backlog-archived-2026-07-08.md) | Refactor audit Sprints 1–3 done (29 items) |
+| [`archive/260708-ui-ux-backlog-archived-2026-07-08.md`](./archive/260708-ui-ux-backlog-archived-2026-07-08.md) | UI/UX audit done (AUD-021–153, 134 items) |
+| [`archive/260708-refactor-backlog-archived-2026-07-08.md`](./archive/260708-refactor-backlog-archived-2026-07-08.md) | Refactor audit done (30 items incl. Sprints 1–3 + AUD-186) |
 | [`archive/`](./archive/) | UI/UX, forums, hub redesign, product improvements |
 
 ---

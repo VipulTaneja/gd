@@ -117,9 +117,11 @@ export function RichTextEditor({
     }
   }, []);
 
-  insertImagesRef.current = (files) => {
-    void insertImages(files);
-  };
+  useEffect(() => {
+    insertImagesRef.current = (files) => {
+      void insertImages(files);
+    };
+  }, [insertImages]);
 
   const editor = useEditor({
     immediatelyRender: false,

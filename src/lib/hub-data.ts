@@ -5,6 +5,7 @@ import {
   buildSubCommunityContentFilter,
 } from "@/lib/community-leaders";
 import { activeMembershipWhere } from "@/lib/rbac";
+import { getUnreadCount } from "@/lib/notifications";
 import type { HubData } from "@/types/hub";
 
 export async function getHubData(
@@ -137,9 +138,7 @@ async function getResidentHubData(userId: string): Promise<HubData> {
         },
       },
     }),
-    db.notification.count({
-      where: { userId, isRead: false },
-    }),
+    getUnreadCount(userId),
     db.poll.count({
       where: {
         opensAt: { lte: new Date() },

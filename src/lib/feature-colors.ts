@@ -15,6 +15,10 @@ import {
   UsersRound,
   HelpCircle,
   Crown,
+  Package,
+  FileText,
+  User,
+  ShieldCheck,
 } from "lucide-react";
 
 export type FeatureKey =
@@ -34,7 +38,11 @@ export type FeatureKey =
   | "contacts"
   | "staff"
   | "faq"
-  | "leader";
+  | "leader"
+  | "packages"
+  | "files"
+  | "profile"
+  | "gate";
 
 export interface FeatureStyle {
   icon: LucideIcon;
@@ -163,5 +171,33 @@ export const featureColors: Record<FeatureKey, FeatureStyle> = {
     bg: "bg-fuchsia-100",
     text: "text-fuchsia-700",
     ring: "ring-fuchsia-200",
+  },
+  packages: {
+    icon: Package,
+    label: "Packages",
+    bg: "bg-amber-100",
+    text: "text-amber-700",
+    ring: "ring-amber-200",
+  },
+  files: {
+    icon: FileText,
+    label: "Documents",
+    bg: "bg-slate-100",
+    text: "text-slate-700",
+    ring: "ring-slate-200",
+  },
+  profile: {
+    icon: User,
+    label: "My profile",
+    bg: "bg-zinc-100",
+    text: "text-zinc-700",
+    ring: "ring-zinc-200",
+  },
+  gate: {
+    icon: ShieldCheck,
+    label: "Gate control",
+    bg: "bg-red-100",
+    text: "text-red-700",
+    ring: "ring-red-200",
   },
 };

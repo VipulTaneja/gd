@@ -9,7 +9,7 @@ import { SoftCard } from "@/components/shared/soft-card";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Bell } from "lucide-react";
-import { nav, actions, empty } from "@/lib/microcopy";
+import { nav, empty } from "@/lib/microcopy";
 import Link from "next/link";
 import { RichTextPreview } from "@/components/shared/rich-text-preview";
 

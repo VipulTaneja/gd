@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
-import { requireFaqEditor } from "@/lib/faq-auth";
-import { checkFaqWriteRateLimit, rateLimitResponse } from "@/lib/faq-rate-limit";
+import { guardFaqEditorRoute } from "@/lib/faq-auth";
 import {
   createFaqSection,
   deleteFaqSection,
@@ -10,23 +8,8 @@ import {
   updateFaqSection,
 } from "@/lib/faq";
 
-async function guardEditor() {
-  const session = await auth();
-  if (!session?.user?.id) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
-  try {
-    await requireFaqEditor(session.user.id);
-  } catch {
-    return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
-  }
-  const rl = checkFaqWriteRateLimit(session.user.id);
-  if (!rl.ok) {
-    return { error: rateLimitResponse(rl.retryAfterMs) };
-  }
-  return { userId: session.user.id };
-}
-
 export async function POST(request: Request) {
-  const guard = await guardEditor();
+  const guard = await guardFaqEditorRoute();
   if ("error" in guard) return guard.error;
 
   try {
@@ -49,7 +32,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const guard = await guardEditor();
+  const guard = await guardFaqEditorRoute();
   if ("error" in guard) return guard.error;
 
   try {
@@ -82,7 +65,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const guard = await guardEditor();
+  const guard = await guardFaqEditorRoute();
   if ("error" in guard) return guard.error;
 
   const { searchParams } = new URL(request.url);

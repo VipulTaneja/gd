@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { HubBadgeCounts } from "@/types/hub";
 import { IconTile } from "@/components/shared/icon-tile";
 import { StaggerChildren } from "@/components/shared/animated";

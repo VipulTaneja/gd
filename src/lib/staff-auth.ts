@@ -11,7 +11,7 @@ export async function getApprovedUser(userId: string) {
   });
 }
 
-export async function requireApprovedResident(userId: string) {
+export async function getApprovedResident(userId: string) {
   const user = await getApprovedUser(userId);
   if (!user) return null;
   return user;

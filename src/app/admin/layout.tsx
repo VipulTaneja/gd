@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
@@ -10,7 +11,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await auth();
   const userRole = session?.user?.globalRole;
 
-  if (!session?.user?.id || !["SUPER_ADMIN", "ADMIN"].includes(userRole ?? "")) {
+  if (!session?.user?.id || !isAdminRole(userRole)) {
     redirect("/dashboard");
   }
 

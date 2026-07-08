@@ -88,7 +88,6 @@ export default async function PollsPage({
             {polls.map((poll) => {
               const status = getStatus(poll);
               const totalVotes = poll._count.votes;
-              const maxVotes = Math.max(...poll.options.map((o) => o._count.votes), 1);
               return (
                 <Link key={poll.id} href={`/polls/${poll.id}`}
                   className="group rounded-xl border bg-card p-5 transition-all hover:ring-gold hover:shadow-lg">

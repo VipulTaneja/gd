@@ -8,6 +8,7 @@ import { DashboardLayout } from "@/components/dashboard/layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { HubHeroManagePanel } from "@/components/hub/hub-hero-manage-panel";
 import { Button } from "@/components/ui/button";
+import { hubHero } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
 
@@ -31,15 +32,15 @@ export default async function HubHeroManagePage() {
       <div className="space-y-6">
         <PageHeader
           feature="home"
-          title="Hub hero carousel"
-          subtitle="Add, reorder, or remove images on the community home page. Each slide can link anywhere when clicked."
+          title={hubHero.manageTitle}
+          subtitle={hubHero.manageSubtitle}
           action={
             <Button
               variant="outline"
               render={<Link href="/" />}
               className="min-h-11 w-full sm:w-auto"
             >
-              View hub
+              {hubHero.viewHub}
             </Button>
           }
         />

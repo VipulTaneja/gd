@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
@@ -48,7 +49,7 @@ export default async function UnitProfilePage({
   });
   if (!layoutUser) redirect("/login");
 
-  const isAdminUser = ["SUPER_ADMIN", "ADMIN"].includes(layoutUser.globalRole);
+  const isAdminUser = isAdminRole(layoutUser.globalRole);
 
   const unit = await db.unit.findUnique({
     where: { unitNumber },

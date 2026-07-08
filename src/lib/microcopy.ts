@@ -49,6 +49,9 @@ export const empty = {
   forumThreads: { title: "No threads yet", description: "Be the first to start a discussion" },
   contacts: { title: "No contacts found", description: "Try a different search or category." },
   communities: { title: "No communities available yet", description: "Check back soon — new communities are added regularly." },
+  packages: { title: "No packages yet", description: "When deliveries arrive, you'll see them here." },
+  notifications: { title: "You're all caught up", description: "No notifications right now." },
+  files: { title: "No documents yet", description: "Important documents will appear here." },
 } as const;
 
 export const priorityLabels: Record<string, string> = {
@@ -158,4 +161,10 @@ export const faq = {
   deleteQuestionConfirm: "Delete this question?",
   moveUp: "Move up",
   moveDown: "Move down",
+} as const;
+
+export const hubHero = {
+  manageTitle: "Hub hero carousel",
+  manageSubtitle: "Add, reorder, or remove images on the community home page. Each slide can link anywhere when clicked.",
+  viewHub: "View hub",
 } as const;

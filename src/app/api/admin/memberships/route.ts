@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi, isAdminApiError } from "@/lib/api-auth";
 import { db } from "@/lib/db";
+import { logAction } from "@/lib/audit";
 import type { UnitRole } from "@/generated/prisma/enums";
 
 export async function PATCH(request: NextRequest) {
@@ -43,15 +44,7 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    await db.auditLog.create({
-      data: {
-        userId: admin.userId,
-        action: "MEMBERSHIP_UPDATED",
-        entityType: "UnitMembership",
-        entityId: membershipId,
-        metadata: { role, isPrimary, endDate },
-      },
-    });
+    await logAction(admin.userId, "MEMBERSHIP_UPDATED", "UnitMembership", membershipId, { role, isPrimary, endDate });
 
     return NextResponse.json({ success: true });
   } catch (e) {

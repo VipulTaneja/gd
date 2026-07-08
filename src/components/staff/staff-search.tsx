@@ -19,12 +19,11 @@ export interface StaffSearchResult {
 }
 
 interface StaffSearchProps {
-  onSelect?: (result: StaffSearchResult) => void;
+  onSelect: (result: StaffSearchResult) => void;
   placeholder?: string;
-  autoFocus?: boolean;
 }
 
-export function StaffSearch({ onSelect, placeholder, autoFocus }: StaffSearchProps) {
+export function StaffSearch({ onSelect, placeholder }: StaffSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<StaffSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,13 +32,14 @@ export function StaffSearch({ onSelect, placeholder, autoFocus }: StaffSearchPro
   useEffect(() => {
     const trimmed = query.trim();
     const digits = trimmed.replace(/\D/g, "");
-    if (trimmed.length < 2 && digits.length < 10) {
-      setResults([]);
-      setError(null);
-      return;
-    }
 
     const timer = setTimeout(async () => {
+      if (trimmed.length < 2 && digits.length < 10) {
+        setResults([]);
+        setError(null);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {

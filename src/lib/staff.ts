@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import type { StaffAssociationStatus, StaffRole, StaffScope } from "@/generated/prisma/enums";
 import { staffInitials, staffRoleLabel, isSocietyStaffRole } from "@/lib/staff-labels";
 import { canManageStaffAssociation, getCallerUnitIds, isResidentStaffRole } from "@/lib/staff-auth";
+import { getReviewAggregate, getReviewAggregates } from "@/lib/review-aggregates";
 
 export { staffInitials, staffRoleLabel };
 
@@ -13,39 +14,26 @@ const activeAssociationWhere = {
 };
 
 export async function getStaffReviewAggregate(staffPersonId: string) {
-  const reviews = await db.staffReview.findMany({
-    where: { staffPersonId, isHidden: false },
-    select: { rating: true },
-  });
-  if (reviews.length === 0) return { avgRating: null, reviewCount: 0 };
-  const sum = reviews.reduce((a, r) => a + r.rating, 0);
-  return {
-    avgRating: Math.round((sum / reviews.length) * 10) / 10,
-    reviewCount: reviews.length,
-  };
+  return getReviewAggregate(db.staffReview, "staffPersonId", staffPersonId);
 }
 
 export async function getStaffReviewAggregates(staffPersonIds: string[]) {
-  if (staffPersonIds.length === 0) return new Map<string, { avgRating: number | null; reviewCount: number }>();
+  return getReviewAggregates(db.staffReview, "staffPersonId", staffPersonIds);
+}
 
-  const reviews = await db.staffReview.groupBy({
-    by: ["staffPersonId"],
-    where: { staffPersonId: { in: staffPersonIds }, isHidden: false },
-    _avg: { rating: true },
-    _count: { rating: true },
-  });
-
-  const map = new Map<string, { avgRating: number | null; reviewCount: number }>();
-  for (const id of staffPersonIds) {
-    map.set(id, { avgRating: null, reviewCount: 0 });
-  }
-  for (const row of reviews) {
-    map.set(row.staffPersonId, {
-      avgRating: row._avg.rating != null ? Math.round(row._avg.rating * 10) / 10 : null,
-      reviewCount: row._count.rating,
-    });
-  }
-  return map;
+export async function listStaffReviews(staffPersonId: string, page = 1, pageSize = 10) {
+  const skip = (page - 1) * pageSize;
+  const [reviews, total] = await Promise.all([
+    db.staffReview.findMany({
+      where: { staffPersonId, isHidden: false },
+      include: { author: { select: { id: true, name: true, avatarUrl: true } } },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    db.staffReview.count({ where: { staffPersonId, isHidden: false } }),
+  ]);
+  return { reviews, total, page, pageSize };
 }
 
 export async function searchStaffPersons(query: string) {

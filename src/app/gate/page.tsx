@@ -1,6 +1,7 @@
 import { GateValidation } from "@/components/visitors/gate-validation";
 import { getTodayStaffPasses } from "@/lib/staff-passes";
 import { UnitLink } from "@/components/shared/unit-link";
+import { PageHeader } from "@/components/shared/page-header";
 import { staff as staffCopy } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export default async function GatePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-4 py-8 space-y-8">
-        <h1 className="font-heading text-2xl font-bold">Gate Control</h1>
+        <PageHeader feature="gate" title="Gate Control" subtitle={`${passes.length} staff member${passes.length === 1 ? "" : "s"} expected today`} />
 
         {passes.length > 0 && (
           <div className="rounded-xl border bg-card p-6">

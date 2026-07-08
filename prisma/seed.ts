@@ -1,4 +1,4 @@
-import { PrismaClient, GlobalRole, ApprovalStatus, UnitRole, TicketCategory, TicketStatus, TicketPriority, PollScope, PollEligibility, ResultVisibility, EventScope, VisitorType, PassStatus, BookingStatus, MoveType, MoveStatus, NoticePriority, DueStatus, DomesticHelpStatus, LostFoundType, LostFoundStatus, NotificationType, CommunityRole, RSVPStatus, DesignationTitle } from "../src/generated/prisma/client";
+import { PrismaClient, TicketCategory, TicketStatus, TicketPriority, EventScope, VisitorType, PassStatus, BookingStatus, MoveType, MoveStatus, NoticePriority, DueStatus, DomesticHelpStatus, LostFoundType, LostFoundStatus, NotificationType, CommunityRole, RSVPStatus, DesignationTitle } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -184,29 +184,29 @@ async function seedDev() {
   const arun = await lookupOrCreateUser("arun@example.com", "Arun Nair");
 
   // Additional real residents for variety
-  const abhishekAgrawal = await lookupOrCreateUser("abhishek@mtalkz.com", "Abhishek Agrawal");
+  await lookupOrCreateUser("abhishek@mtalkz.com", "Abhishek Agrawal");
   const aditya = await lookupOrCreateUser("greenaditya@gmail.com", "Aditya Goel");
   const ajayJain = await lookupOrCreateUser("avnikajain07@gmail.com", "Ajay Jain");
-  const amitMittal = await lookupOrCreateUser("namratakumari@gmail.com", "Amit Mittal");
-  const ankit = await lookupOrCreateUser("ankittayal@thestepindia.com", "Ankit Tayal");
-  const ashishSaini = await lookupOrCreateUser("contact@ashishtools.co.in", "Ashish Saini");
+  await lookupOrCreateUser("namratakumari@gmail.com", "Amit Mittal");
+  await lookupOrCreateUser("ankittayal@thestepindia.com", "Ankit Tayal");
+  await lookupOrCreateUser("contact@ashishtools.co.in", "Ashish Saini");
   const bhanu = await lookupOrCreateUser("noemail-919310011010@gulshandynasty.local", "Bhanu Binani");
   const deepakGupta = await lookupOrCreateUser("deepak@yogiassociates.com", "Deepak Gupta");
-  const gaurav = await lookupOrCreateUser("gmalil@gmail.com", "Gaurav");
+  await lookupOrCreateUser("gmalil@gmail.com", "Gaurav");
   const harish = await lookupOrCreateUser("harishgoyal@gatewaypapers.com", "Harish Goyal");
   const manik = await lookupOrCreateUser("manikuppal@gmail.com", "Manik Uppal");
   const mohit = await lookupOrCreateUser("casinoite@gmail.com", "Mohit Kalra");
-  const nitin = await lookupOrCreateUser("nitinkumargupta@gmail.com", "Nitin Gupta");
-  const pankaj = await lookupOrCreateUser("noemail-919999960068@gulshandynasty.local", "Pankaj Sharma");
+  await lookupOrCreateUser("nitinkumargupta@gmail.com", "Nitin Gupta");
+  await lookupOrCreateUser("noemail-919999960068@gulshandynasty.local", "Pankaj Sharma");
   const rakesh = await lookupOrCreateUser("drmalhotra68@gmail.com", "Rakesh Malhotra");
-  const sachin = await lookupOrCreateUser("sachin@advadvise.in", "Sachin");
+  await lookupOrCreateUser("sachin@advadvise.in", "Sachin");
   const sanjay = await lookupOrCreateUser("chiragmittal13@gmail.com", "Sanjay Mittal");
   const sumeet = await lookupOrCreateUser("sumeet86@gmail.com", "Sumeet");
   const sunil = await lookupOrCreateUser("sunil22sharma@gmail.com", "Sunil Sharma");
-  const varun = await lookupOrCreateUser("goyal.v81@gmail.com", "Varun Goyal");
+  await lookupOrCreateUser("goyal.v81@gmail.com", "Varun Goyal");
   const salil = await lookupOrCreateUser("noemail-919871488022@gulshandynasty.local", "Salil");
   const sameer = await lookupOrCreateUser("sameer.com@gmail.com", "Sameer");
-  const manojBansal = await lookupOrCreateUser("manoj4506@gmail.com", "Manoj Bansal");
+  await lookupOrCreateUser("manoj4506@gmail.com", "Manoj Bansal");
 
   const allUsers = [vipul, deepakSapra, sumitTayal, meenalKumar, rajesh, priya, amit, neha, anita, deepa, ravi, meena, vikram, karan, sneha, arun].filter(Boolean);
   console.log(`   ✅ ${allUsers.length} key users found`);
@@ -409,7 +409,7 @@ async function seedDev() {
       resultVisibility: "LIVE",
       opensAt: daysAgo(3),
       closesAt: daysFromNow(4),
-      createdById: rajesh?.id!,
+      createdById: rajesh!.id,
       options: {
         create: [
           { label: "Weekday mornings (7–9 AM)", order: 0 },
@@ -431,7 +431,7 @@ async function seedDev() {
       resultVisibility: "AFTER_CLOSE",
       opensAt: daysAgo(10),
       closesAt: daysAgo(3),
-      createdById: vipul?.id!,
+      createdById: vipul!.id,
       options: {
         create: [
           { label: "Yes, approve the upgrade", order: 0 },
@@ -452,7 +452,7 @@ async function seedDev() {
       resultVisibility: "LIVE",
       opensAt: daysAgo(1),
       closesAt: daysFromNow(2),
-      createdById: neha?.id!,
+      createdById: neha!.id,
       options: {
         create: [
           { label: "3 Idiots", order: 0 },
@@ -464,7 +464,7 @@ async function seedDev() {
     },
   });
 
-  const poll4 = await prisma.poll.create({
+  await prisma.poll.create({
     data: {
       title: "Festival decoration budget per tower",
       description: "How much should each tower spend on common area decorations for upcoming festivals? Current proposal is ₹15,000 per tower per festival.",
@@ -474,7 +474,7 @@ async function seedDev() {
       resultVisibility: "AFTER_CLOSE",
       opensAt: daysFromNow(2),
       closesAt: daysFromNow(12),
-      createdById: meenalKumar?.id!,
+      createdById: meenalKumar!.id,
       options: {
         create: [
           { label: "₹10,000 — keep it minimal", order: 0 },
@@ -497,7 +497,7 @@ async function seedDev() {
       resultVisibility: "LIVE",
       opensAt: daysAgo(5),
       closesAt: daysFromNow(2),
-      createdById: neha?.id!,
+      createdById: neha!.id,
       options: {
         create: [
           { label: "The White Tiger — Aravind Adiga", order: 0 },
@@ -518,7 +518,7 @@ async function seedDev() {
       resultVisibility: "LIVE",
       opensAt: daysAgo(2),
       closesAt: daysFromNow(5),
-      createdById: sumitTayal?.id!,
+      createdById: sumitTayal!.id,
       options: {
         create: [
           { label: "Cricket", order: 0 },
@@ -542,40 +542,40 @@ async function seedDev() {
 
   const votes = [
     // Poll 1 — gardening workshops
-    { pollId: poll1.id, optionId: poll1Opts[2].id, userId: rajesh?.id! },
-    { pollId: poll1.id, optionId: poll1Opts[0].id, userId: priya?.id! },
-    { pollId: poll1.id, optionId: poll1Opts[2].id, userId: amit?.id! },
-    { pollId: poll1.id, optionId: poll1Opts[3].id, userId: neha?.id! },
-    { pollId: poll1.id, optionId: poll1Opts[2].id, userId: anita?.id! },
-    { pollId: poll1.id, optionId: poll1Opts[0].id, userId: deepa?.id! },
-    { pollId: poll1.id, optionId: poll1Opts[2].id, userId: meena?.id! },
+    { pollId: poll1.id, optionId: poll1Opts[2].id, userId: rajesh!.id },
+    { pollId: poll1.id, optionId: poll1Opts[0].id, userId: priya!.id },
+    { pollId: poll1.id, optionId: poll1Opts[2].id, userId: amit!.id },
+    { pollId: poll1.id, optionId: poll1Opts[3].id, userId: neha!.id },
+    { pollId: poll1.id, optionId: poll1Opts[2].id, userId: anita!.id },
+    { pollId: poll1.id, optionId: poll1Opts[0].id, userId: deepa!.id },
+    { pollId: poll1.id, optionId: poll1Opts[2].id, userId: meena!.id },
     // Poll 2 — gym upgrade (closed)
-    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: rajesh?.id! },
-    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: priya?.id! },
-    { pollId: poll2.id, optionId: poll2Opts[2].id, userId: amit?.id! },
-    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: neha?.id! },
-    { pollId: poll2.id, optionId: poll2Opts[1].id, userId: anita?.id! },
-    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: deepa?.id! },
-    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: ravi?.id! },
-    { pollId: poll2.id, optionId: poll2Opts[2].id, userId: karan?.id! },
+    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: rajesh!.id },
+    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: priya!.id },
+    { pollId: poll2.id, optionId: poll2Opts[2].id, userId: amit!.id },
+    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: neha!.id },
+    { pollId: poll2.id, optionId: poll2Opts[1].id, userId: anita!.id },
+    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: deepa!.id },
+    { pollId: poll2.id, optionId: poll2Opts[0].id, userId: ravi!.id },
+    { pollId: poll2.id, optionId: poll2Opts[2].id, userId: karan!.id },
     // Poll 3 — movie night
-    { pollId: poll3.id, optionId: poll3Opts[0].id, userId: rajesh?.id! },
-    { pollId: poll3.id, optionId: poll3Opts[2].id, userId: priya?.id! },
-    { pollId: poll3.id, optionId: poll3Opts[0].id, userId: neha?.id! },
-    { pollId: poll3.id, optionId: poll3Opts[1].id, userId: anita?.id! },
-    { pollId: poll3.id, optionId: poll3Opts[2].id, userId: deepa?.id! },
-    { pollId: poll3.id, optionId: poll3Opts[0].id, userId: karan?.id! },
+    { pollId: poll3.id, optionId: poll3Opts[0].id, userId: rajesh!.id },
+    { pollId: poll3.id, optionId: poll3Opts[2].id, userId: priya!.id },
+    { pollId: poll3.id, optionId: poll3Opts[0].id, userId: neha!.id },
+    { pollId: poll3.id, optionId: poll3Opts[1].id, userId: anita!.id },
+    { pollId: poll3.id, optionId: poll3Opts[2].id, userId: deepa!.id },
+    { pollId: poll3.id, optionId: poll3Opts[0].id, userId: karan!.id },
     // Poll 5 — book club
-    { pollId: poll5.id, optionId: poll5Opts[0].id, userId: neha?.id! },
-    { pollId: poll5.id, optionId: poll5Opts[2].id, userId: priya?.id! },
-    { pollId: poll5.id, optionId: poll5Opts[0].id, userId: sneha?.id! },
+    { pollId: poll5.id, optionId: poll5Opts[0].id, userId: neha!.id },
+    { pollId: poll5.id, optionId: poll5Opts[2].id, userId: priya!.id },
+    { pollId: poll5.id, optionId: poll5Opts[0].id, userId: sneha!.id },
     // Poll 6 — sports tournament
-    { pollId: poll6.id, optionId: poll6Opts[0].id, userId: sumitTayal?.id! },
-    { pollId: poll6.id, optionId: poll6Opts[1].id, userId: vikram?.id! },
-    { pollId: poll6.id, optionId: poll6Opts[0].id, userId: karan?.id! },
-    { pollId: poll6.id, optionId: poll6Opts[2].id, userId: rajesh?.id! },
-    { pollId: poll6.id, optionId: poll6Opts[3].id, userId: amit?.id! },
-    { pollId: poll6.id, optionId: poll6Opts[0].id, userId: deepakSapra?.id! },
+    { pollId: poll6.id, optionId: poll6Opts[0].id, userId: sumitTayal!.id },
+    { pollId: poll6.id, optionId: poll6Opts[1].id, userId: vikram!.id },
+    { pollId: poll6.id, optionId: poll6Opts[0].id, userId: karan!.id },
+    { pollId: poll6.id, optionId: poll6Opts[2].id, userId: rajesh!.id },
+    { pollId: poll6.id, optionId: poll6Opts[3].id, userId: amit!.id },
+    { pollId: poll6.id, optionId: poll6Opts[0].id, userId: deepakSapra!.id },
   ].filter(v => v.userId);
 
   for (const v of votes) {
@@ -591,35 +591,35 @@ async function seedDev() {
   const eventData = [
     {
       title: "Community Meet & Greet", description: "Join your neighbors for a casual meet and greet session at the rooftop recreation center. Light snacks and chai will be served.",
-      location: "Rooftop Recreation Center", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(14), endsAt: new Date(daysFromNow(14).getTime() + 2 * 60 * 60 * 1000), maxAttendees: 50, createdById: rajesh?.id!,
+      location: "Rooftop Recreation Center", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(14), endsAt: new Date(daysFromNow(14).getTime() + 2 * 60 * 60 * 1000), maxAttendees: 50, createdById: rajesh!.id,
     },
     {
       title: "Morning Yoga — Every Sunday", description: "Start your Sunday with a rejuvenating yoga session. Open to all fitness levels. Mats provided. Wear comfortable clothing.",
-      location: "Amphitheater Lawn", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(5), endsAt: new Date(daysFromNow(5).getTime() + 90 * 60 * 1000), maxAttendees: 30, createdById: karan?.id!,
+      location: "Amphitheater Lawn", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(5), endsAt: new Date(daysFromNow(5).getTime() + 90 * 60 * 1000), maxAttendees: 30, createdById: karan!.id,
     },
     {
       title: "Kids Cricket Tournament", description: "Annual inter-tower cricket tournament for kids aged 8–15. Teams of 6. Trophies for winners! Register with Vikram Singh.",
-      location: "Cricket Pitch", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(21), endsAt: new Date(daysFromNow(21).getTime() + 4 * 60 * 60 * 1000), maxAttendees: 40, createdById: sumitTayal?.id!,
+      location: "Cricket Pitch", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(21), endsAt: new Date(daysFromNow(21).getTime() + 4 * 60 * 60 * 1000), maxAttendees: 40, createdById: sumitTayal!.id,
     },
     {
       title: "Book Club Monthly Meet", description: "This month we're discussing 'The God of Small Things' by Arundhati Roy. Bring your copy and your thoughts. Tea and biscuits provided.",
-      location: "Mini Theatre Lobby", scope: "SUB_COMMUNITY" as EventScope, subCommunityId: byName["Book Club"].id, startsAt: daysFromNow(10), endsAt: new Date(daysFromNow(10).getTime() + 2 * 60 * 60 * 1000), maxAttendees: 15, createdById: neha?.id!,
+      location: "Mini Theatre Lobby", scope: "SUB_COMMUNITY" as EventScope, subCommunityId: byName["Book Club"].id, startsAt: daysFromNow(10), endsAt: new Date(daysFromNow(10).getTime() + 2 * 60 * 60 * 1000), maxAttendees: 15, createdById: neha!.id,
     },
     {
       title: "Tower A Annual Maintenance Meeting", description: "Annual general meeting for Tower A owners. Agenda: maintenance budget review, elevator modernization proposal, and common area renovation plan.",
-      location: "Mini Theatre", scope: "SUB_COMMUNITY" as EventScope, subCommunityId: byName["Tower A Residents"].id, startsAt: daysFromNow(7), endsAt: new Date(daysFromNow(7).getTime() + 2 * 60 * 60 * 1000), maxAttendees: 40, createdById: rajesh?.id!,
+      location: "Mini Theatre", scope: "SUB_COMMUNITY" as EventScope, subCommunityId: byName["Tower A Residents"].id, startsAt: daysFromNow(7), endsAt: new Date(daysFromNow(7).getTime() + 2 * 60 * 60 * 1000), maxAttendees: 40, createdById: rajesh!.id,
     },
     {
       title: "Weekend Badminton", description: "Friendly badminton doubles every Saturday morning. All skill levels welcome. Rackets available if you don't have one.",
-      location: "Sports Area", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(6), endsAt: new Date(daysFromNow(6).getTime() + 2 * 60 * 60 * 1000), maxAttendees: 16, createdById: sumitTayal?.id!,
+      location: "Sports Area", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(6), endsAt: new Date(daysFromNow(6).getTime() + 2 * 60 * 60 * 1000), maxAttendees: 16, createdById: sumitTayal!.id,
     },
     {
       title: "Senior Citizens' Health Camp", description: "Free health checkup camp — blood pressure, sugar, BMI, and basic cardiac screening. Organized in collaboration with Fortis Hospital.",
-      location: "Ground Floor Community Hall", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(28), endsAt: new Date(daysFromNow(28).getTime() + 5 * 60 * 60 * 1000), maxAttendees: 60, createdById: vipul?.id!,
+      location: "Ground Floor Community Hall", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(28), endsAt: new Date(daysFromNow(28).getTime() + 5 * 60 * 60 * 1000), maxAttendees: 60, createdById: vipul!.id,
     },
     {
       title: "Cultural Night — Diwali Special", description: "An evening of dance performances, skits, and music to celebrate Diwali. Open mic for residents! Contact Meenal Kumar to register your act.",
-      location: "Amphitheater", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(45), endsAt: new Date(daysFromNow(45).getTime() + 4 * 60 * 60 * 1000), maxAttendees: 100, createdById: meenalKumar?.id!,
+      location: "Amphitheater", scope: "GLOBAL" as EventScope, startsAt: daysFromNow(45), endsAt: new Date(daysFromNow(45).getTime() + 4 * 60 * 60 * 1000), maxAttendees: 100, createdById: meenalKumar!.id,
     },
   ];
 
@@ -637,16 +637,16 @@ async function seedDev() {
   console.log("\n✋ Creating RSVPs...");
   if (createdEvents.length >= 3) {
     const rsvpData = [
-      { eventId: createdEvents[0].id, userId: priya?.id!, status: "ACCEPTED" as RSVPStatus },
-      { eventId: createdEvents[0].id, userId: amit?.id!, status: "ACCEPTED" as RSVPStatus },
-      { eventId: createdEvents[0].id, userId: neha?.id!, status: "MAYBE" as RSVPStatus },
-      { eventId: createdEvents[0].id, userId: anita?.id!, status: "ACCEPTED" as RSVPStatus },
-      { eventId: createdEvents[0].id, userId: deepa?.id!, status: "DECLINED" as RSVPStatus },
-      { eventId: createdEvents[1].id, userId: rajesh?.id!, status: "ACCEPTED" as RSVPStatus },
-      { eventId: createdEvents[1].id, userId: priya?.id!, status: "ACCEPTED" as RSVPStatus },
-      { eventId: createdEvents[1].id, userId: karan?.id!, status: "ACCEPTED" as RSVPStatus },
-      { eventId: createdEvents[2].id, userId: vikram?.id!, status: "ACCEPTED" as RSVPStatus },
-      { eventId: createdEvents[2].id, userId: ravi?.id!, status: "ACCEPTED" as RSVPStatus },
+      { eventId: createdEvents[0].id, userId: priya!.id, status: "ACCEPTED" as RSVPStatus },
+      { eventId: createdEvents[0].id, userId: amit!.id, status: "ACCEPTED" as RSVPStatus },
+      { eventId: createdEvents[0].id, userId: neha!.id, status: "MAYBE" as RSVPStatus },
+      { eventId: createdEvents[0].id, userId: anita!.id, status: "ACCEPTED" as RSVPStatus },
+      { eventId: createdEvents[0].id, userId: deepa!.id, status: "DECLINED" as RSVPStatus },
+      { eventId: createdEvents[1].id, userId: rajesh!.id, status: "ACCEPTED" as RSVPStatus },
+      { eventId: createdEvents[1].id, userId: priya!.id, status: "ACCEPTED" as RSVPStatus },
+      { eventId: createdEvents[1].id, userId: karan!.id, status: "ACCEPTED" as RSVPStatus },
+      { eventId: createdEvents[2].id, userId: vikram!.id, status: "ACCEPTED" as RSVPStatus },
+      { eventId: createdEvents[2].id, userId: ravi!.id, status: "ACCEPTED" as RSVPStatus },
     ].filter(r => r.userId);
 
     for (const r of rsvpData) {
@@ -669,13 +669,13 @@ async function seedDev() {
   const unitB1201 = await unitLookup("B-1201");
 
   const visitorPasses = [
-    { userId: vipul?.id!, unitId: unitC1702?.id!, visitorName: "Ramesh Agarwal", visitorPhone: "+91-9999911111", visitorType: "GUEST" as VisitorType, otp: "4821", validFrom: daysFromNow(0), validUntil: daysFromNow(1), status: "ACTIVE" as PassStatus, parkingSlot: "V-01" },
-    { userId: deepakSapra?.id!, unitId: unitC0301?.id!, visitorName: "Flipkart Delivery", visitorPhone: "+91-8888822222", visitorType: "DELIVERY" as VisitorType, otp: "7392", validFrom: daysFromNow(0), validUntil: daysFromNow(0), status: "ACTIVE" as PassStatus },
-    { userId: priya?.id!, unitId: unitA0101?.id!, visitorName: "Sunil Kumar (Plumber)", visitorPhone: "+91-7777733333", visitorType: "DAILY_HELP" as VisitorType, otp: "1563", validFrom: daysAgo(5), validUntil: daysFromNow(25), status: "ACTIVE" as PassStatus, isRecurring: true, recurrenceDays: ["MON", "WED", "FRI"] },
-    { userId: amit?.id!, unitId: unitB1201?.id!, visitorName: "Mamta Devi (Housekeeper)", visitorPhone: "+91-6666644444", visitorType: "DAILY_HELP" as VisitorType, otp: "8247", validFrom: daysAgo(30), validUntil: daysFromNow(60), status: "ACTIVE" as PassStatus, isRecurring: true, recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI"] },
-    { userId: vipul?.id!, unitId: unitC1702?.id!, visitorName: "Ola Cab", visitorPhone: "+91-5555555555", visitorType: "CAB" as VisitorType, otp: "3190", validFrom: daysAgo(2), validUntil: daysAgo(2), status: "USED" as PassStatus, usedAt: daysAgo(2) },
-    { userId: sumitTayal?.id!, unitId: unitC0201?.id!, visitorName: "Sumit's Parents", visitorPhone: "+91-4444466666", visitorType: "GUEST" as VisitorType, otp: "6754", validFrom: daysAgo(7), validUntil: daysAgo(4), status: "USED" as PassStatus, usedAt: daysAgo(7) },
-    { userId: meenalKumar?.id!, unitId: unitA2502?.id!, visitorName: "Amazon Delivery", visitorPhone: "+91-3333377777", visitorType: "DELIVERY" as VisitorType, otp: "9028", validFrom: daysAgo(1), validUntil: daysAgo(1), status: "EXPIRED" as PassStatus },
+    { userId: vipul!.id, unitId: unitC1702!.id, visitorName: "Ramesh Agarwal", visitorPhone: "+91-9999911111", visitorType: "GUEST" as VisitorType, otp: "4821", validFrom: daysFromNow(0), validUntil: daysFromNow(1), status: "ACTIVE" as PassStatus, parkingSlot: "V-01" },
+    { userId: deepakSapra!.id, unitId: unitC0301!.id, visitorName: "Flipkart Delivery", visitorPhone: "+91-8888822222", visitorType: "DELIVERY" as VisitorType, otp: "7392", validFrom: daysFromNow(0), validUntil: daysFromNow(0), status: "ACTIVE" as PassStatus },
+    { userId: priya!.id, unitId: unitA0101!.id, visitorName: "Sunil Kumar (Plumber)", visitorPhone: "+91-7777733333", visitorType: "DAILY_HELP" as VisitorType, otp: "1563", validFrom: daysAgo(5), validUntil: daysFromNow(25), status: "ACTIVE" as PassStatus, isRecurring: true, recurrenceDays: ["MON", "WED", "FRI"] },
+    { userId: amit!.id, unitId: unitB1201!.id, visitorName: "Mamta Devi (Housekeeper)", visitorPhone: "+91-6666644444", visitorType: "DAILY_HELP" as VisitorType, otp: "8247", validFrom: daysAgo(30), validUntil: daysFromNow(60), status: "ACTIVE" as PassStatus, isRecurring: true, recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI"] },
+    { userId: vipul!.id, unitId: unitC1702!.id, visitorName: "Ola Cab", visitorPhone: "+91-5555555555", visitorType: "CAB" as VisitorType, otp: "3190", validFrom: daysAgo(2), validUntil: daysAgo(2), status: "USED" as PassStatus, usedAt: daysAgo(2) },
+    { userId: sumitTayal!.id, unitId: unitC0201!.id, visitorName: "Sumit's Parents", visitorPhone: "+91-4444466666", visitorType: "GUEST" as VisitorType, otp: "6754", validFrom: daysAgo(7), validUntil: daysAgo(4), status: "USED" as PassStatus, usedAt: daysAgo(7) },
+    { userId: meenalKumar!.id, unitId: unitA2502!.id, visitorName: "Amazon Delivery", visitorPhone: "+91-3333377777", visitorType: "DELIVERY" as VisitorType, otp: "9028", validFrom: daysAgo(1), validUntil: daysAgo(1), status: "EXPIRED" as PassStatus },
   ].filter(vp => vp.userId && vp.unitId);
 
   for (const vp of visitorPasses) {
@@ -689,15 +689,15 @@ async function seedDev() {
   // ─── HELP TICKETS ──────────────────────────────────────────────
   console.log("\n🔧 Creating help tickets...");
   const ticketData = [
-    { userId: deepakSapra?.id!, unitId: unitC0301?.id, category: "CIVIL" as TicketCategory, priority: "HIGH" as TicketPriority, subject: "Crack in balcony wall — C-0301", description: "Noticed a horizontal crack about 2 feet long on the outer balcony wall. It appeared after the recent rains. Concerned about structural integrity.", status: "IN_PROGRESS" as TicketStatus, assignedToUserId: vipul?.id! },
-    { userId: priya?.id!, unitId: unitA0101?.id, category: "PLUMBING" as TicketCategory, priority: "HIGH" as TicketPriority, subject: "Leaky kitchen faucet — water dripping continuously", description: "The kitchen mixer tap has been dripping for the past 3 days. Water wastage is significant. Tried tightening but doesn't help.", status: "OPEN" as TicketStatus },
-    { userId: amit?.id!, unitId: unitB1201?.id, category: "ELECTRICAL" as TicketCategory, priority: "URGENT" as TicketPriority, subject: "Power outage in B-1201 — MCB keeps tripping", description: "The main MCB trips every time we turn on the AC and geyser together. This started after last week's voltage fluctuation. Need electrician urgently.", status: "IN_PROGRESS" as TicketStatus, assignedToUserId: deepakSapra?.id! },
-    { userId: neha?.id!, unitId: unitB1201?.id, category: "HOUSEKEEPING" as TicketCategory, priority: "MEDIUM" as TicketPriority, subject: "Corridor carpet staining on 17th floor", description: "The corridor carpet near flat B-1702 has a large coffee stain that hasn't been cleaned in over a week. It's becoming a hygiene concern.", status: "OPEN" as TicketStatus },
-    { userId: vikram?.id!, unitId: unitC0301?.id, category: "SECURITY" as TicketCategory, priority: "HIGH" as TicketPriority, subject: "Unknown person found in Tower A lobby at 2 AM", description: "Security camera footage shows an unidentified person lingering in the Tower A lobby at 2:15 AM on 3rd July. Please investigate and tighten access.", status: "RESOLVED" as TicketStatus, resolvedAt: daysAgo(2), satisfactionRating: 4, satisfactionComment: "Quick response from security team. Thanks!" },
-    { userId: anita?.id!, unitId: unitA0101?.id, category: "PLUMBING" as TicketCategory, priority: "LOW" as TicketPriority, subject: "Low water pressure in master bathroom", description: "Water pressure in the master bathroom has been noticeably low for the past week. Other bathrooms are fine. Probably a local blockage.", status: "CLOSED" as TicketStatus, resolvedAt: daysAgo(5), satisfactionRating: 5, satisfactionComment: "Fixed promptly. Very satisfied." },
-    { userId: ravi?.id!, unitId: unitB1201?.id, category: "OTHER" as TicketCategory, priority: "LOW" as TicketPriority, subject: "Noise complaint — renovation in B-2002", description: "The flat above (B-2002) has been doing renovation work from 7 AM to 9 PM including weekends. The noise is disruptive. Please enforce renovation timings.", status: "OPEN" as TicketStatus },
-    { userId: karan?.id!, unitId: unitB1201?.id, category: "ELECTRICAL" as TicketCategory, priority: "MEDIUM" as TicketPriority, subject: "Common area lights flickering in Tower C", description: "The LED lights in the Tower C ground floor corridor have been flickering for the past 2 days. Could be a wiring issue.", status: "IN_PROGRESS" as TicketStatus, assignedToUserId: deepakSapra?.id! },
-    { userId: rajesh?.id!, unitId: unitA0101?.id, category: "HOUSEKEEPING" as TicketCategory, priority: "MEDIUM" as TicketPriority, subject: "Elevator buttons sticky and dirty", description: "The lift buttons on floors 4-6 in Tower A feel sticky and haven't been cleaned in a while. Please schedule a deep cleaning.", status: "RESOLVED" as TicketStatus, resolvedAt: daysAgo(1), satisfactionRating: 4, satisfactionComment: "Cleaned next day. Good." },
+    { userId: deepakSapra!.id, unitId: unitC0301?.id, category: "CIVIL" as TicketCategory, priority: "HIGH" as TicketPriority, subject: "Crack in balcony wall — C-0301", description: "Noticed a horizontal crack about 2 feet long on the outer balcony wall. It appeared after the recent rains. Concerned about structural integrity.", status: "IN_PROGRESS" as TicketStatus, assignedToUserId: vipul!.id },
+    { userId: priya!.id, unitId: unitA0101?.id, category: "PLUMBING" as TicketCategory, priority: "HIGH" as TicketPriority, subject: "Leaky kitchen faucet — water dripping continuously", description: "The kitchen mixer tap has been dripping for the past 3 days. Water wastage is significant. Tried tightening but doesn't help.", status: "OPEN" as TicketStatus },
+    { userId: amit!.id, unitId: unitB1201?.id, category: "ELECTRICAL" as TicketCategory, priority: "URGENT" as TicketPriority, subject: "Power outage in B-1201 — MCB keeps tripping", description: "The main MCB trips every time we turn on the AC and geyser together. This started after last week's voltage fluctuation. Need electrician urgently.", status: "IN_PROGRESS" as TicketStatus, assignedToUserId: deepakSapra!.id },
+    { userId: neha!.id, unitId: unitB1201?.id, category: "HOUSEKEEPING" as TicketCategory, priority: "MEDIUM" as TicketPriority, subject: "Corridor carpet staining on 17th floor", description: "The corridor carpet near flat B-1702 has a large coffee stain that hasn't been cleaned in over a week. It's becoming a hygiene concern.", status: "OPEN" as TicketStatus },
+    { userId: vikram!.id, unitId: unitC0301?.id, category: "SECURITY" as TicketCategory, priority: "HIGH" as TicketPriority, subject: "Unknown person found in Tower A lobby at 2 AM", description: "Security camera footage shows an unidentified person lingering in the Tower A lobby at 2:15 AM on 3rd July. Please investigate and tighten access.", status: "RESOLVED" as TicketStatus, resolvedAt: daysAgo(2), satisfactionRating: 4, satisfactionComment: "Quick response from security team. Thanks!" },
+    { userId: anita!.id, unitId: unitA0101?.id, category: "PLUMBING" as TicketCategory, priority: "LOW" as TicketPriority, subject: "Low water pressure in master bathroom", description: "Water pressure in the master bathroom has been noticeably low for the past week. Other bathrooms are fine. Probably a local blockage.", status: "CLOSED" as TicketStatus, resolvedAt: daysAgo(5), satisfactionRating: 5, satisfactionComment: "Fixed promptly. Very satisfied." },
+    { userId: ravi!.id, unitId: unitB1201?.id, category: "OTHER" as TicketCategory, priority: "LOW" as TicketPriority, subject: "Noise complaint — renovation in B-2002", description: "The flat above (B-2002) has been doing renovation work from 7 AM to 9 PM including weekends. The noise is disruptive. Please enforce renovation timings.", status: "OPEN" as TicketStatus },
+    { userId: karan!.id, unitId: unitB1201?.id, category: "ELECTRICAL" as TicketCategory, priority: "MEDIUM" as TicketPriority, subject: "Common area lights flickering in Tower C", description: "The LED lights in the Tower C ground floor corridor have been flickering for the past 2 days. Could be a wiring issue.", status: "IN_PROGRESS" as TicketStatus, assignedToUserId: deepakSapra!.id },
+    { userId: rajesh!.id, unitId: unitA0101?.id, category: "HOUSEKEEPING" as TicketCategory, priority: "MEDIUM" as TicketPriority, subject: "Elevator buttons sticky and dirty", description: "The lift buttons on floors 4-6 in Tower A feel sticky and haven't been cleaned in a while. Please schedule a deep cleaning.", status: "RESOLVED" as TicketStatus, resolvedAt: daysAgo(1), satisfactionRating: 4, satisfactionComment: "Cleaned next day. Good." },
   ].filter(t => t.userId);
 
   const createdTickets = [];
@@ -724,22 +724,22 @@ async function seedDev() {
 
   if (ticketMap["Crack in balcony wall — C-0301"] && ticketMap["Power outage in B-1201 — MCB keeps tripping"]) {
     const ticketComments = [
-      { ticketId: ticketMap["Crack in balcony wall — C-0301"].id, authorId: vipul?.id!, body: "I've informed Deepak Sapra from Infrastructure team. He'll inspect the crack this weekend. In the meantime, please avoid putting heavy items near the balcony wall." },
-      { ticketId: ticketMap["Crack in balcony wall — C-0301"].id, authorId: deepakSapra?.id!, body: "I'll visit C-0301 on Saturday morning. This could be a waterproofing issue rather than structural. Will assess on-site." },
-      { ticketId: ticketMap["Crack in balcony wall — C-0301"].id, authorId: deepakSapra?.id!, body: "Visited and inspected. It's a surface-level crack from thermal expansion. Will get it patched this week. No structural concern." },
-      { ticketId: ticketMap["Power outage in B-1201 — MCB keeps tripping"].id, authorId: deepakSapra?.id!, body: "Electrician Raju has been assigned. He will visit this evening after 5 PM. Please ensure someone is home." },
-      { ticketId: ticketMap["Power outage in B-1201 — MCB keeps tripping"].id, authorId: amit?.id!, body: "I'll be home after 5:30 PM. Please ask him to check the voltage stabilizer too — it might be the root cause." },
+      { ticketId: ticketMap["Crack in balcony wall — C-0301"].id, authorId: vipul!.id, body: "I've informed Deepak Sapra from Infrastructure team. He'll inspect the crack this weekend. In the meantime, please avoid putting heavy items near the balcony wall." },
+      { ticketId: ticketMap["Crack in balcony wall — C-0301"].id, authorId: deepakSapra!.id, body: "I'll visit C-0301 on Saturday morning. This could be a waterproofing issue rather than structural. Will assess on-site." },
+      { ticketId: ticketMap["Crack in balcony wall — C-0301"].id, authorId: deepakSapra!.id, body: "Visited and inspected. It's a surface-level crack from thermal expansion. Will get it patched this week. No structural concern." },
+      { ticketId: ticketMap["Power outage in B-1201 — MCB keeps tripping"].id, authorId: deepakSapra!.id, body: "Electrician Raju has been assigned. He will visit this evening after 5 PM. Please ensure someone is home." },
+      { ticketId: ticketMap["Power outage in B-1201 — MCB keeps tripping"].id, authorId: amit!.id, body: "I'll be home after 5:30 PM. Please ask him to check the voltage stabilizer too — it might be the root cause." },
     ].filter(c => c.authorId);
 
     if (ticketMap["Unknown person found in Tower A lobby at 2 AM"]) {
       ticketComments.push(
-        { ticketId: ticketMap["Unknown person found in Tower A lobby at 2 AM"].id, authorId: vipul?.id!, body: "Security team has been alerted. We've reviewed the footage and identified the person — it was a guest of a Tower B resident who got lost. Gates have been re-secured." },
+        { ticketId: ticketMap["Unknown person found in Tower A lobby at 2 AM"].id, authorId: vipul!.id, body: "Security team has been alerted. We've reviewed the footage and identified the person — it was a guest of a Tower B resident who got lost. Gates have been re-secured." },
       );
     }
     if (ticketMap["Common area lights flickering in Tower C"]) {
       ticketComments.push(
-        { ticketId: ticketMap["Common area lights flickering in Tower C"].id, authorId: deepakSapra?.id!, body: "Maintenance team is checking the wiring in the Tower C corridor. Will update by tomorrow." },
-        { ticketId: ticketMap["Common area lights flickering in Tower C"].id, authorId: deepakSapra?.id!, body: "Found the issue — a loose connection in the junction box on the ground floor. Electrician is fixing it now." },
+        { ticketId: ticketMap["Common area lights flickering in Tower C"].id, authorId: deepakSapra!.id, body: "Maintenance team is checking the wiring in the Tower C corridor. Will update by tomorrow." },
+        { ticketId: ticketMap["Common area lights flickering in Tower C"].id, authorId: deepakSapra!.id, body: "Found the issue — a loose connection in the junction box on the ground floor. Electrician is fixing it now." },
       );
     }
 
@@ -768,10 +768,10 @@ async function seedDev() {
     const weekendEveEnd = new Date(weekendEve.getTime() + 2 * 60 * 60 * 1000);
 
     const bookings = [
-      { facilityId: facilityPool.id, userId: vipul?.id!, startsAt: tomorrowAM, endsAt: tomorrowPM, status: "CONFIRMED" as BookingStatus },
-      { facilityId: facilityPool.id, userId: sumitTayal?.id!, startsAt: dayAfterAM, endsAt: dayAfterPM, status: "CONFIRMED" as BookingStatus },
-      { facilityId: facilityTheatre.id, userId: meenalKumar?.id!, startsAt: weekendEve, endsAt: weekendEveEnd, status: "CONFIRMED" as BookingStatus },
-      { facilityId: facilityRooftop.id, userId: karan?.id!, startsAt: weekendEve, endsAt: weekendEveEnd, status: "PENDING_APPROVAL" as BookingStatus },
+      { facilityId: facilityPool.id, userId: vipul!.id, startsAt: tomorrowAM, endsAt: tomorrowPM, status: "CONFIRMED" as BookingStatus },
+      { facilityId: facilityPool.id, userId: sumitTayal!.id, startsAt: dayAfterAM, endsAt: dayAfterPM, status: "CONFIRMED" as BookingStatus },
+      { facilityId: facilityTheatre.id, userId: meenalKumar!.id, startsAt: weekendEve, endsAt: weekendEveEnd, status: "CONFIRMED" as BookingStatus },
+      { facilityId: facilityRooftop.id, userId: karan!.id, startsAt: weekendEve, endsAt: weekendEveEnd, status: "PENDING_APPROVAL" as BookingStatus },
     ].filter(b => b.userId);
 
     for (const b of bookings) {
@@ -792,7 +792,7 @@ async function seedDev() {
     console.log("   ✅ 1 facility blackout created");
 
     // Facility waitlist
-    const existingWaitlist = await prisma.facilityWaitlist.findFirst({ where: { facilityId: facilityTheatre.id, userId: ravi?.id! } });
+    const existingWaitlist = await prisma.facilityWaitlist.findFirst({ where: { facilityId: facilityTheatre.id, userId: ravi!.id } });
     if (!existingWaitlist && ravi) {
       await prisma.facilityWaitlist.create({ data: { facilityId: facilityTheatre.id, userId: ravi.id, preferredDate: daysFromNow(7), status: "WAITING" } });
     }
@@ -802,12 +802,12 @@ async function seedDev() {
   // ─── DOMESTIC HELP ─────────────────────────────────────────────
   console.log("\n👩‍🍳 Creating domestic help registry...");
   const domesticHelps = [
-    { userId: vipul?.id!, unitId: unitC1702?.id!, name: "Kamla Devi", phone: "+91-9111122222", helpType: "HOUSEKEEPING", recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(120), createdById: vipul?.id! },
-    { userId: vipul?.id!, unitId: unitC1702?.id!, name: "Rakesh Yadav", phone: "+91-9111133333", helpType: "DRIVER", recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(90), createdById: vipul?.id! },
-    { userId: priya?.id!, unitId: unitA0101?.id!, name: "Sunita Bai", phone: "+91-9111144444", helpType: "COOK", recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(60), createdById: priya?.id! },
-    { userId: amit?.id!, unitId: unitB1201?.id!, name: "Gopal Krishna", phone: "+91-9111155555", helpType: "HOUSEKEEPING", recurrenceDays: ["MON", "WED", "FRI"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(45), createdById: amit?.id! },
-    { userId: deepakSapra?.id!, unitId: unitC0301?.id!, name: "Parvati Sharma", phone: "+91-9111166666", helpType: "HOUSEKEEPING", recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(200), createdById: deepakSapra?.id! },
-    { userId: meenalKumar?.id!, unitId: unitA2502?.id!, name: "Bharat Singh", phone: "+91-9111177777", helpType: "GARDENER", recurrenceDays: ["TUE", "SAT"], status: "REVOKED" as DomesticHelpStatus, validFrom: daysAgo(150), validUntil: daysAgo(10), createdById: meenalKumar?.id! },
+    { userId: vipul!.id, unitId: unitC1702!.id, name: "Kamla Devi", phone: "+91-9111122222", helpType: "HOUSEKEEPING", recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(120), createdById: vipul!.id },
+    { userId: vipul!.id, unitId: unitC1702!.id, name: "Rakesh Yadav", phone: "+91-9111133333", helpType: "DRIVER", recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI", "SAT"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(90), createdById: vipul!.id },
+    { userId: priya!.id, unitId: unitA0101!.id, name: "Sunita Bai", phone: "+91-9111144444", helpType: "COOK", recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(60), createdById: priya!.id },
+    { userId: amit!.id, unitId: unitB1201!.id, name: "Gopal Krishna", phone: "+91-9111155555", helpType: "HOUSEKEEPING", recurrenceDays: ["MON", "WED", "FRI"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(45), createdById: amit!.id },
+    { userId: deepakSapra!.id, unitId: unitC0301!.id, name: "Parvati Sharma", phone: "+91-9111166666", helpType: "HOUSEKEEPING", recurrenceDays: ["MON", "TUE", "WED", "THU", "FRI"], status: "ACTIVE" as DomesticHelpStatus, validFrom: daysAgo(200), createdById: deepakSapra!.id },
+    { userId: meenalKumar!.id, unitId: unitA2502!.id, name: "Bharat Singh", phone: "+91-9111177777", helpType: "GARDENER", recurrenceDays: ["TUE", "SAT"], status: "REVOKED" as DomesticHelpStatus, validFrom: daysAgo(150), validUntil: daysAgo(10), createdById: meenalKumar!.id },
   ].filter(dh => dh.userId && dh.unitId && dh.createdById);
 
   for (const dh of domesticHelps) {
@@ -839,6 +839,7 @@ async function seedDev() {
   for (const d of dueUnits) {
     const existing = await prisma.due.findFirst({ where: { unitId: d.unitId!, label: d.label } });
     if (!existing) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const due = await prisma.due.create({ data: d as any });
       if (d.label.includes("Maintenance")) {
         const baseAmount = d.amount as number;
@@ -859,11 +860,11 @@ async function seedDev() {
   // ─── PETS ──────────────────────────────────────────────────────
   console.log("\n🐾 Creating pet registrations...");
   const pets = [
-    { userId: vipul?.id!, unitId: unitC1702?.id!, name: "Bruno", petType: "DOG" as const, breed: "German Shepherd", color: "Black & Tan", ageYears: 4, gender: "MALE" as const, vaccinationExpiry: daysFromNow(180) },
-    { userId: priya?.id!, unitId: unitA0101?.id!, name: "Milo", petType: "DOG" as const, breed: "Labrador Retriever", color: "Golden", ageYears: 3, gender: "MALE" as const, vaccinationExpiry: daysFromNow(90) },
-    { userId: deepakSapra?.id!, unitId: unitC0301?.id!, name: "Whiskers", petType: "CAT" as const, breed: "Persian", color: "White", ageYears: 2, gender: "FEMALE" as const, vaccinationExpiry: daysFromNow(120) },
-    { userId: vikram?.id!, unitId: unitC0301?.id!, name: "Chintu", petType: "DOG" as const, breed: "Indie", color: "Brown", ageYears: 5, gender: "MALE" as const, vaccinationExpiry: daysAgo(15) },
-    { userId: deepa?.id!, unitId: unitA0101?.id!, name: "Nemo", petType: "DOG" as const, breed: "Golden Retriever", color: "Cream", ageYears: 1, gender: "MALE" as const, vaccinationExpiry: daysFromNow(200) },
+    { userId: vipul!.id, unitId: unitC1702!.id, name: "Bruno", petType: "DOG" as const, breed: "German Shepherd", color: "Black & Tan", ageYears: 4, gender: "MALE" as const, vaccinationExpiry: daysFromNow(180) },
+    { userId: priya!.id, unitId: unitA0101!.id, name: "Milo", petType: "DOG" as const, breed: "Labrador Retriever", color: "Golden", ageYears: 3, gender: "MALE" as const, vaccinationExpiry: daysFromNow(90) },
+    { userId: deepakSapra!.id, unitId: unitC0301!.id, name: "Whiskers", petType: "CAT" as const, breed: "Persian", color: "White", ageYears: 2, gender: "FEMALE" as const, vaccinationExpiry: daysFromNow(120) },
+    { userId: vikram!.id, unitId: unitC0301!.id, name: "Chintu", petType: "DOG" as const, breed: "Indie", color: "Brown", ageYears: 5, gender: "MALE" as const, vaccinationExpiry: daysAgo(15) },
+    { userId: deepa!.id, unitId: unitA0101!.id, name: "Nemo", petType: "DOG" as const, breed: "Golden Retriever", color: "Cream", ageYears: 1, gender: "MALE" as const, vaccinationExpiry: daysFromNow(200) },
   ].filter(p => p.userId && p.unitId);
 
   for (const p of pets) {
@@ -877,11 +878,11 @@ async function seedDev() {
   // ─── VEHICLES ──────────────────────────────────────────────────
   console.log("\n🚗 Creating unit vehicles...");
   const vehicleData = [
-    { userId: vipul?.id!, unitId: unitC1702?.id!, vehicleType: "SUV" as const, registrationNumber: "UP16CT1234", make: "BMW", model: "X5", color: "Black" },
-    { userId: priya?.id!, unitId: unitA0101?.id!, vehicleType: "SEDAN" as const, registrationNumber: "DL4CAF5678", make: "Honda", model: "City", color: "Silver" },
-    { userId: amit?.id!, unitId: unitB1201?.id!, vehicleType: "SUV" as const, registrationNumber: "UP14AB9012", make: "Hyundai", model: "Creta", color: "White" },
-    { userId: deepakSapra?.id!, unitId: unitC0301?.id!, vehicleType: "EV" as const, registrationNumber: "UP16EV3456", make: "Tata", model: "Nexon EV", color: "Blue" },
-    { userId: rajesh?.id!, unitId: unitA0101?.id!, vehicleType: "MOTORCYCLE" as const, registrationNumber: "UP16BK7890", make: "Royal Enfield", model: "Classic 350", color: "Maroon" },
+    { userId: vipul!.id, unitId: unitC1702!.id, vehicleType: "SUV" as const, registrationNumber: "UP16CT1234", make: "BMW", model: "X5", color: "Black" },
+    { userId: priya!.id, unitId: unitA0101!.id, vehicleType: "SEDAN" as const, registrationNumber: "DL4CAF5678", make: "Honda", model: "City", color: "Silver" },
+    { userId: amit!.id, unitId: unitB1201!.id, vehicleType: "SUV" as const, registrationNumber: "UP14AB9012", make: "Hyundai", model: "Creta", color: "White" },
+    { userId: deepakSapra!.id, unitId: unitC0301!.id, vehicleType: "EV" as const, registrationNumber: "UP16EV3456", make: "Tata", model: "Nexon EV", color: "Blue" },
+    { userId: rajesh!.id, unitId: unitA0101!.id, vehicleType: "MOTORCYCLE" as const, registrationNumber: "UP16BK7890", make: "Royal Enfield", model: "Classic 350", color: "Maroon" },
   ].filter(v => v.userId && v.unitId);
 
   for (const v of vehicleData) {
@@ -907,11 +908,11 @@ async function seedDev() {
   // ─── LOST & FOUND ──────────────────────────────────────────────
   console.log("\n🔍 Creating lost & found items...");
   const lostFoundItems = [
-    { userId: priya?.id!, title: "Car keys — Honda City keychain", description: "Lost my car keys somewhere between Tower A lobby and parking basement. Black Honda keychain with a small Ganesha charm. Please contact Priya if found.", type: "LOST" as LostFoundType, location: "Tower A Lobby / Parking", status: "ACTIVE" as LostFoundStatus, expiresAt: daysFromNow(14) },
-    { userId: amit?.id!, title: "Umbrella — Blue compact umbrella", description: "Found a blue compact umbrella near the swimming pool entrance. If it's yours, please claim it from security with a description.", type: "FOUND" as LostFoundType, location: "Swimming Pool Entrance", status: "ACTIVE" as LostFoundStatus, expiresAt: daysFromNow(14) },
-    { userId: vikram?.id!, title: "Wallet — Brown leather wallet", description: "Lost a brown leather wallet near the amphitheater during last weekend's event. Contains ID cards and some cash. Very important — please return.", type: "LOST" as LostFoundType, location: "Amphitheater Area", status: "CLAIMED" as LostFoundStatus, expiresAt: daysFromNow(7) },
-    { userId: ravi?.id!, title: "Children's lunchbox — Spiderman design", description: "Found a Spiderman-themed children's lunchbox on the 8th floor corridor of Tower B. Looks like it was left after school.", type: "FOUND" as LostFoundType, location: "Tower B, 8th Floor Corridor", status: "ACTIVE" as LostFoundStatus, expiresAt: daysFromNow(10) },
-    { userId: anita?.id!, title: "Reading glasses — Silver frame", description: "Lost my reading glasses somewhere in the garden area. Silver half-frame, prescription lenses. Quite expensive — please help!", type: "LOST" as LostFoundType, location: "Central Garden", status: "ACTIVE" as LostFoundStatus, expiresAt: daysFromNow(7) },
+    { userId: priya!.id, title: "Car keys — Honda City keychain", description: "Lost my car keys somewhere between Tower A lobby and parking basement. Black Honda keychain with a small Ganesha charm. Please contact Priya if found.", type: "LOST" as LostFoundType, location: "Tower A Lobby / Parking", status: "ACTIVE" as LostFoundStatus, expiresAt: daysFromNow(14) },
+    { userId: amit!.id, title: "Umbrella — Blue compact umbrella", description: "Found a blue compact umbrella near the swimming pool entrance. If it's yours, please claim it from security with a description.", type: "FOUND" as LostFoundType, location: "Swimming Pool Entrance", status: "ACTIVE" as LostFoundStatus, expiresAt: daysFromNow(14) },
+    { userId: vikram!.id, title: "Wallet — Brown leather wallet", description: "Lost a brown leather wallet near the amphitheater during last weekend's event. Contains ID cards and some cash. Very important — please return.", type: "LOST" as LostFoundType, location: "Amphitheater Area", status: "CLAIMED" as LostFoundStatus, expiresAt: daysFromNow(7) },
+    { userId: ravi!.id, title: "Children's lunchbox — Spiderman design", description: "Found a Spiderman-themed children's lunchbox on the 8th floor corridor of Tower B. Looks like it was left after school.", type: "FOUND" as LostFoundType, location: "Tower B, 8th Floor Corridor", status: "ACTIVE" as LostFoundStatus, expiresAt: daysFromNow(10) },
+    { userId: anita!.id, title: "Reading glasses — Silver frame", description: "Lost my reading glasses somewhere in the garden area. Silver half-frame, prescription lenses. Quite expensive — please help!", type: "LOST" as LostFoundType, location: "Central Garden", status: "ACTIVE" as LostFoundStatus, expiresAt: daysFromNow(7) },
   ].filter(item => item.userId);
 
   for (const item of lostFoundItems) {
@@ -925,7 +926,7 @@ async function seedDev() {
   // ─── MOVE REQUESTS ─────────────────────────────────────────────
   console.log("\n🚚 Creating move requests...");
   const moveData = [
-    { type: "MOVE_IN" as MoveType, unitId: unitC0201?.id!, requestedBy: sumitTayal?.id!, scheduledAt: daysFromNow(10), status: "APPROVED" as MoveStatus, notes: "Moving in new furniture — 2BHK setup. Will use service elevator." },
+    { type: "MOVE_IN" as MoveType, unitId: unitC0201!.id, requestedBy: sumitTayal!.id, scheduledAt: daysFromNow(10), status: "APPROVED" as MoveStatus, notes: "Moving in new furniture — 2BHK setup. Will use service elevator." },
   ].filter(m => m.unitId && m.requestedBy);
 
   for (const m of moveData) {
@@ -939,16 +940,16 @@ async function seedDev() {
   // ─── NOTIFICATIONS ─────────────────────────────────────────────
   console.log("\n🔔 Creating notifications...");
   const notificationData = [
-    { userId: priya?.id!, type: "NEW_POLL" as NotificationType, title: "New poll: Best time for gardening workshops?", body: "A new poll has been created by Rajesh Kumar. Cast your vote before it closes!", link: "/polls" },
-    { userId: amit?.id!, type: "TICKET_UPDATE" as NotificationType, title: "Your ticket has been assigned", body: "Your ticket 'Power outage in B-1201' has been assigned to Deepak Sapra for follow-up.", link: "/help" },
-    { userId: deepakSapra?.id!, type: "TICKET_UPDATE" as NotificationType, title: "New ticket assigned to you", body: "Amit Patel's electrical issue ticket has been assigned to you for follow-up.", link: "/help" },
-    { userId: neha?.id!, type: "NEW_EVENT" as NotificationType, title: "New event: Kids Cricket Tournament", body: "Sumit Tayal has organized a cricket tournament for kids. RSVP now!", link: "/events" },
-    { userId: sumitTayal?.id!, type: "DUE_REMINDER" as NotificationType, title: "Maintenance due reminder", body: "Your maintenance bill for July 2026 (₹8,500) is due in 10 days.", link: "/dues" },
-    { userId: deepakSapra?.id!, type: "VISITOR_ARRIVED" as NotificationType, title: "Visitor at the gate", body: "Flipkart Delivery has arrived at the main gate. OTP: 7392", link: "/visitors" },
-    { userId: vipul?.id!, type: "COMMUNITY_JOIN_APPROVED" as NotificationType, title: "New community request", body: "Deepak Sapra has been appointed as Infrastructure & Fire Safety head.", link: "/communities" },
-    { userId: rajesh?.id!, type: "NOTICE_PUBLISHED" as NotificationType, title: "New notice: Monthly Maintenance Bill", body: "July 2026 maintenance bills have been generated. Check your dues.", link: "/notices" },
-    { userId: anita?.id!, type: "POLL_CLOSED" as NotificationType, title: "Poll results: Gym equipment upgrade", body: "The gym equipment upgrade poll has closed. Results are now visible.", link: "/polls" },
-    { userId: karan?.id!, type: "APPROVAL_GRANTED" as NotificationType, title: "Booking confirmed", body: "Your rooftop recreation booking for this Saturday evening has been approved.", link: "/facilities" },
+    { userId: priya!.id, type: "NEW_POLL" as NotificationType, title: "New poll: Best time for gardening workshops?", body: "A new poll has been created by Rajesh Kumar. Cast your vote before it closes!", link: "/polls" },
+    { userId: amit!.id, type: "TICKET_UPDATE" as NotificationType, title: "Your ticket has been assigned", body: "Your ticket 'Power outage in B-1201' has been assigned to Deepak Sapra for follow-up.", link: "/help" },
+    { userId: deepakSapra!.id, type: "TICKET_UPDATE" as NotificationType, title: "New ticket assigned to you", body: "Amit Patel's electrical issue ticket has been assigned to you for follow-up.", link: "/help" },
+    { userId: neha!.id, type: "NEW_EVENT" as NotificationType, title: "New event: Kids Cricket Tournament", body: "Sumit Tayal has organized a cricket tournament for kids. RSVP now!", link: "/events" },
+    { userId: sumitTayal!.id, type: "DUE_REMINDER" as NotificationType, title: "Maintenance due reminder", body: "Your maintenance bill for July 2026 (₹8,500) is due in 10 days.", link: "/dues" },
+    { userId: deepakSapra!.id, type: "VISITOR_ARRIVED" as NotificationType, title: "Visitor at the gate", body: "Flipkart Delivery has arrived at the main gate. OTP: 7392", link: "/visitors" },
+    { userId: vipul!.id, type: "COMMUNITY_JOIN_APPROVED" as NotificationType, title: "New community request", body: "Deepak Sapra has been appointed as Infrastructure & Fire Safety head.", link: "/communities" },
+    { userId: rajesh!.id, type: "NOTICE_PUBLISHED" as NotificationType, title: "New notice: Monthly Maintenance Bill", body: "July 2026 maintenance bills have been generated. Check your dues.", link: "/notices" },
+    { userId: anita!.id, type: "POLL_CLOSED" as NotificationType, title: "Poll results: Gym equipment upgrade", body: "The gym equipment upgrade poll has closed. Results are now visible.", link: "/polls" },
+    { userId: karan!.id, type: "APPROVAL_GRANTED" as NotificationType, title: "Booking confirmed", body: "Your rooftop recreation booking for this Saturday evening has been approved.", link: "/facilities" },
   ].filter(n => n.userId);
 
   for (const n of notificationData) {

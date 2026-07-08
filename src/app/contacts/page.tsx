@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
@@ -19,7 +20,7 @@ export default async function ContactsPage() {
   });
   if (!user) redirect("/login");
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(user.globalRole);
+  const isAdmin = isAdminRole(user.globalRole);
 
   const contacts = await db.importantContact.findMany({
     include: { lastEditedBy: { select: { name: true } } },

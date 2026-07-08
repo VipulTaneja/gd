@@ -1,22 +1,17 @@
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { getSLADeadline, getSLAStatus } from "@/lib/tickets";
 import { RichTextContent } from "@/components/shared/rich-text-content";
 import { CommentForm } from "./comment-form";
 import { StatusButtons } from "./status-buttons";
 
 export const dynamic = "force-dynamic";
-
-const statusStyles: Record<string, string> = {
-  OPEN: "bg-blue-100 text-blue-800",
-  IN_PROGRESS: "bg-amber-100 text-amber-800",
-  RESOLVED: "bg-green-100 text-green-800",
-  CLOSED: "bg-gray-100 text-gray-800",
-};
 
 export default async function TicketDetailPage({
   params,
@@ -47,7 +42,7 @@ export default async function TicketDetailPage({
   if (!user) redirect("/login");
 
   const isOwner = ticket.userId === session.user!.id;
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(user.globalRole);
+  const isAdmin = isAdminRole(user.globalRole);
 
   return (
     <DashboardLayout user={user}>
@@ -57,9 +52,7 @@ export default async function TicketDetailPage({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[ticket.status]}`}>
-                {ticket.status.replace(/_/g, " ")}
-              </span>
+              <FriendlyBadge value={ticket.status} variant="status" />
               <span className="text-xs text-muted-foreground">{ticket.category}</span>
               <span className="text-xs text-muted-foreground">Priority: {ticket.priority}</span>
             </div>

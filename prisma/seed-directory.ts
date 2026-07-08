@@ -161,7 +161,7 @@ async function main() {
   // Batch users in groups of 50
   for (let i = 0; i < userEntries.length; i += 50) {
     const batch = userEntries.slice(i, i + 50);
-    const values = batch.map(([key, u]) => {
+    const values = batch.map(([, u]) => {
       const id = cuid();
       return `('${id}', '${u.email.replace(/'/g, "''")}', '${u.name.replace(/'/g, "''")}', ${u.phone ? `'${u.phone}'` : "NULL"}, ${u.organization ? `'${u.organization.replace(/'/g, "''")}'` : "NULL"}, 'RESIDENT', 'APPROVED', true, now(), now())`;
     }).join(",\n    ");
@@ -185,7 +185,7 @@ async function main() {
 
   for (let i = 0; i < unitEntries.length; i += 50) {
     const batch = unitEntries.slice(i, i + 50);
-    const values = batch.map(([key, u]) => {
+    const values = batch.map(([, u]) => {
       const id = cuid();
       return `('${id}', '${u.unitNumber}', '${u.block}', ${u.floor}, 'APARTMENT', now())`;
     }).join(",\n    ");

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { logAction } from "@/lib/audit";
+import { isAdminRole } from "@/lib/rbac";
 import type { UnitRole } from "@/generated/prisma/enums";
 import { syncTowerCommunitiesForUser } from "@/lib/tower-communities";
 
@@ -10,7 +12,7 @@ async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
   const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
+  if (!user || !isAdminRole(user.globalRole)) {
     throw new Error("Forbidden");
   }
   return user;
@@ -59,15 +61,7 @@ export async function assignMember(
 
     await syncTowerCommunitiesForUser(targetUser.id);
 
-    await db.auditLog.create({
-      data: {
-        userId: admin.id,
-        action: "MEMBER_ASSIGNED",
-        entityType: "UnitMembership",
-        entityId: unitId,
-        metadata: { targetUser: data.email, role: data.role },
-      },
-    });
+    await logAction(admin.id, "MEMBER_ASSIGNED", "UnitMembership", unitId, { targetUser: data.email, role: data.role });
 
     revalidatePath(`/admin/units/${unitId}`);
     revalidatePath("/admin/units");
@@ -127,15 +121,7 @@ export async function transferOwnership(
       await syncTowerCommunitiesForUser(owner.userId);
     }
 
-    await db.auditLog.create({
-      data: {
-        userId: admin.id,
-        action: "OWNERSHIP_TRANSFERRED",
-        entityType: "Unit",
-        entityId: unitId,
-        metadata: { newOwner: newOwnerEmail },
-      },
-    });
+    await logAction(admin.id, "OWNERSHIP_TRANSFERRED", "Unit", unitId, { newOwner: newOwnerEmail });
 
     revalidatePath(`/admin/units/${unitId}`);
     revalidatePath("/admin/units");

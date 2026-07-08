@@ -52,6 +52,7 @@ export function PendingBookings({
 
   useEffect(() => {
     if (initialBookings.length > 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchBookings();
   }, [fetchBookings, initialBookings.length]);
 

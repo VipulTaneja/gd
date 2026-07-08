@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MapPin, Settings2 } from "lucide-react";
 import { UnitLink } from "@/components/shared/unit-link";
 import { FadeIn } from "@/components/shared/animated";
-import { HubHeroCarousel } from "@/components/hub/hub-hero-carousel";
+import { ImageCarousel } from "@/components/shared/image-carousel";
 import { actions, greetings } from "@/lib/microcopy";
 import { cn } from "@/lib/utils";
 import { defaultHeroTint, towerHeroTint } from "@/lib/hub-images";
@@ -38,7 +38,14 @@ export function HubHero({ user, slides, canManage = false }: HubHeroProps) {
   return (
     <section className="relative w-full overflow-hidden">
       <div className="relative h-[220px] sm:h-[280px] md:h-[320px]">
-        <HubHeroCarousel slides={slides} />
+        <ImageCarousel
+          slides={slides.map((slide) => ({
+            id: slide.id,
+            src: slide.imageUrl,
+            alt: slide.altText,
+            href: slide.linkUrl,
+          }))}
+        />
         <div
           className={cn(
             "absolute inset-0 bg-gradient-to-t",

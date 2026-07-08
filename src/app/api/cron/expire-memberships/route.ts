@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authorizeCronRequest } from "@/lib/cron-auth";
+import { withCronAuth } from "@/lib/cron-auth";
 import { db } from "@/lib/db";
 import { syncAllTowerCommunities } from "@/lib/tower-communities";
 
@@ -22,26 +22,5 @@ async function expireMemberships() {
   });
 }
 
-export async function GET() {
-  if (!(await authorizeCronRequest())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    return await expireMemberships();
-  } catch {
-    return NextResponse.json({ error: "Failed to expire memberships" }, { status: 500 });
-  }
-}
-
-export async function POST() {
-  if (!(await authorizeCronRequest())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    return await expireMemberships();
-  } catch {
-    return NextResponse.json({ error: "Failed to expire memberships" }, { status: 500 });
-  }
-}
+export const GET = withCronAuth(expireMemberships);
+export const POST = withCronAuth(expireMemberships);

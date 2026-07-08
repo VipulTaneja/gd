@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { canReadForum, canPost } from "@/lib/forums/rbac";
+import { canReadForum, canPost, toForumUserContext } from "@/lib/forums/rbac";
 import { containsProfanity } from "@/lib/forums/profanity";
 import { checkThreadRateLimit } from "@/lib/forums/rate-limit";
 import { validateRichTextBody } from "@/lib/rich-text";
@@ -32,7 +32,8 @@ export async function GET(
     return NextResponse.json({ error: "Forum not found" }, { status: 404 });
   }
 
-  if (!canReadForum(forum, session.user as { id: string; globalRole: string; approvalStatus: string; isActive: boolean })) {
+  const forumUser = toForumUserContext(session.user);
+  if (!forumUser || !canReadForum(forum, forumUser)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -107,7 +108,8 @@ export async function POST(
     return NextResponse.json({ error: "Forum not found" }, { status: 404 });
   }
 
-  if (!(await canPost(forum, session.user as { id: string; globalRole: string; approvalStatus: string; isActive: boolean }))) {
+  const postUser = toForumUserContext(session.user);
+  if (!postUser || !(await canPost(forum, postUser))) {
     if (forum.scope === "SUB_COMMUNITY") {
       return NextResponse.json({ error: "You must be a member of this community to post" }, { status: 403 });
     }

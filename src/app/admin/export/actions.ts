@@ -2,12 +2,13 @@
 
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 
 async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
   const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
+  if (!user || !isAdminRole(user.globalRole)) {
     throw new Error("Forbidden");
   }
   return user;

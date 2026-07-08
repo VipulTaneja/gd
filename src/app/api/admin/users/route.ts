@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi, isAdminApiError } from "@/lib/api-auth";
 import { db } from "@/lib/db";
+import { logAction } from "@/lib/audit";
 
 export async function PATCH(request: NextRequest) {
   const admin = await requireAdminApi();
@@ -28,15 +29,7 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    await db.auditLog.create({
-      data: {
-        userId: admin.userId,
-        action: "USER_UPDATED",
-        entityType: "User",
-        entityId: userId,
-        metadata: { fields: Object.keys({ name, phone, emergencyContactName, emergencyContactPhone }) },
-      },
-    });
+    await logAction(admin.userId, "USER_UPDATED", "User", userId, { fields: Object.keys({ name, phone, emergencyContactName, emergencyContactPhone }) });
 
     return NextResponse.json({ success: true });
   } catch (e) {

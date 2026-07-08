@@ -8,8 +8,6 @@ import { PhoneLink } from "@/components/shared/phone-link";
 export const dynamic = "force-dynamic";
 
 async function getOverdueDues() {
-  const now = new Date();
-
   return db.due.findMany({
     where: { status: { in: ["PENDING", "OVERDUE"] } },
     include: {

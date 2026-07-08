@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type");
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = { status: "ACTIVE", expiresAt: { gt: new Date() } };
   if (type) where.type = type;
 

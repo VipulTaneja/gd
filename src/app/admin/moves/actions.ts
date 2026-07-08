@@ -3,20 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { createNotification } from "@/lib/notifications";
 
 async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
   const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
+  if (!user || !isAdminRole(user.globalRole)) {
     throw new Error("Forbidden");
   }
   return user;
 }
 
 export async function approveMove(moveId: string) {
-  const admin = await requireAdmin();
+  await requireAdmin();
 
   const move = await db.moveRequest.findUnique({ where: { id: moveId } });
   if (!move || move.status !== "PENDING") {
@@ -40,7 +41,7 @@ export async function approveMove(moveId: string) {
 }
 
 export async function rejectMove(moveId: string) {
-  const admin = await requireAdmin();
+  await requireAdmin();
 
   const move = await db.moveRequest.findUnique({ where: { id: moveId } });
   if (!move || move.status !== "PENDING") {
@@ -64,7 +65,7 @@ export async function rejectMove(moveId: string) {
 }
 
 export async function completeMove(moveId: string, checklist: Record<string, boolean>) {
-  const admin = await requireAdmin();
+  await requireAdmin();
 
   const move = await db.moveRequest.findUnique({ where: { id: moveId } });
   if (!move || move.status !== "APPROVED") {

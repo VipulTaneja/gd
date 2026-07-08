@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { logAction } from "@/lib/audit";
 import { isAdmin } from "@/lib/rbac";
-import { requireApprovedResident } from "@/lib/staff-auth";
+import { getApprovedResident } from "@/lib/staff-auth";
 import { isValidContactCategory } from "@/lib/contact-reviews";
 
 export async function POST(request: NextRequest) {
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const approved = await requireApprovedResident(session.user.id);
+  const approved = await getApprovedResident(session.user.id);
   if (!approved) {
     return NextResponse.json({ error: "Approval required" }, { status: 403 });
   }
@@ -40,15 +41,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    await db.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "CONTACT_CREATED",
-        entityType: "ImportantContact",
-        entityId: contact.id,
-        metadata: { category, typeOfService, contactNo },
-      },
-    });
+    await logAction(session.user.id, "CONTACT_CREATED", "ImportantContact", contact.id, { category, typeOfService, contactNo });
 
     return NextResponse.json({ success: true, id: contact.id });
   } catch (e) {
@@ -78,7 +71,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const admin = await isAdmin(session.user.id);
-    const approved = await requireApprovedResident(session.user.id);
+    const approved = await getApprovedResident(session.user.id);
     const isOwner = contact.createdById === session.user.id;
 
     if (!admin && (!approved || !isOwner)) {
@@ -96,15 +89,7 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    await db.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "CONTACT_UPDATED",
-        entityType: "ImportantContact",
-        entityId: id,
-        metadata: { contactNo, name },
-      },
-    });
+    await logAction(session.user.id, "CONTACT_UPDATED", "ImportantContact", id, { contactNo, name });
 
     return NextResponse.json({ success: true });
   } catch (e) {

@@ -41,23 +41,21 @@ export function FaqAccordion({ sections, showSearch = false }: FaqAccordionProps
     const hash = window.location.hash.replace(/^#/, "");
     if (!hash) return;
 
-    for (const section of sections) {
-      if (section.slug === hash) {
-        setOpenSections(new Set([section.id]));
-        return;
-      }
-      for (const item of section.items) {
-        const itemAnchor = `${section.slug}-${item.slug}`;
-        if (item.slug === hash || itemAnchor === hash) {
+      for (const section of sections) {
+        if (section.slug === hash) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- hash-based navigation init, runs once on mount
           setOpenSections(new Set([section.id]));
-          requestAnimationFrame(() => {
-            document.getElementById(itemAnchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
-          });
           return;
         }
+        for (const item of section.items) {
+          const itemAnchor = `${section.slug}-${item.slug}`;
+          if (item.slug === hash || itemAnchor === hash) {
+            setOpenSections(new Set([section.id]));
+            return;
+          }
+        }
       }
-    }
-  }, [sections]);
+    }, [sections]);
 
   if (sections.length === 0) {
     return (

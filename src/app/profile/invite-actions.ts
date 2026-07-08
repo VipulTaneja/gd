@@ -9,7 +9,6 @@ import {
 } from "@/lib/unit-membership-requests";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { isOwner } from "@/lib/rbac";
 
 async function requireUserId() {
   const session = await auth();

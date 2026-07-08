@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { logAction } from "@/lib/audit";
 import {
   canManageStaffAssociation,
-  requireApprovedResident,
+  getApprovedResident,
   isResidentStaffRole,
 } from "@/lib/staff-auth";
 import { addStaffAssociation, endStaffAssociation } from "@/lib/staff";
@@ -18,7 +19,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const approved = await requireApprovedResident(session.user.id);
+  const approved = await getApprovedResident(session.user.id);
   if (!approved) {
     return NextResponse.json({ error: "Approval required" }, { status: 403 });
   }
@@ -55,15 +56,7 @@ export async function POST(
       startDate: startDate ? new Date(startDate) : undefined,
     });
 
-    await db.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "STAFF_ASSOCIATION_CREATED",
-        entityType: "StaffAssociation",
-        entityId: association.id,
-        metadata: { staffPersonId, unitId, role },
-      },
-    });
+    await logAction(session.user.id, "STAFF_ASSOCIATION_CREATED", "StaffAssociation", association.id, { staffPersonId, unitId, role });
 
     return NextResponse.json({ success: true, associationId: association.id });
   } catch (e) {
@@ -83,7 +76,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const approved = await requireApprovedResident(session.user.id);
+  const approved = await getApprovedResident(session.user.id);
   if (!approved) {
     return NextResponse.json({ error: "Approval required" }, { status: 403 });
   }
@@ -109,15 +102,7 @@ export async function PATCH(
 
   await endStaffAssociation(associationId);
 
-  await db.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "STAFF_ASSOCIATION_ENDED",
-      entityType: "StaffAssociation",
-      entityId: associationId,
-      metadata: { staffPersonId },
-    },
-  });
+  await logAction(session.user.id, "STAFF_ASSOCIATION_ENDED", "StaffAssociation", associationId, { staffPersonId });
 
   return NextResponse.json({ success: true });
 }

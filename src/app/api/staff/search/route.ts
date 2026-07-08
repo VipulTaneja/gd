@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { requireApprovedResident } from "@/lib/staff-auth";
+import { getApprovedResident } from "@/lib/staff-auth";
 import { getStaffReviewAggregates, searchStaffPersons } from "@/lib/staff";
 import { checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { approvalRequiredResponse, unauthorizedResponse } from "@/lib/api-errors";
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     return unauthorizedResponse();
   }
 
-  const approved = await requireApprovedResident(session.user.id);
+  const approved = await getApprovedResident(session.user.id);
   if (!approved) {
     return approvalRequiredResponse();
   }

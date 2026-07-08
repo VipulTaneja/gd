@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
+import { isAdminRole } from "@/lib/rbac";
 import { syncTowerCommunitiesForUser } from "@/lib/tower-communities";
 import {
   requireUnitAssetAccess,
@@ -19,8 +20,8 @@ export async function assignResident(unitNumber: string, data: {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(
-    (session.user as { globalRole?: string }).globalRole ?? ""
+  const isAdmin = isAdminRole(
+    (session.user as { globalRole?: string }).globalRole
   );
   if (!isAdmin) throw new Error("Forbidden");
 
@@ -68,8 +69,8 @@ export async function generateDue(unitNumber: string, data: {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const isAdmin = ["SUPER_ADMIN", "ADMIN"].includes(
-    (session.user as { globalRole?: string }).globalRole ?? ""
+  const isAdmin = isAdminRole(
+    (session.user as { globalRole?: string }).globalRole
   );
   if (!isAdmin) throw new Error("Forbidden");
 

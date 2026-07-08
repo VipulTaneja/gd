@@ -3,11 +3,18 @@ import { db } from "@/lib/db";
 
 type ForumWithCommunity = Forum & { subCommunityId: string | null };
 
-interface UserContext {
+export interface UserContext {
   id: string;
   globalRole: string;
   approvalStatus: string;
   isActive: boolean;
+}
+
+export function toForumUserContext(
+  user: { id?: string; globalRole?: string; approvalStatus?: string; isActive?: boolean } | null | undefined,
+): UserContext | null {
+  if (!user?.id || !user.globalRole || user.approvalStatus === undefined || user.isActive === undefined) return null;
+  return { id: user.id, globalRole: user.globalRole, approvalStatus: user.approvalStatus, isActive: user.isActive };
 }
 
 export function canReadForum(

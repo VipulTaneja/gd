@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import {
   canManageStaffAssociation,
-  requireApprovedResident,
+  getApprovedResident,
   isResidentStaffRole,
 } from "@/lib/staff-auth";
 import {
@@ -17,7 +17,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const approved = await requireApprovedResident(session.user.id);
+  const approved = await getApprovedResident(session.user.id);
   if (!approved) {
     return NextResponse.json({ error: "Approval required" }, { status: 403 });
   }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const approved = await requireApprovedResident(session.user.id);
+  const approved = await getApprovedResident(session.user.id);
   if (!approved) {
     return NextResponse.json({ error: "Approval required" }, { status: 403 });
   }

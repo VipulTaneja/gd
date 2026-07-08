@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { logAction } from "@/lib/audit";
 
 export async function hidePost(postId: string) {
   const session = await auth();
@@ -13,15 +14,7 @@ export async function hidePost(postId: string) {
     data: { isHidden: true },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId,
-      action: "FORUM_POST_HIDE",
-      entityType: "ForumPost",
-      entityId: postId,
-      metadata: { threadId: post.threadId },
-    },
-  });
+  await logAction(userId, "FORUM_POST_HIDE", "ForumPost", postId, { threadId: post.threadId });
 }
 
 export async function deletePost(postId: string) {
@@ -34,15 +27,7 @@ export async function deletePost(postId: string) {
 
   await db.forumPost.delete({ where: { id: postId } });
 
-  await db.auditLog.create({
-    data: {
-      userId,
-      action: "FORUM_POST_DELETE",
-      entityType: "ForumPost",
-      entityId: postId,
-      metadata: { threadId: post.threadId },
-    },
-  });
+  await logAction(userId, "FORUM_POST_DELETE", "ForumPost", postId, { threadId: post.threadId });
 }
 
 export async function lockThread(threadId: string) {
@@ -55,15 +40,7 @@ export async function lockThread(threadId: string) {
     data: { status: "LOCKED" },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId,
-      action: "FORUM_THREAD_LOCK",
-      entityType: "ForumThread",
-      entityId: threadId,
-      metadata: { title: thread.title },
-    },
-  });
+  await logAction(userId, "FORUM_THREAD_LOCK", "ForumThread", threadId, { title: thread.title });
 }
 
 export async function unlockThread(threadId: string) {
@@ -76,15 +53,7 @@ export async function unlockThread(threadId: string) {
     data: { status: "OPEN" },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId,
-      action: "FORUM_THREAD_UNLOCK",
-      entityType: "ForumThread",
-      entityId: threadId,
-      metadata: { title: thread.title },
-    },
-  });
+  await logAction(userId, "FORUM_THREAD_UNLOCK", "ForumThread", threadId, { title: thread.title });
 }
 
 export async function pinThread(threadId: string) {
@@ -100,15 +69,7 @@ export async function pinThread(threadId: string) {
     data: { isPinned: !existing.isPinned },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId,
-      action: thread.isPinned ? "FORUM_THREAD_PIN" : "FORUM_THREAD_UNPIN",
-      entityType: "ForumThread",
-      entityId: threadId,
-      metadata: { title: thread.title },
-    },
-  });
+  await logAction(userId, thread.isPinned ? "FORUM_THREAD_PIN" : "FORUM_THREAD_UNPIN", "ForumThread", threadId, { title: thread.title });
 }
 
 export async function resolveReport(reportId: string) {
@@ -121,15 +82,7 @@ export async function resolveReport(reportId: string) {
     data: { status: "RESOLVED", resolvedById: userId, resolvedAt: new Date() },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId,
-      action: "FORUM_REPORT_RESOLVE",
-      entityType: "ForumReport",
-      entityId: reportId,
-      metadata: { postId: report.postId },
-    },
-  });
+  await logAction(userId, "FORUM_REPORT_RESOLVE", "ForumReport", reportId, { postId: report.postId });
 }
 
 export async function dismissReport(reportId: string) {
@@ -142,13 +95,5 @@ export async function dismissReport(reportId: string) {
     data: { status: "DISMISSED", resolvedById: userId, resolvedAt: new Date() },
   });
 
-  await db.auditLog.create({
-    data: {
-      userId,
-      action: "FORUM_REPORT_DISMISS",
-      entityType: "ForumReport",
-      entityId: reportId,
-      metadata: { postId: report.postId },
-    },
-  });
+  await logAction(userId, "FORUM_REPORT_DISMISS", "ForumReport", reportId, { postId: report.postId });
 }

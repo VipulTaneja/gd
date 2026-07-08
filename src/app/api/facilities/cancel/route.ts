@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
 import { db } from "@/lib/db";
 
 export async function POST(request: Request) {
@@ -14,8 +15,8 @@ export async function POST(request: Request) {
   });
 
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
-  if (booking.userId !== session.user!.id && !["SUPER_ADMIN", "ADMIN"].includes(
-    (await db.user.findUnique({ where: { id: session.user!.id } }))?.globalRole ?? ""
+  if (booking.userId !== session.user!.id && !isAdminRole(
+    (await db.user.findUnique({ where: { id: session.user!.id } }))?.globalRole
   )) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }

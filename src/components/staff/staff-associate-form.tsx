@@ -97,7 +97,7 @@ export function StaffAssociateForm({ units, onSuccess, onCancel }: StaffAssociat
 
       {mode === "search" && (
         <>
-          <StaffSearch onSelect={handleSelect} autoFocus />
+          <StaffSearch onSelect={handleSelect} />
           <button
             type="button"
             onClick={() => { setMode("create"); setError(null); }}
