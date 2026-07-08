@@ -47,6 +47,8 @@ export const empty = {
   feed: { title: "It's a quiet day", description: "Nothing new — maybe time for chai on the terrace?" },
   forums: { title: "No discussions yet", description: "Start a conversation with your community" },
   forumThreads: { title: "No threads yet", description: "Be the first to start a discussion" },
+  contacts: { title: "No contacts found", description: "Try a different search or category." },
+  communities: { title: "No communities available yet", description: "Check back soon — new communities are added regularly." },
 } as const;
 
 export const priorityLabels: Record<string, string> = {
@@ -84,7 +86,6 @@ export const staff = {
   filterMyUnit: "My unit",
   filterAllTypes: "All types",
   societyWide: "Society-wide",
-  viewProfile: "Profile",
   endConfirm: "Stop daily passes for this person at your unit?",
   reviewsTitle: "What neighbors say",
   yourReview: "Your rating",
@@ -100,10 +101,19 @@ export const staff = {
   callStaff: "Call",
 } as const;
 
+export const communities = {
+  title: "Teams and Communities",
+  subtitle: "Browse teams and join communities in your neighbourhood.",
+} as const;
+
+export const committee = {
+  title: "RWA Committee",
+  subtitle: "Current office bearers of the Gulshan Dynasty Residents' Welfare Association",
+} as const;
+
 export const contacts = {
   title: "Important contacts",
   subtitle: "Society services, maintenance, and vendor contacts",
-  detailTitle: "Contact details",
   callCta: "Call or message",
   reviewsTitle: "Community ratings",
   yourReview: "Your rating",
@@ -117,6 +127,8 @@ export const contacts = {
   addedBy: "Added by",
   lastEditedBy: "Last updated by",
   noRating: "Not rated yet",
+  crossLinkToStaff: "Looking for individual help (maid, cook, driver)?",
+  crossLinkToStaffCta: "Regular help registry",
 } as const;
 
 export const faq = {

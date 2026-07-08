@@ -33,3 +33,13 @@ export function rateLimitResponse(retryAfterMs: number) {
     },
   );
 }
+
+/** Per-user rate limit with a namespaced key prefix. */
+export function checkUserRateLimit(
+  userId: string,
+  key: string,
+  limit: number,
+  windowMs: number,
+): { ok: true } | { ok: false; retryAfterMs: number } {
+  return checkRateLimit(`${key}:${userId}`, limit, windowMs);
+}

@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
-import { canManageHubHero } from "@/lib/hub-hero-auth";
+import { canManageCommunityContent } from "@/lib/faq-auth";
 import {
   listActiveHubHeroSlides,
   listManageHubHeroSlides,
   nextHubHeroSortOrder,
   normalizeHeroLinkUrl,
+  reorderHubHeroSlides,
 } from "@/lib/hub-hero";
 
 export async function GET(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (!(await canManageHubHero(session.user.id))) {
+    if (!(await canManageCommunityContent(session.user.id))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const slides = await listManageHubHeroSlides();
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!(await canManageHubHero(session.user.id))) {
+  if (!(await canManageCommunityContent(session.user.id))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -87,4 +88,22 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     slide: { ...slide, createdAt: slide.createdAt.toISOString() },
   });
+}
+
+export async function PATCH(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!(await canManageCommunityContent(session.user.id))) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await request.json();
+  if (body.reorder && Array.isArray(body.ids)) {
+    await reorderHubHeroSlides(body.ids);
+    return NextResponse.json({ success: true });
+  }
+
+  return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 }

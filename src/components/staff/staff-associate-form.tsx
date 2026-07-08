@@ -67,7 +67,6 @@ export function StaffAssociateForm({ units, onSuccess, onCancel }: StaffAssociat
         return;
       }
       onSuccess?.();
-      window.location.reload();
     });
   };
 
@@ -89,7 +88,6 @@ export function StaffAssociateForm({ units, onSuccess, onCancel }: StaffAssociat
         return;
       }
       onSuccess?.();
-      window.location.reload();
     });
   };
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Bell, LogOut, User, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -14,24 +14,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GlobalSearchDialog } from "@/components/shared/global-search-dialog";
+import { CountBadge } from "@/components/shared/count-badge";
 import { featureColors, type FeatureKey } from "@/lib/feature-colors";
+import { headerNav, mobileQuickNav } from "@/lib/nav-items";
 import { nav, actions } from "@/lib/microcopy";
 import { cn } from "@/lib/utils";
-
-const headerNav: { feature: FeatureKey; href: string }[] = [
-  { feature: "notices", href: "/notices" },
-  { feature: "communities", href: "/communities" },
-  { feature: "contacts", href: "/contacts" },
-  { feature: "staff", href: "/staff" },
-  { feature: "team", href: "/team" },
-];
-
-/** Icon-only shortcuts on mobile — contacts, regular help, teams */
-const mobileQuickNav: { feature: FeatureKey; href: string }[] = [
-  { feature: "staff", href: "/staff" },
-  { feature: "contacts", href: "/contacts" },
-  { feature: "communities", href: "/communities" },
-];
 
 function isNavActive(
   feature: FeatureKey,
@@ -52,17 +39,8 @@ interface CasualHeaderProps {
 
 export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProps) {
   const pathname = usePathname();
-  const [unreadCount, setUnreadCount] = useState(unreadProp ?? 0);
+  const unreadCount = unreadProp ?? 0;
   const [searchOpen, setSearchOpen] = useState(false);
-
-  useEffect(() => {
-    if (unreadProp != null) return;
-    if (!user) return;
-    fetch("/api/notifications/unread")
-      .then((r) => r.json())
-      .then((data) => setUnreadCount(data.count))
-      .catch(() => {});
-  }, [user, unreadProp]);
 
   const initials = user?.name
     ?.split(" ")
@@ -105,7 +83,7 @@ export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProp
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="rounded-lg bg-zinc-800 px-3 py-2">
             <Image
-              src="https://www.gulshandynasty.com/images/logo.webp"
+              src="/logo.webp"
               alt="Gulshan Dynasty"
               width={164}
               height={45}
@@ -150,11 +128,7 @@ export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProp
                 className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-muted transition-colors"
               >
                 <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 min-w-4 animate-badge-pop items-center justify-center rounded-full bg-gold px-1 text-[9px] font-bold text-black">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
+                {unreadCount > 0 && <CountBadge count={unreadCount} size="sm" />}
               </Link>
 
               <DropdownMenu>

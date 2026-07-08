@@ -41,17 +41,18 @@ function useCompactDirectory() {
 
 interface DirectoryTowerFilterProps {
   activeTower?: string;
+  userTower?: string;
 }
 
-export function DirectoryTowerFilter({ activeTower }: DirectoryTowerFilterProps) {
+export function DirectoryTowerFilter({ activeTower, userTower }: DirectoryTowerFilterProps) {
   const router = useRouter();
   const compact = useCompactDirectory();
 
   useEffect(() => {
     if (compact && !activeTower) {
-      router.replace("/directory?tower=A");
+      router.replace(`/directory?tower=${userTower ?? "A"}`);
     }
-  }, [compact, activeTower, router]);
+  }, [compact, activeTower, userTower, router]);
 
   return (
     <div className="overflow-x-auto flex-nowrap snap-x snap-mandatory scrollbar-hide -mx-1 px-1">

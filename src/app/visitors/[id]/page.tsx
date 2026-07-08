@@ -6,6 +6,9 @@ import Link from "next/link";
 import { PhoneLink } from "@/components/shared/phone-link";
 import { UnitLink } from "@/components/shared/unit-link";
 import { StaffLink } from "@/components/staff/staff-link";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
+import { CopyButton } from "@/components/shared/copy-button";
+import { FadeIn } from "@/components/shared/animated";
 import { QRCodeDisplay } from "./qr-display";
 
 export const dynamic = "force-dynamic";
@@ -37,13 +40,6 @@ export default async function VisitorPassDetailPage({
   });
   if (!user) redirect("/login");
 
-  const statusStyles: Record<string, string> = {
-    ACTIVE: "bg-green-100 text-green-800",
-    USED: "bg-blue-100 text-blue-800",
-    EXPIRED: "bg-gray-100 text-gray-800",
-    CANCELLED: "bg-red-100 text-red-800",
-  };
-
   const unitLabel = pass.unit?.unitNumber ?? "Multiple units";
 
   const whatsappText = encodeURIComponent(
@@ -55,10 +51,8 @@ export default async function VisitorPassDetailPage({
       <div className="mx-auto max-w-lg space-y-6">
         <Link href="/visitors" className="text-sm text-muted-foreground hover:text-foreground">← Passes</Link>
 
-        <div className="rounded-xl border bg-card p-6 text-center space-y-4">
-          <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${statusStyles[pass.status]}`}>
-            {pass.status}
-          </span>
+        <FadeIn className="rounded-xl border bg-card p-6 text-center space-y-4">
+          <FriendlyBadge value={pass.status} variant="status" />
 
           <div>
             <h1 className="font-heading text-2xl font-bold">{pass.visitorName}</h1>
@@ -67,7 +61,10 @@ export default async function VisitorPassDetailPage({
 
           <div className="rounded-lg bg-muted p-6">
             <p className="text-sm text-muted-foreground mb-1">OTP Code</p>
-            <p className="font-mono text-3xl sm:text-4xl font-bold tracking-widest break-all">{pass.otp}</p>
+            <div className="flex items-center justify-center gap-2">
+              <p className="font-mono text-3xl sm:text-4xl font-bold tracking-widest">{pass.otp}</p>
+              <CopyButton value={pass.otp} label="Copy OTP" />
+            </div>
           </div>
 
           <QRCodeDisplay passId={pass.id} otp={pass.otp} unitNumber={unitLabel} />
@@ -101,7 +98,7 @@ export default async function VisitorPassDetailPage({
               Share via WhatsApp
             </a>
           )}
-        </div>
+        </FadeIn>
       </div>
     </DashboardLayout>
   );

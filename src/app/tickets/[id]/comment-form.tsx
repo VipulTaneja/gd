@@ -1,35 +1,43 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { RichTextEditor } from "@/components/shared/rich-text-editor";
+import { InlineAlert } from "@/components/shared/inline-alert";
 import { isRichTextEmpty } from "@/lib/rich-text";
 
 export function CommentForm({ ticketId }: { ticketId: string }) {
+  const router = useRouter();
   const [body, setBody] = useState("");
   const [pending, startTransition] = useTransition();
-  const [result, setResult] = useState<{ success?: boolean; error?: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isRichTextEmpty(body)) {
-      setResult({ error: "Comment cannot be empty" });
+      setError("Comment cannot be empty");
       return;
     }
     startTransition(async () => {
+      setError(null);
       const res = await fetch("/api/tickets/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticketId, body }),
       });
       const data = await res.json();
-      setResult(data);
-      if (data.success) { setBody(""); window.location.reload(); }
+      if (!res.ok || !data.success) {
+        setError(data.error ?? "Failed to post comment");
+        return;
+      }
+      setBody("");
+      router.refresh();
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      {result?.error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{result.error}</div>}
+      {error && <InlineAlert>{error}</InlineAlert>}
       <RichTextEditor
         value={body}
         onChange={setBody}

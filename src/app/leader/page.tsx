@@ -29,7 +29,7 @@ export default async function LeaderPage() {
     redirect("/");
   }
 
-  const [communities, facilities, pendingByFacility, pendingQueue] = await Promise.all([
+  const [communities, facilities, pendingQueue] = await Promise.all([
     scopes.communityLeaderIds.length > 0
       ? db.subCommunity.findMany({
           where: { id: { in: scopes.communityLeaderIds }, isArchived: false },
@@ -40,17 +40,6 @@ export default async function LeaderPage() {
       ? db.facility.findMany({
           where: { id: { in: scopes.amenityLeaderFacilityIds } },
           select: { id: true, name: true },
-        })
-      : Promise.resolve([]),
-    scopes.amenityLeaderFacilityIds.length > 0
-      ? db.facilityBooking.groupBy({
-          by: ["facilityId"],
-          where: {
-            facilityId: { in: scopes.amenityLeaderFacilityIds },
-            status: "PENDING_APPROVAL",
-            startsAt: { gte: new Date() },
-          },
-          _count: { id: true },
         })
       : Promise.resolve([]),
     scopes.amenityLeaderFacilityIds.length > 0
@@ -69,7 +58,10 @@ export default async function LeaderPage() {
       : Promise.resolve([]),
   ]);
 
-  const pendingMap = new Map(pendingByFacility.map((p) => [p.facilityId, p._count.id]));
+  const pendingMap = new Map<string, number>();
+  for (const booking of pendingQueue) {
+    pendingMap.set(booking.facilityId, (pendingMap.get(booking.facilityId) ?? 0) + 1);
+  }
 
   return (
     <DashboardLayout user={user}>

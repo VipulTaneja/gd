@@ -293,7 +293,7 @@ export function RichTextEditor({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span>Paste, drag & drop, or use Photo to add images from your device.</span>
-        <span>
+        <span className={plainLength > maxLength ? "font-medium text-rose-600" : undefined}>
           {plainLength.toLocaleString()}/{maxLength.toLocaleString()}
         </span>
         {uploadError && <span className="w-full text-rose-600 sm:w-auto">{uploadError}</span>}

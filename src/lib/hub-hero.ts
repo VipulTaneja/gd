@@ -96,3 +96,14 @@ export async function nextHubHeroSortOrder(): Promise<number> {
   });
   return (last?.sortOrder ?? -1) + 1;
 }
+
+export async function reorderHubHeroSlides(ids: string[]) {
+  await db.$transaction(
+    ids.map((id, index) =>
+      db.hubHeroSlide.update({
+        where: { id },
+        data: { sortOrder: index * 10 },
+      }),
+    ),
+  );
+}

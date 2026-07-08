@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ArrowRight, Loader2 } from "lucide-react";
-import { featureColors, type FeatureKey } from "@/lib/feature-colors";
+import { Search, ArrowRight, Loader2, Home as HomeIcon, PawPrint, Car, X, type LucideIcon } from "lucide-react";
+import { featureColors } from "@/lib/feature-colors";
 import type { SearchResultItem, SearchResultGroup } from "@/lib/search/types";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 
@@ -13,22 +13,28 @@ interface GlobalSearchDialogProps {
   trigger?: React.ReactNode;
 }
 
-const typeToFeature: Record<string, FeatureKey> = {
-  user: "directory",
-  unit: "directory",
-  notice: "notices",
-  event: "events",
-  poll: "polls",
-  forum_thread: "forums",
-  facility: "facilities",
-  community: "communities",
-  ticket: "tickets",
-  staff: "staff",
-  contact: "contacts",
-  faq: "directory",
-  pet: "directory",
-  vehicle: "directory",
-  navigation: "home",
+interface SearchTypeStyle {
+  icon: LucideIcon;
+  bg: string;
+  text: string;
+}
+
+const searchTypeStyles: Record<string, SearchTypeStyle> = {
+  user: featureColors.directory,
+  unit: { icon: HomeIcon, bg: "bg-indigo-100", text: "text-indigo-700" },
+  notice: featureColors.notices,
+  event: featureColors.events,
+  poll: featureColors.polls,
+  forum_thread: featureColors.forums,
+  facility: featureColors.facilities,
+  community: featureColors.communities,
+  ticket: featureColors.tickets,
+  staff: featureColors.staff,
+  contact: featureColors.contacts,
+  faq: featureColors.faq,
+  pet: { icon: PawPrint, bg: "bg-green-100", text: "text-green-700" },
+  vehicle: { icon: Car, bg: "bg-orange-100", text: "text-orange-700" },
+  navigation: featureColors.home,
 };
 
 export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearchDialogProps) {
@@ -41,8 +47,11 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const allResults = groups.flatMap((g) => g.results);
+  const latestRequestId = useRef(0);
 
   const search = useCallback(async (q: string) => {
+    const requestId = ++latestRequestId.current;
+
     if (q.length < 2) {
       setGroups([]);
       setError(null);
@@ -52,18 +61,21 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
     setError(null);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      if (requestId !== latestRequestId.current) return;
       if (res.status === 401) {
         setError("Please log in to search");
         return;
       }
       if (!res.ok) throw new Error();
       const data = await res.json();
+      if (requestId !== latestRequestId.current) return;
       setGroups(data.groups || []);
     } catch {
+      if (requestId !== latestRequestId.current) return;
       setGroups([]);
       setError("Search unavailable. Try again.");
     }
-    setLoading(false);
+    if (requestId === latestRequestId.current) setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -137,14 +149,14 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center sm:pt-[15vh] sm:px-4">
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in-up"
             onClick={() => onOpenChange(false)}
           />
-          <div className="relative z-50 w-full max-w-lg rounded-2xl border bg-background shadow-2xl overflow-hidden">
+          <div className="relative z-50 flex h-full w-full flex-col overflow-hidden bg-background shadow-2xl animate-fade-in-up sm:h-auto sm:max-w-lg sm:rounded-2xl sm:border">
             {/* Search input */}
-            <div className="flex items-center gap-3 border-b px-4">
+            <div className="flex items-center gap-3 border-b px-4 pt-[env(safe-area-inset-top)] sm:pt-0">
               <Search className="h-5 w-5 text-muted-foreground shrink-0" />
               <input
                 ref={inputRef}
@@ -157,10 +169,17 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
                 aria-autocomplete="list"
               />
               {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+              <button
+                onClick={() => onOpenChange(false)}
+                className="-mr-1 flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground sm:hidden"
+                aria-label="Close search"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             {/* Results */}
-            <div className="max-h-80 overflow-y-auto p-2">
+            <div className="flex-1 overflow-y-auto p-2 sm:max-h-80 sm:flex-none">
               {query.length >= 2 && !loading && totalResults === 0 && !error && (
                 <p className="py-8 text-center text-sm text-muted-foreground">
                   No results found for &ldquo;{query}&rdquo;
@@ -174,8 +193,7 @@ export function GlobalSearchDialog({ open, onOpenChange, trigger }: GlobalSearch
               )}
 
               {groups.map((group) => {
-                const feature = typeToFeature[group.type] || "home";
-                const { icon: Icon, bg, text } = featureColors[feature];
+                const { icon: Icon, bg, text } = searchTypeStyles[group.type] ?? featureColors.home;
 
                 return (
                   <div key={group.type} className="mb-2">

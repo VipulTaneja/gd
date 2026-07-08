@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 interface FileUploadProps {
@@ -10,26 +10,51 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ onFilesSelected, maxFiles = 3, accept = "image/*" }: FileUploadProps) {
+  const [files, setFiles] = useState<File[]>([]);
   const [preview, setPreview] = useState<string[]>([]);
+  const [truncated, setTruncated] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const previewRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    previewRef.current = preview;
+  }, [preview]);
+
+  useEffect(() => {
+    return () => {
+      previewRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const validFiles = files.slice(0, maxFiles);
+    const selected = Array.from(e.target.files || []);
+    const validFiles = selected.slice(0, maxFiles);
+    setTruncated(selected.length > maxFiles);
 
+    preview.forEach((url) => URL.revokeObjectURL(url));
     const previews = validFiles.map((f) => URL.createObjectURL(f));
+    setFiles(validFiles);
     setPreview(previews);
     onFilesSelected(validFiles);
   };
 
   const removeFile = (index: number) => {
+    URL.revokeObjectURL(preview[index]);
+    const newFiles = files.filter((_, i) => i !== index);
     const newPreview = preview.filter((_, i) => i !== index);
+    setFiles(newFiles);
     setPreview(newPreview);
-    onFilesSelected([]);
+    setTruncated(false);
+    onFilesSelected(newFiles);
   };
 
   return (
     <div className="space-y-2">
+      {truncated && (
+        <p className="text-xs text-amber-600">
+          Only the first {maxFiles} photo{maxFiles === 1 ? "" : "s"} were kept.
+        </p>
+      )}
       <input
         ref={inputRef}
         type="file"

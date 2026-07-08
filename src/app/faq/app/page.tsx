@@ -20,13 +20,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ResidentFaqPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/faq");
+  if (!session?.user?.id) redirect("/login?callbackUrl=/faq/app");
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
     select: { name: true, email: true, globalRole: true },
   });
-  if (!user) redirect("/faq");
+  if (!user) redirect("/login?callbackUrl=/faq/app");
 
   const [sections, canEdit] = await Promise.all([
     listPublicFaq(),

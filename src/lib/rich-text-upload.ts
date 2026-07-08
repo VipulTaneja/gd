@@ -1,9 +1,7 @@
 "use client";
 
 import { mediaUrlFromKey } from "@/lib/rich-text";
-
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+import { IMAGE_TYPES, MAX_IMAGE_SIZE } from "@/lib/upload-constants";
 
 function normalizeUploadFile(file: File): File {
   if (file.name) return file;
@@ -16,7 +14,7 @@ export async function uploadRichTextImage(
   options?: { namespace?: string },
 ): Promise<string> {
   const uploadFile = normalizeUploadFile(file);
-  if (!IMAGE_TYPES.includes(uploadFile.type)) {
+  if (!IMAGE_TYPES.includes(uploadFile.type as (typeof IMAGE_TYPES)[number])) {
     throw new Error("Only JPEG, PNG, WebP, and GIF images are allowed");
   }
 

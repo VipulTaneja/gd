@@ -3,7 +3,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { listManageHubHeroSlides } from "@/lib/hub-hero";
-import { canManageHubHero } from "@/lib/hub-hero-auth";
+import { canManageCommunityContent } from "@/lib/faq-auth";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { HubHeroManagePanel } from "@/components/hub/hub-hero-manage-panel";
@@ -15,7 +15,7 @@ export default async function HubHeroManagePage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/hub/hero/manage");
 
-  const canEdit = await canManageHubHero(session.user.id);
+  const canEdit = await canManageCommunityContent(session.user.id);
   if (!canEdit) redirect("/");
 
   const user = await db.user.findUnique({

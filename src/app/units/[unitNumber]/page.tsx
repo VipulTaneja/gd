@@ -2,8 +2,9 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/shared/page-header";
+import { SoftCard } from "@/components/shared/soft-card";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { UserLink } from "@/components/shared/user-link";
 import { MembershipTimeline } from "@/components/shared/membership-timeline";
 import { AdminUnitActions } from "@/components/shared/admin-unit-actions";
@@ -11,6 +12,7 @@ import { UnitHouseholdStaff } from "@/components/units/unit-household-staff";
 import { UnitPetsSection } from "@/components/units/unit-pets-section";
 import { UnitVehiclesSection } from "@/components/units/unit-vehicles-section";
 import { UnitLeaderPanel } from "@/components/units/unit-leader-panel";
+import { towerBalloonStyles } from "@/lib/directory-layout";
 import { assignResident, generateDue } from "./actions";
 import {
   cancelUnitInviteAction,
@@ -30,12 +32,6 @@ import {
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
-
-const towerColors: Record<string, string> = {
-  A: "bg-gold/15 text-gold-dark border-gold/30",
-  B: "bg-teal-100 text-teal-800 border-teal-300",
-  C: "bg-rose-100 text-rose-800 border-rose-300",
-};
 
 export default async function UnitProfilePage({
   params,
@@ -125,57 +121,52 @@ export default async function UnitProfilePage({
   return (
     <DashboardLayout user={layoutUser}>
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">Unit Profile</h1>
-        <p className="text-muted-foreground">
-          Details for unit {unitNumber}
-        </p>
-      </div>
+      <PageHeader
+        feature="directory"
+        title="Unit Profile"
+        subtitle={`Details for unit ${unitNumber}`}
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <div
-                  className={`inline-flex h-16 w-16 items-center justify-center rounded-xl border text-xl font-bold ${
-                    towerColors[tower] ?? "bg-muted"
-                  }`}
-                >
-                  {tower}
-                </div>
-                <div className="flex-1">
-                  <h2 className="font-heading text-2xl font-bold">
-                    {unit.unitNumber}
-                  </h2>
-                  {unit.leader && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Unit leader:{" "}
-                      <UserLink userId={unit.leader.id} name={unit.leader.name} />
-                    </p>
-                  )}
-                  <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Building2 className="h-4 w-4" /> Tower {unit.block}
-                    </span>
-                    <span>Floor {unit.floor}</span>
-                    <span>{unit.unitType}</span>
-                    {unit.areaSqFt && <span>{unit.areaSqFt} sq ft</span>}
-                    <span>{unit.parkingSlots} parking</span>
-                  </div>
+          <SoftCard>
+            <div className="flex items-start gap-4">
+              <div
+                className={`inline-flex h-16 w-16 items-center justify-center rounded-xl border text-xl font-bold ${
+                  towerBalloonStyles[tower]?.floorBadge ?? "bg-muted"
+                }`}
+              >
+                {tower}
+              </div>
+              <div className="flex-1">
+                <h2 className="font-heading text-2xl font-bold">
+                  {unit.unitNumber}
+                </h2>
+                {unit.leader && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Unit leader:{" "}
+                    <UserLink userId={unit.leader.id} name={unit.leader.name} />
+                  </p>
+                )}
+                <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Building2 className="h-4 w-4" /> Tower {unit.block}
+                  </span>
+                  <span>Floor {unit.floor}</span>
+                  <span>{unit.unitType}</span>
+                  {unit.areaSqFt && <span>{unit.areaSqFt} sq ft</span>}
+                  <span>{unit.parkingSlots} parking</span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </SoftCard>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5 text-gold" />
-                Current Residents ({unit.memberships.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
+          <div className="space-y-3">
+            <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-gold" />
+              Current Residents ({unit.memberships.length})
+            </h2>
+            <SoftCard className="space-y-2">
               {unit.memberships.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No residents assigned
@@ -193,20 +184,16 @@ export default async function UnitProfilePage({
                       showAvatar
                     />
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">
-                        {m.role.replace("_", " ")}
-                      </Badge>
+                      <FriendlyBadge value={m.role} variant="semantic" />
                       {m.isPrimary && (
-                        <Badge className="bg-gold/15 text-gold-dark text-[10px]">
-                          Primary
-                        </Badge>
+                        <FriendlyBadge value="PRIMARY" variant="semantic" />
                       )}
                     </div>
                   </div>
                 ))
               )}
-            </CardContent>
-          </Card>
+            </SoftCard>
+          </div>
 
           {isLeader && (
             <UnitLeaderPanel
@@ -228,14 +215,12 @@ export default async function UnitProfilePage({
 
           {canViewSensitive && (
           <>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-gold" />
-                Membership History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-3">
+            <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-gold" />
+              Membership History
+            </h2>
+            <SoftCard>
               <MembershipTimeline
                 memberships={allMemberships.map((m) => ({
                   ...m,
@@ -244,8 +229,8 @@ export default async function UnitProfilePage({
                 }))}
                 perspective="unit"
               />
-            </CardContent>
-          </Card>
+            </SoftCard>
+          </div>
 
           <UnitHouseholdStaff unitId={unit.id} />
 
@@ -283,11 +268,9 @@ export default async function UnitProfilePage({
           )}
 
           {!canViewSensitive && (
-            <Card>
-              <CardContent className="pt-6 text-sm text-muted-foreground">
-                Dues, pets, vehicles, and tickets are visible to unit members only.
-              </CardContent>
-            </Card>
+            <SoftCard className="text-sm text-muted-foreground">
+              Dues, pets, vehicles, and tickets are visible to unit members only.
+            </SoftCard>
           )}
         </div>
 
@@ -307,14 +290,12 @@ export default async function UnitProfilePage({
 
           {canViewSensitive && (
           <>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-gold" />
-                Dues Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-3">
+            <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-gold" />
+              Dues Summary
+            </h2>
+            <SoftCard>
               {pendingDues.length > 0 ? (
                 <div className="space-y-2">
                   <div className="text-center py-3">
@@ -322,7 +303,7 @@ export default async function UnitProfilePage({
                       ₹{totalPending.toLocaleString("en-IN")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {pendingDues.length} pending due(s)
+                      {pendingDues.length} pending due{pendingDues.length === 1 ? "" : "s"}
                     </p>
                   </div>
                   {pendingDues.map((d) => (
@@ -342,18 +323,16 @@ export default async function UnitProfilePage({
                   No pending dues
                 </p>
               )}
-            </CardContent>
-          </Card>
+            </SoftCard>
+          </div>
 
           {openTickets.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Ticket className="h-5 w-5 text-gold" />
-                  Open Tickets ({openTickets.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+                <Ticket className="h-5 w-5 text-gold" />
+                Open Tickets ({openTickets.length})
+              </h2>
+              <SoftCard className="space-y-2">
                 {openTickets.map((t) => (
                   <div
                     key={t.id}
@@ -361,9 +340,7 @@ export default async function UnitProfilePage({
                   >
                     <p className="font-medium">{t.subject}</p>
                     <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      <Badge variant="outline" className="text-[10px]">
-                        {t.status}
-                      </Badge>
+                      <FriendlyBadge value={t.status} variant="status" />
                       <span>
                         by{" "}
                         <UserLink userId={t.user.id} name={t.user.name} />
@@ -371,19 +348,17 @@ export default async function UnitProfilePage({
                     </div>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </SoftCard>
+            </div>
           )}
 
           {unit.visitorPasses.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DoorOpen className="h-5 w-5 text-gold" />
-                  Active Visitor Passes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+                <DoorOpen className="h-5 w-5 text-gold" />
+                Active Visitor Passes
+              </h2>
+              <SoftCard className="space-y-2">
                 {unit.visitorPasses.map((vp) => (
                   <div
                     key={vp.id}
@@ -396,28 +371,24 @@ export default async function UnitProfilePage({
                         <UserLink userId={vp.user.id} name={vp.user.name} />
                       </p>
                     </div>
-                    <Badge className="bg-green-100 text-green-800 text-[10px]">
-                      Active
-                    </Badge>
+                    <FriendlyBadge value="ACTIVE" variant="status" />
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </SoftCard>
+            </div>
           )}
           </>
           )}
 
-          <Card>
-            <CardContent className="pt-6 text-xs text-muted-foreground">
-              <p>
-                Created{" "}
-                {new Date(unit.createdAt).toLocaleDateString("en-IN", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
-            </CardContent>
-          </Card>
+          <SoftCard className="text-xs text-muted-foreground">
+            <p>
+              Created{" "}
+              {new Date(unit.createdAt).toLocaleDateString("en-IN", {
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </SoftCard>
         </div>
       </div>
     </div>

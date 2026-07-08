@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireAdminApi, isAdminApiError } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { getPresignedUploadUrl, generateFileKey } from "@/lib/minio";
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const admin = await requireAdminApi();
+  if (isAdminApiError(admin)) return admin;
 
   const { filename, mimeType, eventId, year } = await request.json();
 
@@ -18,7 +13,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const key = generateFileKey(session.user.id, `agm/${year || new Date().getFullYear()}/${filename}`);
+  const key = generateFileKey(admin.userId, `agm/${year || new Date().getFullYear()}/${filename}`);
   const uploadUrl = await getPresignedUploadUrl(key);
 
   const fileEntry = await db.fileEntry.create({
@@ -27,7 +22,7 @@ export async function POST(request: NextRequest) {
       mimeType,
       sizeBytes: 0,
       storageKey: key,
-      uploadedById: session.user.id,
+      uploadedById: admin.userId,
     },
   });
 

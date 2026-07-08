@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { SoftCard } from "@/components/shared/soft-card";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { EmptyState } from "@/components/shared/empty-state";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { LifeBuoy } from "lucide-react";
 import { nav, actions, empty, statusLabels } from "@/lib/microcopy";
 import Link from "next/link";
@@ -88,7 +87,7 @@ export default async function TicketsPage({
                     <div className="flex items-center gap-2 flex-wrap">
                       <FriendlyBadge value={ticket.status} variant="status" />
                       <span className="text-xs text-muted-foreground">{ticket.category}</span>
-                      <StatusBadge status={ticket.priority} />
+                      <FriendlyBadge value={ticket.priority} variant="priority" />
                     </div>
                     <h3 className="mt-2 font-heading text-base font-semibold">{ticket.subject}</h3>
                     <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{ticket.description}</p>

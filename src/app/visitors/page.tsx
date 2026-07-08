@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { actions, empty } from "@/lib/microcopy";
+import { FilterPillRow } from "@/components/shared/filter-pill-row";
 import { getUserUnitMemberships } from "@/lib/rbac";
 import type { PassStatus } from "@/generated/prisma/enums";
 
@@ -64,7 +65,7 @@ export default async function VisitorsPage({
           ) : undefined}
         />
 
-        <div className="flex gap-2 overflow-x-auto flex-nowrap snap-x snap-mandatory scrollbar-hide pb-1">
+        <FilterPillRow>
           {[
             ["active", "Active"],
             ["past", "Past"],
@@ -76,7 +77,7 @@ export default async function VisitorsPage({
               {label}
             </Link>
           ))}
-        </div>
+        </FilterPillRow>
 
         {passes.length === 0 ? (
           <EmptyState
@@ -96,9 +97,7 @@ export default async function VisitorsPage({
                   <div className="flex items-start justify-between mb-3">
                     <FriendlyBadge value={pass.status} variant="status" />
                     {pass.isRecurring && (
-                      <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
-                        Recurring
-                      </span>
+                      <FriendlyBadge value="RECURRING" variant="semantic" />
                     )}
                   </div>
                   <h3 className="font-heading text-base font-semibold group-hover:text-gold">{pass.visitorName}</h3>

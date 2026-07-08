@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, Loader2, X, Check } from "lucide-react";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { InlineAlert } from "@/components/shared/inline-alert";
 import { approveUser, rejectUser, deactivateUser, changeUserRole, approveClaim, rejectClaim } from "./server-actions";
 
 export function ApproveUserButton({ userId }: { userId: string }) {
@@ -32,18 +35,34 @@ export function RejectUserButton({ userId }: { userId: string }) {
 
 export function DeactivateUserButton({ userId }: { userId: string }) {
   const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+
+  const deactivate = () => {
+    startTransition(async () => {
+      await deactivateUser(userId);
+      setOpen(false);
+    });
+  };
+
   return (
-    <button
-      disabled={pending}
-      onClick={() => {
-        if (confirm("Are you sure you want to deactivate this user?")) {
-          startTransition(() => deactivateUser(userId));
-        }
-      }}
-      className="inline-flex h-8 items-center justify-center rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
-    >
-      {pending ? "..." : "Deactivate"}
-    </button>
+    <>
+      <button
+        disabled={pending}
+        onClick={() => setOpen(true)}
+        className="inline-flex h-8 items-center justify-center rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+      >
+        {pending ? "..." : "Deactivate"}
+      </button>
+      <ConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Deactivate this user?"
+        description="They will no longer be able to sign in."
+        confirmLabel="Deactivate"
+        onConfirm={deactivate}
+        pending={pending}
+      />
+    </>
   );
 }
 
@@ -112,8 +131,10 @@ export function EditUserButton({
   currentEmergencyName: string;
   currentEmergencyPhone: string;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(currentName);
   const [phone, setPhone] = useState(currentPhone);
   const [emergencyName, setEmergencyName] = useState(currentEmergencyName);
@@ -121,6 +142,7 @@ export function EditUserButton({
 
   const handleSave = () => {
     startTransition(async () => {
+      setError(null);
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -132,11 +154,13 @@ export function EditUserButton({
           emergencyContactPhone: emergencyPhone || null,
         }),
       });
-
-      if (res.ok) {
-        setOpen(false);
-        window.location.reload();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "Failed to save user");
+        return;
       }
+      setOpen(false);
+      router.refresh();
     });
   };
 
@@ -159,6 +183,8 @@ export function EditUserButton({
                 <X className="h-4 w-4" />
               </button>
             </div>
+
+            {error && <InlineAlert className="mb-4">{error}</InlineAlert>}
 
             <div className="space-y-4">
               <div>

@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getHubData } from "@/lib/hub-data";
 import { listActiveHubHeroSlides } from "@/lib/hub-hero";
-import { canManageHubHero } from "@/lib/hub-hero-auth";
+import { canManageCommunityContent } from "@/lib/faq-auth";
 import { CommunityHub } from "@/components/hub/community-hub";
 import { HubHeader } from "@/components/hub/hub-header";
 import { HubHero } from "@/components/hub/hub-hero";
@@ -15,15 +15,17 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const session = await auth();
+  const isLeader = session?.user?.isLeader ?? false;
   const [hubData, heroSlides, canManageHero] = await Promise.all([
     getHubData(session?.user?.id),
     listActiveHubHeroSlides(),
-    session?.user?.id ? canManageHubHero(session.user.id) : Promise.resolve(false),
+    session?.user?.id ? canManageCommunityContent(session.user.id) : Promise.resolve(false),
   ]);
 
   return (
     <CommunityHub
       isAuthenticated={hubData.isResident}
+      isLeader={isLeader}
       header={
         <HubHeader
           user={hubData.user}

@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireAdminApi, isAdminApiError } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import type { UnitRole } from "@/generated/prisma/enums";
 
 export async function PATCH(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const admin = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!admin || !["SUPER_ADMIN", "ADMIN"].includes(admin.globalRole)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const admin = await requireAdminApi();
+  if (isAdminApiError(admin)) return admin;
 
   const { membershipId, role, isPrimary, endDate } = await request.json();
 
@@ -52,7 +45,7 @@ export async function PATCH(request: NextRequest) {
 
     await db.auditLog.create({
       data: {
-        userId: admin.id,
+        userId: admin.userId,
         action: "MEMBERSHIP_UPDATED",
         entityType: "UnitMembership",
         entityId: membershipId,

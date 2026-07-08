@@ -40,7 +40,7 @@ export default function UnitClaimPage() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
         <div className="w-full max-w-md space-y-6 text-center">
           <Image
-            src="https://www.gulshandynasty.com/images/logo.webp"
+            src="/logo.webp"
             alt="Gulshan Dynasty"
             width={200}
             height={50}
@@ -68,7 +68,7 @@ export default function UnitClaimPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <Image
-            src="https://www.gulshandynasty.com/images/logo.webp"
+            src="/logo.webp"
             alt="Gulshan Dynasty"
             width={200}
             height={50}

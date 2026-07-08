@@ -1,6 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { InlineAlert } from "@/components/shared/inline-alert";
 
 const statuses = [
   { value: "ACCEPTED", label: "Accept", color: "bg-green-600 hover:bg-green-700" },
@@ -15,35 +17,46 @@ export function RsvpButtons({
   eventId: string;
   currentStatus: string | null;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const handleRsvp = (status: string) => {
     startTransition(async () => {
-      await fetch("/api/events/rsvp", {
+      setError(null);
+      const res = await fetch("/api/events/rsvp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId, status }),
       });
-      window.location.reload();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "Failed to update RSVP");
+        return;
+      }
+      router.refresh();
     });
   };
 
   return (
-    <div className="flex gap-3">
-      {statuses.map((s) => (
-        <button
-          key={s.value}
-          disabled={pending}
-          onClick={() => handleRsvp(s.value)}
-          className={`inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
-            currentStatus === s.value
-              ? "ring-2 ring-offset-2 ring-gold " + s.color
-              : s.color
-          }`}
-        >
-          {s.label}
-        </button>
-      ))}
+    <div className="space-y-2">
+      {error && <InlineAlert>{error}</InlineAlert>}
+      <div className="flex gap-3">
+        {statuses.map((s) => (
+          <button
+            key={s.value}
+            disabled={pending}
+            onClick={() => handleRsvp(s.value)}
+            className={`inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
+              currentStatus === s.value
+                ? "ring-2 ring-offset-2 ring-gold " + s.color
+                : s.color
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

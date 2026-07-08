@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
 import { deleteFile } from "@/lib/minio";
-import { canManageHubHero } from "@/lib/hub-hero-auth";
+import { canManageCommunityContent } from "@/lib/faq-auth";
 import { normalizeHeroLinkUrl } from "@/lib/hub-hero";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -13,7 +13,7 @@ async function requireEditor() {
   if (!session?.user?.id) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
-  if (!(await canManageHubHero(session.user.id))) {
+  if (!(await canManageCommunityContent(session.user.id))) {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
   return { userId: session.user.id };

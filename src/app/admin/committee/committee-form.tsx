@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { DESIGNATION_TITLES, designationTitleLabels } from "@/lib/designation-labels";
 
-const TITLES = ["President", "Secretary", "Treasurer", "Vice President", "Committee Member"];
+const TITLES = DESIGNATION_TITLES.map((t) => designationTitleLabels[t]);
 
 export function CommitteeForm() {
   const [email, setEmail] = useState("");
@@ -81,6 +82,7 @@ export function CommitteeForm() {
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
+            min={startDate || undefined}
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         </div>

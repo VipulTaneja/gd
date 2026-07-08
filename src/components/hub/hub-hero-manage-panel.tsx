@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { ChevronDown, ChevronUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,14 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { FileUpload } from "@/components/shared/file-upload";
+import { InlineAlert } from "@/components/shared/inline-alert";
+import { ReorderButtons } from "@/components/shared/reorder-buttons";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { useJsonMutation } from "@/lib/client-api";
 import { uploadRichTextImage } from "@/lib/rich-text-upload";
 import type { HubHeroSlideManageDto } from "@/lib/hub-hero";
 
@@ -30,22 +26,11 @@ interface HubHeroManagePanelProps {
 }
 
 export function HubHeroManagePanel({ initialSlides }: HubHeroManagePanelProps) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { pending, error, setError, refresh, apiCall } = useJsonMutation();
   const [altText, setAltText] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-
-  const refresh = () => startTransition(() => router.refresh());
-
-  async function apiCall(url: string, init?: RequestInit) {
-    const res = await fetch(url, init);
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Request failed");
-    return data;
-  }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -91,23 +76,17 @@ export function HubHeroManagePanel({ initialSlides }: HubHeroManagePanelProps) {
   async function moveSlide(slide: HubHeroSlideManageDto, direction: "up" | "down") {
     const index = initialSlides.findIndex((s) => s.id === slide.id);
     const swapIndex = direction === "up" ? index - 1 : index + 1;
-    const swap = initialSlides[swapIndex];
-    if (!swap) return;
+    if (swapIndex < 0 || swapIndex >= initialSlides.length) return;
 
     setError(null);
     try {
-      await Promise.all([
-        apiCall(`/api/hub/hero-slides/${slide.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: swap.sortOrder }),
-        }),
-        apiCall(`/api/hub/hero-slides/${swap.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sortOrder: slide.sortOrder }),
-        }),
-      ]);
+      const ids = initialSlides.map((s) => s.id);
+      [ids[index], ids[swapIndex]] = [ids[swapIndex], ids[index]];
+      await apiCall("/api/hub/hero-slides", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reorder: true, ids }),
+      });
       refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reorder");
@@ -116,11 +95,7 @@ export function HubHeroManagePanel({ initialSlides }: HubHeroManagePanelProps) {
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {error && <InlineAlert variant="destructive">{error}</InlineAlert>}
 
       <Card>
         <CardHeader>
@@ -304,26 +279,12 @@ function SlideRow({
                 <Button type="button" variant="outline" size="sm" disabled={pending} onClick={toggleActive}>
                   {slide.isActive ? "Hide" : "Show"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={pending || index === 0}
-                  onClick={() => onMove(slide, "up")}
-                  aria-label="Move up"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={pending || index === total - 1}
-                  onClick={() => onMove(slide, "down")}
-                  aria-label="Move down"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
+                <ReorderButtons
+                  index={index}
+                  total={total}
+                  pending={pending}
+                  onMove={(direction) => onMove(slide, direction)}
+                />
                 <Button
                   type="button"
                   variant="outline"
@@ -341,24 +302,15 @@ function SlideRow({
         </CardContent>
       </Card>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove slide?</DialogTitle>
-            <DialogDescription>
-              This removes the image from the home page carousel. Uploaded files are deleted from storage.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" disabled={pending} onClick={remove}>
-              Remove
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Remove slide?"
+        description="This removes the image from the home page carousel. Uploaded files are deleted from storage."
+        confirmLabel="Remove"
+        onConfirm={remove}
+        pending={pending}
+      />
     </>
   );
 }

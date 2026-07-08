@@ -1,10 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Loader2, Plus, Trash2, Pencil, ChevronUp, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Plus, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/shared/rich-text-editor";
+import { InlineAlert } from "@/components/shared/inline-alert";
+import { ReorderButtons } from "@/components/shared/reorder-buttons";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { useJsonMutation } from "@/lib/client-api";
 import type { FaqSectionDto } from "@/lib/faq";
 import { faq as faqCopy } from "@/lib/microcopy";
 
@@ -13,21 +16,23 @@ interface FaqManagePanelProps {
 }
 
 export function FaqManagePanel({ initialSections }: FaqManagePanelProps) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { pending, error, setError, refresh, apiCall } = useJsonMutation();
+  const [sections, setSections] = useState(initialSections);
+  const [prevInitialSections, setPrevInitialSections] = useState(initialSections);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newItemSectionId, setNewItemSectionId] = useState<string | null>(null);
 
-  const refresh = () => startTransition(() => router.refresh());
+  if (initialSections !== prevInitialSections) {
+    setPrevInitialSections(initialSections);
+    setSections(initialSections);
+  }
 
-  async function apiCall(url: string, init?: RequestInit) {
-    const res = await fetch(url, init);
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Request failed");
-    return data;
+  function reorderItems(sectionId: string, newItems: FaqSectionDto["items"]) {
+    setSections((prev) =>
+      prev.map((s) => (s.id === sectionId ? { ...s, items: newItems } : s)),
+    );
   }
 
   async function handleCreateSection(e: React.FormEvent) {
@@ -48,9 +53,7 @@ export function FaqManagePanel({ initialSections }: FaqManagePanelProps) {
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</div>
-      )}
+      {error && <InlineAlert>{error}</InlineAlert>}
 
       <form onSubmit={handleCreateSection} className="flex flex-col gap-3 sm:flex-row">
         <input
@@ -66,14 +69,14 @@ export function FaqManagePanel({ initialSections }: FaqManagePanelProps) {
         </Button>
       </form>
 
-      {initialSections.length === 0 ? (
+      {sections.length === 0 ? (
         <p className="text-sm text-muted-foreground">{faqCopy.manageEmpty}</p>
       ) : (
-        initialSections.map((section, sectionIndex) => (
+        sections.map((section, sectionIndex) => (
           <SectionCard
             key={section.id}
             section={section}
-            allSections={initialSections}
+            allSections={sections}
             sectionIndex={sectionIndex}
             pending={pending}
             editingSectionId={editingSectionId}
@@ -87,6 +90,8 @@ export function FaqManagePanel({ initialSections }: FaqManagePanelProps) {
             onCancelNewItem={() => setNewItemSectionId(null)}
             onError={setError}
             onRefresh={refresh}
+            onReorderSections={setSections}
+            onReorderItems={reorderItems}
             apiCall={apiCall}
           />
         ))
@@ -111,6 +116,8 @@ function SectionCard({
   onCancelNewItem,
   onError,
   onRefresh,
+  onReorderSections,
+  onReorderItems,
   apiCall,
 }: {
   section: FaqSectionDto;
@@ -128,9 +135,13 @@ function SectionCard({
   onCancelNewItem: () => void;
   onError: (msg: string | null) => void;
   onRefresh: () => void;
+  onReorderSections: (sections: FaqSectionDto[]) => void;
+  onReorderItems: (sectionId: string, items: FaqSectionDto["items"]) => void;
   apiCall: (url: string, init?: RequestInit) => Promise<unknown>;
 }) {
   const isEditing = editingSectionId === section.id;
+  const [deleteSectionOpen, setDeleteSectionOpen] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
 
   async function saveSection(form: FormData) {
     onError(null);
@@ -153,10 +164,10 @@ function SectionCard({
   }
 
   async function deleteSection() {
-    if (!confirm(faqCopy.deleteSectionConfirm(section.items.length))) return;
     onError(null);
     try {
       await apiCall(`/api/faq/sections?id=${section.id}`, { method: "DELETE" });
+      setDeleteSectionOpen(false);
       onRefresh();
     } catch (e) {
       onError(e instanceof Error ? e.message : "Failed");
@@ -167,17 +178,20 @@ function SectionCard({
     const swap = direction === "up" ? sectionIndex - 1 : sectionIndex + 1;
     if (swap < 0 || swap >= allSections.length) return;
     onError(null);
+
+    const reordered = [...allSections];
+    [reordered[sectionIndex], reordered[swap]] = [reordered[swap], reordered[sectionIndex]];
+    onReorderSections(reordered);
+
     try {
-      const ids = allSections.map((s) => s.id);
-      [ids[sectionIndex], ids[swap]] = [ids[swap], ids[sectionIndex]];
       await apiCall("/api/faq/sections", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reorder: true, ids }),
+        body: JSON.stringify({ reorder: true, ids: reordered.map((s) => s.id) }),
       });
-      onRefresh();
     } catch (e) {
       onError(e instanceof Error ? e.message : "Failed");
+      onRefresh();
     }
   }
 
@@ -186,17 +200,20 @@ function SectionCard({
     const swap = direction === "up" ? idx - 1 : idx + 1;
     if (swap < 0 || swap >= section.items.length) return;
     onError(null);
+
+    const reordered = [...section.items];
+    [reordered[idx], reordered[swap]] = [reordered[swap], reordered[idx]];
+    onReorderItems(section.id, reordered);
+
     try {
-      const ids = section.items.map((i) => i.id);
-      [ids[idx], ids[swap]] = [ids[swap], ids[idx]];
       await apiCall("/api/faq/items", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reorder: true, sectionId: section.id, ids }),
+        body: JSON.stringify({ reorder: true, sectionId: section.id, ids: reordered.map((i) => i.id) }),
       });
-      onRefresh();
     } catch (e) {
       onError(e instanceof Error ? e.message : "Failed");
+      onRefresh();
     }
   }
 
@@ -240,30 +257,16 @@ function SectionCard({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={sectionIndex === 0 || pending}
-              onClick={() => moveSection("up")}
-              aria-label={faqCopy.moveUp}
-            >
-              <ChevronUp className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={sectionIndex === allSections.length - 1 || pending}
-              onClick={() => moveSection("down")}
-              aria-label={faqCopy.moveDown}
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={onEditSection}>
+            <ReorderButtons
+              index={sectionIndex}
+              total={allSections.length}
+              pending={pending}
+              onMove={moveSection}
+            />
+            <Button type="button" variant="outline" size="sm" onClick={onEditSection} aria-label="Edit">
               <Pencil className="h-3.5 w-3.5" />
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={deleteSection}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteSectionOpen(true)} aria-label="Delete">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={onNewItem}>
@@ -314,38 +317,21 @@ function SectionCard({
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={itemIndex === 0 || pending}
-                    onClick={() => moveItem(item.id, "up")}
-                    aria-label={faqCopy.moveUp}
-                  >
-                    <ChevronUp className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={itemIndex === section.items.length - 1 || pending}
-                    onClick={() => moveItem(item.id, "down")}
-                    aria-label={faqCopy.moveDown}
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => onEditItem(item.id)}>
+                  <ReorderButtons
+                    index={itemIndex}
+                    total={section.items.length}
+                    pending={pending}
+                    onMove={(direction) => moveItem(item.id, direction)}
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => onEditItem(item.id)} aria-label="Edit">
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={async () => {
-                      if (!confirm(faqCopy.deleteQuestionConfirm)) return;
-                      await apiCall(`/api/faq/items?id=${item.id}`, { method: "DELETE" });
-                      onRefresh();
-                    }}
+                    onClick={() => setDeleteItemId(item.id)}
+                    aria-label="Delete"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -355,6 +341,36 @@ function SectionCard({
           ),
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteSectionOpen}
+        onOpenChange={setDeleteSectionOpen}
+        title="Delete section?"
+        description={faqCopy.deleteSectionConfirm(section.items.length)}
+        confirmLabel="Delete"
+        onConfirm={deleteSection}
+        pending={pending}
+      />
+
+      <ConfirmDialog
+        open={deleteItemId !== null}
+        onOpenChange={(open) => !open && setDeleteItemId(null)}
+        title="Delete question?"
+        description={faqCopy.deleteQuestionConfirm}
+        confirmLabel="Delete"
+        onConfirm={async () => {
+          if (!deleteItemId) return;
+          onError(null);
+          try {
+            await apiCall(`/api/faq/items?id=${deleteItemId}`, { method: "DELETE" });
+            setDeleteItemId(null);
+            onRefresh();
+          } catch (e) {
+            onError(e instanceof Error ? e.message : "Failed");
+          }
+        }}
+        pending={pending}
+      />
     </div>
   );
 }

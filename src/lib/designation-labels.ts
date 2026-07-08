@@ -20,6 +20,11 @@ export function designationTitleLabel(title: DesignationTitle): string {
   return designationTitleLabels[title] ?? title;
 }
 
+/** A designation with no end date, or one ending in the future, is currently active. */
+export function isActiveDesignation(endDate: Date | null, now: Date = new Date()): boolean {
+  return !endDate || endDate > now;
+}
+
 /** Form/API string values → enum */
 export function parseDesignationTitle(value: string): DesignationTitle | null {
   const map: Record<string, DesignationTitle> = {

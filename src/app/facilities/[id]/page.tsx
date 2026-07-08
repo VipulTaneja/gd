@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { UserLink } from "@/components/shared/user-link";
 import { canApproveFacilityBooking } from "@/lib/rbac-leaders";
 import { BookingGrid } from "./booking-grid";
@@ -95,10 +96,8 @@ export default async function FacilityDetailPage({
             <p className="text-sm font-medium mb-2">Amenity leaders</p>
             <div className="flex flex-wrap gap-2">
               {facility.leaders.map((leader) => (
-                <span
-                  key={leader.id}
-                  className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800"
-                >
+                <span key={leader.id} className="inline-flex items-center gap-1">
+                  <FriendlyBadge value="LEADER" variant="semantic" className="mr-1" />
                   <UserLink userId={leader.user.id} name={leader.user.name} />
                 </span>
               ))}

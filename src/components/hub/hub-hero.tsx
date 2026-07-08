@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Home, Building2, Leaf, MapPin, Settings2 } from "lucide-react";
+import { MapPin, Settings2 } from "lucide-react";
 import { UnitLink } from "@/components/shared/unit-link";
 import { FadeIn } from "@/components/shared/animated";
 import { HubHeroCarousel } from "@/components/hub/hub-hero-carousel";
 import { actions, greetings } from "@/lib/microcopy";
 import { cn } from "@/lib/utils";
 import { defaultHeroTint, towerHeroTint } from "@/lib/hub-images";
+import { communityStats } from "@/lib/community-stats";
 import type { HubHeroSlideDto } from "@/lib/hub-hero";
 import type { HubUser } from "@/types/hub";
 
@@ -15,18 +16,20 @@ interface HubHeroProps {
   canManage?: boolean;
 }
 
+/** Gulshan Dynasty is a single-timezone (IST) community — use it explicitly so the
+ * greeting is correct regardless of the server's own local timezone. */
 function getGreeting(): string {
-  const hour = new Date().getHours();
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(new Date()),
+  );
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
 }
-
-const statChips = [
-  { icon: Home, label: "204 homes" },
-  { icon: Building2, label: "3 towers" },
-  { icon: Leaf, label: "IGBC Platinum" },
-];
 
 export function HubHero({ user, slides, canManage = false }: HubHeroProps) {
   const tower = user?.primaryUnit?.block;
@@ -101,7 +104,7 @@ export function HubHero({ user, slides, canManage = false }: HubHeroProps) {
       {!user && (
         <div className="border-b bg-background/95 backdrop-blur-sm">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-2 px-4 py-3 sm:justify-start sm:px-6 lg:px-8">
-            {statChips.map(({ icon: Icon, label }) => (
+            {communityStats.slice(0, 3).map(({ icon: Icon, label }) => (
               <span
                 key={label}
                 className="inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-3 py-1 text-xs font-medium text-gold-dark"

@@ -57,6 +57,27 @@ export function ListSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
+export function CardGridSkeleton({ cards = 6, cols = 3 }: { cards?: number; cols?: number }) {
+  const colsClass = cols === 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3";
+  return (
+    <div className={`grid gap-6 ${colsClass}`}>
+      {Array.from({ length: cards }).map((_, i) => (
+        <div key={i} className="rounded-xl border bg-card p-6 space-y-4">
+          <Skeleton className="h-5 w-2/3" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <div className="flex gap-4">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-3 w-12" />
+          </div>
+          <Skeleton className="h-5 w-16" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function TableSkeleton({ cols = 4, rows = 5 }: { cols?: number; rows?: number }) {
   return (
     <div className="space-y-6">

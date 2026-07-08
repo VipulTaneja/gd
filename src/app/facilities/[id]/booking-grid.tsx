@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FilterPillRow } from "@/components/shared/filter-pill-row";
+import { SuccessAnimation } from "@/components/shared/success-animation";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
 interface Booking {
   id: string;
@@ -77,10 +82,14 @@ export function BookingGrid({
   blackouts: Blackout[];
   userUnitId: string | null;
 }) {
+  const router = useRouter();
   const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()));
   const [selectedDay, setSelectedDay] = useState(() => new Date());
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const [bookingSlotKey, setBookingSlotKey] = useState<string | null>(null);
   const [result, setResult] = useState<{ success?: boolean; error?: string } | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [pendingSlot, setPendingSlot] = useState<{ day: Date; slotIndex: number } | null>(null);
 
   const hours = useMemo(() => slotLabels(slotMinutes), [slotMinutes]);
 
@@ -94,47 +103,71 @@ export function BookingGrid({
     [weekStart],
   );
 
-  const now = new Date();
   const maxDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + maxAdvDays);
     return d;
   }, [maxAdvDays]);
 
-  const getSlotStatus = (day: Date, slotIndex: number): SlotStatus => {
-    const slotStart = new Date(day);
-    const [h, m] = hours[slotIndex].split(":").map(Number);
-    slotStart.setHours(h, m, 0, 0);
-    const slotEnd = new Date(slotStart);
-    slotEnd.setMinutes(slotEnd.getMinutes() + slotMinutes);
+  const slotStatusMap = useMemo(() => {
+    const map = new Map<string, SlotStatus>();
+    const nowSnapshot = new Date();
 
-    if (slotEnd <= now) return "past";
-    if (slotStart > maxDate) return "unavailable";
+    for (const day of days) {
+      for (let slotIndex = 0; slotIndex < hours.length; slotIndex++) {
+        const slotStart = new Date(day);
+        const [h, m] = hours[slotIndex].split(":").map(Number);
+        slotStart.setHours(h, m, 0, 0);
+        const slotEnd = new Date(slotStart);
+        slotEnd.setMinutes(slotEnd.getMinutes() + slotMinutes);
 
-    for (const b of blackouts) {
-      if (slotStart < new Date(b.endsAt) && slotEnd > new Date(b.startsAt)) return "blackout";
+        let status: SlotStatus;
+        if (slotEnd <= nowSnapshot) {
+          status = "past";
+        } else if (slotStart > maxDate) {
+          status = "unavailable";
+        } else if (
+          blackouts.some((b) => slotStart < new Date(b.endsAt) && slotEnd > new Date(b.startsAt))
+        ) {
+          status = "blackout";
+        } else {
+          const bookedCount = existingBookings.filter(
+            (booking) => slotStart < new Date(booking.endsAt) && slotEnd > new Date(booking.startsAt),
+          ).length;
+          status = bookedCount >= capacity ? "full" : "available";
+        }
+
+        map.set(`${day.toISOString()}-${slotIndex}`, status);
+      }
     }
 
-    const booked = existingBookings.filter((booking) => {
-      const bStart = new Date(booking.startsAt);
-      const bEnd = new Date(booking.endsAt);
-      return slotStart < bEnd && slotEnd > bStart;
-    });
+    return map;
+  }, [days, hours, slotMinutes, blackouts, existingBookings, capacity, maxDate]);
 
-    if (booked.length >= capacity) return "full";
-    return "available";
-  };
+  const getSlotStatus = (day: Date, slotIndex: number): SlotStatus =>
+    slotStatusMap.get(`${day.toISOString()}-${slotIndex}`) ?? "unavailable";
 
-  const handleBook = (day: Date, slotIndex: number) => {
-    if (!userUnitId) return;
+  const slotTimeRange = (day: Date, slotIndex: number) => {
     const slotStart = new Date(day);
     const [h, m] = hours[slotIndex].split(":").map(Number);
     slotStart.setHours(h, m, 0, 0);
     const slotEnd = new Date(slotStart);
     slotEnd.setMinutes(slotEnd.getMinutes() + slotMinutes);
+    return { slotStart, slotEnd };
+  };
 
-    if (!confirm(`Book ${slotStart.toLocaleString()} — ${slotEnd.toLocaleString()}?`)) return;
+  const requestBook = (day: Date, slotIndex: number) => {
+    if (!userUnitId || isPending) return;
+    setPendingSlot({ day, slotIndex });
+  };
 
+  const confirmBook = () => {
+    if (!pendingSlot || !userUnitId) return;
+    const { day, slotIndex } = pendingSlot;
+    const { slotStart, slotEnd } = slotTimeRange(day, slotIndex);
+
+    setPendingSlot(null);
+    setBookingSlotKey(`${day.toISOString()}-${slotIndex}`);
     startTransition(async () => {
       const res = await fetch("/api/facilities/book", {
         method: "POST",
@@ -148,7 +181,8 @@ export function BookingGrid({
       });
       const data = await res.json();
       setResult(data);
-      if (data.success) window.location.reload();
+      setBookingSlotKey(null);
+      if (data.success) setShowSuccess(true);
     });
   };
 
@@ -168,28 +202,50 @@ export function BookingGrid({
     }
   };
 
-  const cellColors: Record<SlotStatus, string> = {
-    past: "bg-muted/30",
-    available: "bg-green-50 hover:bg-green-100 cursor-pointer",
-    full: "bg-red-50",
-    blackout: "bg-amber-50",
-    unavailable: "bg-muted/20",
+  const SLOT_STATUS_STYLES: Record<SlotStatus, { bg: string; border: string; text: string }> = {
+    past: { bg: "bg-muted/30", border: "border-transparent", text: "text-muted-foreground" },
+    available: {
+      bg: "bg-green-50 hover:bg-green-100 active:bg-green-100 cursor-pointer",
+      border: "border-green-200",
+      text: "",
+    },
+    full: { bg: "bg-red-50", border: "border-red-100", text: "text-red-700" },
+    blackout: { bg: "bg-amber-50", border: "border-amber-100", text: "text-amber-800" },
+    unavailable: { bg: "bg-muted/20", border: "border-transparent", text: "text-muted-foreground" },
   };
 
   const mobileSlotClass = (status: SlotStatus) =>
     cn(
       "flex min-h-11 w-full items-center justify-between rounded-lg border px-4 text-sm transition-colors",
-      status === "available" && "border-green-200 bg-green-50 hover:bg-green-100 active:bg-green-100",
-      status === "full" && "border-red-100 bg-red-50 text-red-700",
-      status === "blackout" && "border-amber-100 bg-amber-50 text-amber-800",
-      status === "past" && "border-transparent bg-muted/30 text-muted-foreground",
-      status === "unavailable" && "border-transparent bg-muted/20 text-muted-foreground",
+      SLOT_STATUS_STYLES[status].border,
+      SLOT_STATUS_STYLES[status].bg,
+      SLOT_STATUS_STYLES[status].text,
     );
 
   return (
     <div className="space-y-4">
+      {showSuccess && (
+        <SuccessAnimation
+          message="Booked!"
+          onComplete={() => {
+            setShowSuccess(false);
+            router.refresh();
+          }}
+        />
+      )}
+
       {result?.error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{result.error}</div>
+        <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800">
+          <span>{result.error}</span>
+          <button
+            type="button"
+            onClick={() => setResult(null)}
+            aria-label="Dismiss error"
+            className="shrink-0 text-red-800/70 hover:text-red-800"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       )}
 
       <div className="flex items-center justify-between gap-2">
@@ -214,7 +270,7 @@ export function BookingGrid({
 
       {/* Mobile / tablet: pick a day, then tap a slot */}
       <div className="space-y-3 lg:hidden">
-        <div className="flex gap-2 overflow-x-auto flex-nowrap snap-x snap-mandatory scrollbar-hide pb-1">
+        <FilterPillRow>
           {days.map((day) => {
             const isSelected = sameDay(day, selectedDay);
             return (
@@ -236,7 +292,7 @@ export function BookingGrid({
               </button>
             );
           })}
-        </div>
+        </FilterPillRow>
 
         <div className="space-y-2">
           {hours.map((label, slotIndex) => {
@@ -247,21 +303,25 @@ export function BookingGrid({
             end.setMinutes(end.getMinutes() + slotMinutes);
             const endLabel = end.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
+            const slotKey = `${selectedDay.toISOString()}-${slotIndex}`;
+            const isBookingThisSlot = bookingSlotKey === slotKey;
+
             return (
               <button
                 key={label}
                 type="button"
-                disabled={status !== "available" || !userUnitId}
-                onClick={() => status === "available" && handleBook(selectedDay, slotIndex)}
-                className={mobileSlotClass(status)}
+                disabled={status !== "available" || !userUnitId || isPending}
+                onClick={() => status === "available" && requestBook(selectedDay, slotIndex)}
+                className={cn(mobileSlotClass(status), isPending && "opacity-60")}
               >
                 <span className="font-medium">{label} – {endLabel}</span>
                 <span className="text-xs">
-                  {status === "available" && "Tap to book"}
-                  {status === "full" && "Full"}
-                  {status === "blackout" && "Maintenance"}
-                  {status === "past" && "Past"}
-                  {status === "unavailable" && "Unavailable"}
+                  {isBookingThisSlot && "Booking…"}
+                  {!isBookingThisSlot && status === "available" && "Tap to book"}
+                  {!isBookingThisSlot && status === "full" && "Full"}
+                  {!isBookingThisSlot && status === "blackout" && "Maintenance"}
+                  {!isBookingThisSlot && status === "past" && "Past"}
+                  {!isBookingThisSlot && status === "unavailable" && "Unavailable"}
                 </span>
               </button>
             );
@@ -284,19 +344,30 @@ export function BookingGrid({
               <div className="bg-card p-2 text-xs text-muted-foreground">{h}</div>
               {days.map((d) => {
                 const status = getSlotStatus(d, si);
+                const slotKey = `${d.toISOString()}-${si}`;
+                const isBookingThisSlot = bookingSlotKey === slotKey;
+                const clickable = status === "available" && !isPending;
                 return (
                   <div
-                    key={`${d.toISOString()}-${si}`}
-                    role={status === "available" ? "button" : undefined}
-                    tabIndex={status === "available" ? 0 : undefined}
-                    className={cn("bg-card p-1 min-h-[36px]", cellColors[status], "transition-colors")}
-                    onClick={() => status === "available" && handleBook(d, si)}
+                    key={slotKey}
+                    role={clickable ? "button" : undefined}
+                    tabIndex={clickable ? 0 : undefined}
+                    title={status === "blackout" ? "Maintenance" : undefined}
+                    className={cn(
+                      "bg-card p-1 min-h-11",
+                      SLOT_STATUS_STYLES[status].bg,
+                      isPending && "pointer-events-none opacity-60",
+                      "transition-colors",
+                    )}
+                    onClick={() => clickable && requestBook(d, si)}
                     onKeyDown={(e) => {
-                      if (status === "available" && (e.key === "Enter" || e.key === " ")) {
-                        handleBook(d, si);
+                      if (clickable && (e.key === "Enter" || e.key === " ")) {
+                        requestBook(d, si);
                       }
                     }}
                   >
+                    {isBookingThisSlot && <span className="text-[10px] text-muted-foreground">…</span>}
+                    {status === "available" && <Check className="h-3 w-3 text-green-600" />}
                     {status === "full" && <span className="text-[10px] text-red-600">Full</span>}
                     {status === "blackout" && <span className="text-[10px] text-amber-600">Mnt</span>}
                   </div>
@@ -308,6 +379,24 @@ export function BookingGrid({
       </div>
 
       <BookingLegend />
+
+      <ConfirmDialog
+        open={pendingSlot != null}
+        onOpenChange={(open) => !open && setPendingSlot(null)}
+        title="Confirm booking"
+        description={
+          pendingSlot
+            ? (() => {
+                const { slotStart, slotEnd } = slotTimeRange(pendingSlot.day, pendingSlot.slotIndex);
+                return `Book ${slotStart.toLocaleString()} — ${slotEnd.toLocaleString()}?`;
+              })()
+            : undefined
+        }
+        confirmLabel="Book"
+        destructive={false}
+        pending={isPending}
+        onConfirm={confirmBook}
+      />
     </div>
   );
 }

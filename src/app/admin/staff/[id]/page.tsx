@@ -4,6 +4,8 @@ import { redirect, notFound } from "next/navigation";
 import { isAdmin } from "@/lib/rbac";
 import { staffRoleLabel } from "@/lib/staff";
 import { AdminStaffReviewActions } from "@/components/admin/admin-staff-review-actions";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,14 @@ export default async function AdminStaffDetailPage({
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Staff registry", href: "/admin/staff" },
+          { label: person.name },
+        ]}
+      />
+
       <div>
         <h1 className="font-heading text-2xl font-bold">{person.name}</h1>
         <p className="text-sm text-muted-foreground">Phone: {person.phone}</p>
@@ -49,9 +59,14 @@ export default async function AdminStaffDetailPage({
       <section className="rounded-xl border p-4 space-y-2">
         <h2 className="font-semibold">Associations</h2>
         {person.associations.map((a) => (
-          <div key={a.id} className="text-sm border-b pb-2">
-            {a.unit?.unitNumber ?? "Society"} · {staffRoleLabel(a.role)} · {a.status}
-            {a.needsReview && <span className="ml-2 text-amber-600">Needs review</span>}
+          <div key={a.id} className="flex flex-wrap items-center gap-2 text-sm border-b pb-2">
+            <span>{a.unit?.unitNumber ?? "Society"} · {staffRoleLabel(a.role)}</span>
+            <AdminStatusBadge value={a.status} />
+            {a.needsReview && (
+              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                Needs review
+              </span>
+            )}
           </div>
         ))}
       </section>
@@ -73,8 +88,9 @@ export default async function AdminStaffDetailPage({
       <section className="rounded-xl border p-4 space-y-2">
         <h2 className="font-semibold">Recent passes</h2>
         {person.visitorPasses.map((p) => (
-          <div key={p.id} className="text-sm">
-            {p.visitorName} · {p.unit?.unitNumber ?? "Multi-unit"} · {p.status}
+          <div key={p.id} className="flex flex-wrap items-center gap-2 text-sm">
+            <span>{p.visitorName} · {p.unit?.unitNumber ?? "Multi-unit"}</span>
+            <AdminStatusBadge value={p.status} />
           </div>
         ))}
       </section>

@@ -1,5 +1,10 @@
 import { db } from "@/lib/db";
 import { countPublishedFaqItems } from "@/lib/faq";
+import {
+  buildNoticeVisibilityFilter,
+  buildSubCommunityContentFilter,
+} from "@/lib/community-leaders";
+import { activeMembershipWhere } from "@/lib/rbac";
 import type { HubData } from "@/types/hub";
 
 export async function getHubData(
@@ -11,17 +16,19 @@ export async function getHubData(
   return getResidentHubData(sessionUserId);
 }
 
-async function getGuestHubData(): Promise<HubData> {
+async function getPublicHubSlice(
+  noticeFilter: object,
+  eventScopeFilter: object,
+  pollScopeFilter: object,
+) {
   const [notices, events, polls, facilities, forumThreads, publishedFaqCount] = await Promise.all([
     db.notice.findMany({
-      where: {
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-      },
+      where: noticeFilter,
       orderBy: [{ priority: "desc" }, { publishedAt: "desc" }],
       take: 3,
     }),
     db.event.findMany({
-      where: { startsAt: { gte: new Date() } },
+      where: { startsAt: { gte: new Date() }, ...eventScopeFilter },
       orderBy: { startsAt: "asc" },
       take: 2,
     }),
@@ -29,6 +36,7 @@ async function getGuestHubData(): Promise<HubData> {
       where: {
         opensAt: { lte: new Date() },
         closesAt: { gte: new Date() },
+        ...pollScopeFilter,
       },
       orderBy: { opensAt: "desc" },
       take: 1,
@@ -47,11 +55,10 @@ async function getGuestHubData(): Promise<HubData> {
   ]);
 
   return {
-    user: null,
-    isResident: false,
     notices,
     events,
     polls,
+    facilities,
     forumThreads: forumThreads.map((t) => ({
       id: t.id,
       title: t.title,
@@ -59,6 +66,25 @@ async function getGuestHubData(): Promise<HubData> {
       lastActivityAt: t.lastActivityAt,
       _count: t._count,
     })),
+    publishedFaqCount,
+  };
+}
+
+async function getGuestHubData(): Promise<HubData> {
+  const { notices, events, polls, facilities, forumThreads, publishedFaqCount } =
+    await getPublicHubSlice(
+      { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+      {},
+      {},
+    );
+
+  return {
+    user: null,
+    isResident: false,
+    notices,
+    events,
+    polls,
+    forumThreads,
     facilities,
     badges: { openTickets: 0, pendingDues: 0, unreadNotifications: 0, activePolls: polls.length },
     showFaqShortcut: publishedFaqCount > 0,
@@ -75,7 +101,7 @@ async function getResidentHubData(userId: string): Promise<HubData> {
       avatarUrl: true,
       globalRole: true,
       unitMemberships: {
-        where: { endDate: null },
+        where: activeMembershipWhere(),
         include: { unit: { select: { unitNumber: true, block: true, floor: true } } },
         orderBy: { isPrimary: "desc" },
         take: 1,
@@ -85,73 +111,43 @@ async function getResidentHubData(userId: string): Promise<HubData> {
 
   if (!user) return getGuestHubData();
 
-  const primaryUnit = user.unitMemberships[0]?.unit
-    ? {
-        ...user.unitMemberships[0].unit,
-        floor: user.unitMemberships[0].unit.floor ?? 0,
-      }
-    : null;
-  const towerBlock = primaryUnit?.block ?? null;
+  const primaryUnit = user.unitMemberships[0]?.unit ?? null;
 
-  const [notices, events, polls, facilities, forumThreads, openTickets, pendingDues, unreadNotifications, activePolls, publishedFaqCount] =
-    await Promise.all([
-      db.notice.findMany({
-        where: {
-          AND: [
-            { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
-            towerBlock
-              ? { OR: [{ targetBlock: null }, { targetBlock: towerBlock }] }
-              : {},
-          ],
+  const [noticeFilter, scopeFilter] = await Promise.all([
+    buildNoticeVisibilityFilter(userId),
+    buildSubCommunityContentFilter(userId),
+  ]);
+
+  const [
+    { notices, events, polls, facilities, forumThreads, publishedFaqCount },
+    openTickets,
+    pendingDues,
+    unreadNotifications,
+    activePolls,
+  ] = await Promise.all([
+    getPublicHubSlice(noticeFilter, scopeFilter, scopeFilter),
+    db.helpTicket.count({
+      where: { userId, status: { in: ["OPEN", "IN_PROGRESS"] } },
+    }),
+    db.due.count({
+      where: {
+        status: "PENDING",
+        unit: {
+          memberships: { some: { userId, ...activeMembershipWhere() } },
         },
-        orderBy: [{ priority: "desc" }, { publishedAt: "desc" }],
-        take: 3,
-      }),
-      db.event.findMany({
-        where: { startsAt: { gte: new Date() } },
-        orderBy: { startsAt: "asc" },
-        take: 2,
-      }),
-      db.poll.findMany({
-        where: {
-          opensAt: { lte: new Date() },
-          closesAt: { gte: new Date() },
-        },
-        orderBy: { opensAt: "desc" },
-        take: 1,
-      }),
-      db.facility.findMany({
-        select: { id: true, name: true, location: true },
-        take: 8,
-      }),
-      db.forumThread.findMany({
-        where: { status: { not: "HIDDEN" } },
-        orderBy: { lastActivityAt: "desc" },
-        take: 3,
-        include: { forum: { select: { slug: true } }, _count: { select: { posts: true } } },
-      }),
-      db.helpTicket.count({
-        where: { userId, status: { in: ["OPEN", "IN_PROGRESS"] } },
-      }),
-      db.due.count({
-        where: {
-          status: "PENDING",
-          unit: {
-            memberships: { some: { userId, endDate: null } },
-          },
-        },
-      }),
-      db.notification.count({
-        where: { userId, isRead: false },
-      }),
-      db.poll.count({
-        where: {
-          opensAt: { lte: new Date() },
-          closesAt: { gte: new Date() },
-        },
-      }),
-      countPublishedFaqItems(),
-    ]);
+      },
+    }),
+    db.notification.count({
+      where: { userId, isRead: false },
+    }),
+    db.poll.count({
+      where: {
+        opensAt: { lte: new Date() },
+        closesAt: { gte: new Date() },
+        ...scopeFilter,
+      },
+    }),
+  ]);
 
   return {
     user: {
@@ -162,13 +158,7 @@ async function getResidentHubData(userId: string): Promise<HubData> {
     notices,
     events,
     polls,
-    forumThreads: forumThreads.map((t) => ({
-      id: t.id,
-      title: t.title,
-      forumSlug: t.forum.slug,
-      lastActivityAt: t.lastActivityAt,
-      _count: t._count,
-    })),
+    forumThreads,
     facilities,
     badges: {
       openTickets,

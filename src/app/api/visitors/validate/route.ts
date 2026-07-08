@@ -21,19 +21,30 @@ export async function POST(request: Request) {
   });
 
   if (!pass) {
-    return NextResponse.json({ valid: false, error: "Invalid or expired pass" });
+    return NextResponse.json({
+      valid: false,
+      error: "Invalid or expired pass",
+      reason: "NOT_FOUND",
+    });
   }
 
   const now = new Date();
 
   if (now < pass.validFrom || now > pass.validUntil) {
-    return NextResponse.json({ valid: false, error: "Pass is not valid at this time" });
+    return NextResponse.json({
+      valid: false,
+      error: "Pass is not valid at this time",
+      reason: "OUTSIDE_WINDOW",
+      validFrom: pass.validFrom,
+      validUntil: pass.validUntil,
+    });
   }
 
   let unitNumbers: string[] = [];
+  let staffDestinations: Awaited<ReturnType<typeof resolveStaffDestinationUnits>> = [];
   if (pass.staffPersonId) {
-    const destinations = await resolveStaffDestinationUnits(pass.staffPersonId);
-    unitNumbers = destinations.map((d) => d.unit!.unitNumber);
+    staffDestinations = await resolveStaffDestinationUnits(pass.staffPersonId);
+    unitNumbers = staffDestinations.map((d) => d.unit!.unitNumber);
   } else if (pass.unit) {
     unitNumbers = [pass.unit.unitNumber];
   }
@@ -48,19 +59,17 @@ export async function POST(request: Request) {
     }
 
     if (pass.staffPersonId) {
-      const destinations = await resolveStaffDestinationUnits(pass.staffPersonId);
-      const memberIds = new Set<string>();
-      for (const dest of destinations) {
-        if (!dest.unitId) continue;
-        const members = await db.unitMembership.findMany({
-          where: {
-            unitId: dest.unitId,
-            OR: [{ endDate: null }, { endDate: { gt: now } }],
-          },
-          select: { userId: true },
-        });
-        members.forEach((m) => memberIds.add(m.userId));
-      }
+      const unitIds = staffDestinations.map((d) => d.unitId).filter((id): id is string => Boolean(id));
+      const members = unitIds.length > 0
+        ? await db.unitMembership.findMany({
+            where: {
+              unitId: { in: unitIds },
+              OR: [{ endDate: null }, { endDate: { gt: now } }],
+            },
+            select: { userId: true },
+          })
+        : [];
+      const memberIds = new Set(members.map((m) => m.userId));
       for (const userId of memberIds) {
         await createNotification(
           userId,

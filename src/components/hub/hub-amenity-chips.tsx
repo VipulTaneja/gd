@@ -55,7 +55,12 @@ export function HubAmenityChips({ facilities }: HubAmenityChipsProps) {
                       <Icon className="h-3.5 w-3.5" />
                     </span>
                   )}
-                  {f.name}
+                  <span>
+                    {f.name}
+                    {f.location && (
+                      <span className="ml-1 text-muted-foreground/70">· {f.location}</span>
+                    )}
+                  </span>
                 </Link>
               );
             })}

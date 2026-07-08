@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { contacts as contactsCopy } from "@/lib/microcopy";
+import { useJsonMutation } from "@/lib/client-api";
 
 interface ContactEditFormProps {
   contactId: string;
@@ -23,8 +24,7 @@ export function ContactEditForm({
   const [name, setName] = useState(initialName ?? "");
   const [contactNo, setContactNo] = useState(initialContactNo);
   const [remarks, setRemarks] = useState(initialRemarks ?? "");
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const { pending, error, setError, refresh, apiCall, startTransition } = useJsonMutation();
 
   if (!canEdit) return null;
 
@@ -35,23 +35,22 @@ export function ContactEditForm({
     }
     setError(null);
     startTransition(async () => {
-      const res = await fetch("/api/contacts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: contactId,
-          name: name.trim() || null,
-          contactNo: contactNo.trim(),
-          remarks: remarks.trim() || null,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Could not save");
-        return;
+      try {
+        await apiCall("/api/contacts", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: contactId,
+            name: name.trim() || null,
+            contactNo: contactNo.trim(),
+            remarks: remarks.trim() || null,
+          }),
+        });
+        setEditing(false);
+        refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not save");
       }
-      setEditing(false);
-      window.location.reload();
     });
   };
 

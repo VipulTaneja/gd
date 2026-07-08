@@ -3,16 +3,10 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { UserLink } from "@/components/shared/user-link";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
 import { ApproveMoveButton, RejectMoveButton, CompleteMoveButton } from "./buttons";
 
 export const dynamic = "force-dynamic";
-
-const statusStyles: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-800",
-  APPROVED: "bg-green-100 text-green-800",
-  COMPLETED: "bg-blue-100 text-blue-800",
-  CANCELLED: "bg-gray-100 text-gray-800",
-};
 
 export default async function AdminMovesPage() {
   const session = await auth();
@@ -45,9 +39,7 @@ export default async function AdminMovesPage() {
                 <p className="font-medium">{move.type.replace("_", " ")}</p>
                 <p className="text-sm text-muted-foreground">{move.unit.unitNumber}</p>
               </div>
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[move.status]}`}>
-                {move.status}
-              </span>
+              <AdminStatusBadge value={move.status} />
             </div>
             <div className="text-sm">
               <UserLink userId={move.requester.id} name={move.requester.name} />
@@ -94,9 +86,7 @@ export default async function AdminMovesPage() {
                     <p className="text-xs text-muted-foreground">{move.requester.email}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[move.status]}`}>
-                      {move.status}
-                    </span>
+                    <AdminStatusBadge value={move.status} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {move.createdAt.toLocaleDateString()}

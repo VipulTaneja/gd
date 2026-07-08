@@ -4,11 +4,13 @@ import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { SoftCard } from "@/components/shared/soft-card";
+import { DetailHeroCard } from "@/components/shared/detail-hero-card";
 import { PhoneLink } from "@/components/shared/phone-link";
 import { UserLink } from "@/components/shared/user-link";
 import { ContactReviewForm } from "@/components/contacts/contact-review-form";
 import { ContactReviewList } from "@/components/contacts/contact-review-list";
 import { ContactEditForm } from "@/components/contacts/contact-edit-form";
+import { StarRatingDisplay } from "@/components/shared/star-rating-display";
 import {
   getContactReviewAggregate,
   isContactReviewable,
@@ -16,8 +18,8 @@ import {
 } from "@/lib/contact-reviews";
 import { isAdmin } from "@/lib/rbac";
 import { contacts as contactsCopy } from "@/lib/microcopy";
+import { contactCategoryStyle } from "@/lib/contact-category-style";
 import Link from "next/link";
-import { Star } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +60,7 @@ export default async function ContactDetailPage({
 
   const reviewable = isContactReviewable(contact.category);
   const canEdit = admin || contact.createdById === session.user.id;
+  const { icon: CategoryIcon, iconBg, iconColor } = contactCategoryStyle(contact.category);
 
   return (
     <DashboardLayout user={layoutUser}>
@@ -68,29 +71,30 @@ export default async function ContactDetailPage({
           subtitle={contact.category}
         />
 
-        <SoftCard accent="emerald">
-          <div className="space-y-4">
-            {contact.name && (
-              <p className="text-lg font-medium">{contact.name}</p>
-            )}
-            {aggregate.avgRating != null && (
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 fill-gold text-gold" />
-                <span className="font-medium">{aggregate.avgRating}</span>
-                <span className="text-sm text-muted-foreground">
-                  ({aggregate.reviewCount} rating{aggregate.reviewCount === 1 ? "" : "s"})
-                </span>
-              </div>
-            )}
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">{contactsCopy.callCta}</p>
-              <PhoneLink phone={contact.contactNo} className="text-base font-medium" />
-            </div>
-            {contact.remarks && (
-              <p className="text-sm text-muted-foreground">{contact.remarks}</p>
-            )}
+        <DetailHeroCard
+          accent="emerald"
+          avatarClassName={`${iconBg} ${iconColor}`}
+          avatarContent={<CategoryIcon className="h-7 w-7" />}
+        >
+          {contact.name && (
+            <p className="text-lg font-medium">{contact.name}</p>
+          )}
+          {aggregate.avgRating != null && (
+            <StarRatingDisplay
+              rating={aggregate.avgRating}
+              reviewCount={aggregate.reviewCount}
+              size="md"
+              showValue
+            />
+          )}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-1">{contactsCopy.callCta}</p>
+            <PhoneLink phone={contact.contactNo} className="text-base font-medium" />
           </div>
-        </SoftCard>
+          {contact.remarks && (
+            <p className="text-sm text-muted-foreground">{contact.remarks}</p>
+          )}
+        </DetailHeroCard>
 
         <section className="space-y-2 text-sm text-muted-foreground">
           {contact.createdBy && (
@@ -136,9 +140,9 @@ export default async function ContactDetailPage({
         </section>
 
         <p className="text-sm text-muted-foreground border-t pt-4">
-          Looking for individual help (maid, cook, driver)?{" "}
+          {contactsCopy.crossLinkToStaff}{" "}
           <Link href="/staff" className="text-gold hover:underline">
-            Regular help registry
+            {contactsCopy.crossLinkToStaffCta}
           </Link>
         </p>
       </div>

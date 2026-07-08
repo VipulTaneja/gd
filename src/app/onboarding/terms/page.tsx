@@ -26,7 +26,7 @@ export default function TermsPage() {
       <div className="w-full max-w-2xl space-y-6">
         <div className="text-center">
           <Image
-            src="https://www.gulshandynasty.com/images/logo.webp"
+            src="/logo.webp"
             alt="Gulshan Dynasty"
             width={200}
             height={50}

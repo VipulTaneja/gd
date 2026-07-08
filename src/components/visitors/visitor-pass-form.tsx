@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
 const VISITOR_TYPES = ["GUEST", "DELIVERY", "DAILY_HELP", "CAB", "OTHER"];
@@ -17,7 +18,7 @@ export function VisitorPassForm({ unitId }: { unitId: string }) {
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceDays, setRecurrenceDays] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
-  const [result, setResult] = useState<{ success?: boolean; error?: string; passId?: string } | null>(null);
+  const [result, setResult] = useState<{ success?: boolean; error?: string; passId?: string; activeCount?: number } | null>(null);
 
   const toggleDay = (day: string) => {
     setRecurrenceDays((prev) =>
@@ -65,7 +66,20 @@ export function VisitorPassForm({ unitId }: { unitId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {result?.error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{result.error}</div>}
+      {result?.error && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+          {result.error}
+          {result.activeCount != null && (
+            <>
+              {" "}
+              <Link href="/visitors" className="font-medium underline">
+                Review your active passes
+              </Link>{" "}
+              and cancel one to free up a slot.
+            </>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">

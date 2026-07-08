@@ -2,15 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import {
   canManageStaffAssociation,
-  getCallerUnitIds,
   requireApprovedResident,
   isResidentStaffRole,
-  isSocietyStaffRole,
 } from "@/lib/staff-auth";
 import {
   createStaffWithAssociation,
-  getAllActiveStaff,
-  getStaffReviewAggregates,
+  getStaffListForCaller,
 } from "@/lib/staff";
 import type { StaffRole } from "@/generated/prisma/enums";
 
@@ -25,51 +22,7 @@ export async function GET() {
     return NextResponse.json({ error: "Approval required" }, { status: 403 });
   }
 
-  const associations = await getAllActiveStaff();
-  const aggregates = await getStaffReviewAggregates(
-    [...new Set(associations.map((a) => a.staffPersonId))],
-  );
-
-  const callerUnitIds = await getCallerUnitIds(session.user.id);
-  const callerUnitIdSet = new Set(callerUnitIds);
-  const myStaffPersonIds = new Set(
-    associations
-      .filter((a) => a.unitId && callerUnitIdSet.has(a.unitId))
-      .map((a) => a.staffPersonId),
-  );
-
-  const staff = await Promise.all(
-    associations.map(async (a) => {
-      const isMyUnit = a.unitId ? callerUnitIdSet.has(a.unitId) : false;
-      const canManage =
-        isMyUnit && a.unitId
-          ? await canManageStaffAssociation(session.user.id, a.unitId)
-          : false;
-      const canAddToMyUnit =
-        a.scope === "UNIT" &&
-        !isSocietyStaffRole(a.role) &&
-        !isMyUnit &&
-        callerUnitIds.length > 0 &&
-        !myStaffPersonIds.has(a.staffPersonId) &&
-        isResidentStaffRole(a.role);
-
-      return {
-        associationId: a.id,
-        staffPersonId: a.staffPerson.id,
-        name: a.staffPerson.name,
-        role: a.role,
-        scope: a.scope,
-        unitId: a.unitId,
-        unitNumber: a.unit?.unitNumber ?? null,
-        recurrenceDays: a.recurrenceDays,
-        avgRating: aggregates.get(a.staffPersonId)?.avgRating ?? null,
-        reviewCount: aggregates.get(a.staffPersonId)?.reviewCount ?? 0,
-        isMyUnit,
-        canManage,
-        canAddToMyUnit,
-      };
-    }),
-  );
+  const { staff, callerUnitIds } = await getStaffListForCaller(session.user.id);
 
   return NextResponse.json({ staff, callerUnitIds });
 }

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { RichTextContent } from "@/components/shared/rich-text-content";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { VoteForm } from "./vote-form";
 import { PollResults } from "./poll-results";
 
@@ -61,7 +62,7 @@ export default async function PollDetailPage({
               <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">Anonymous</span>
             )}
             {poll.isResolution && (
-              <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">Resolution</span>
+              <FriendlyBadge value="RESOLUTION" variant="semantic" />
             )}
           </div>
         </div>

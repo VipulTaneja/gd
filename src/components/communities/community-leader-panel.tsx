@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserLink } from "@/components/shared/user-link";
+import { ApproveRejectButtons } from "@/components/shared/approve-reject-buttons";
 import { handleJoinRequest } from "@/app/admin/communities/actions";
 
 type PendingRequest = {
@@ -76,6 +78,7 @@ export function CommunityLeaderPanel({
 }
 
 function JoinRequestActions({ request }: { request: PendingRequest }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -87,7 +90,7 @@ function JoinRequestActions({ request }: { request: PendingRequest }) {
         setError(result.error);
         return;
       }
-      window.location.reload();
+      router.refresh();
     });
   };
 
@@ -100,24 +103,7 @@ function JoinRequestActions({ request }: { request: PendingRequest }) {
         </p>
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
       </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => process(true)}
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-green-600 px-4 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-        >
-          Approve
-        </button>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => process(false)}
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-red-600 px-4 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-        >
-          Reject
-        </button>
-      </div>
+      <ApproveRejectButtons pending={pending} onApprove={() => process(true)} onReject={() => process(false)} />
     </div>
   );
 }

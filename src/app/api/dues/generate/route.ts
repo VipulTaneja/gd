@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireAdminApi, isAdminApiError } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const user = await db.user.findUnique({ where: { id: session.user!.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const admin = await requireAdminApi();
+  if (isAdminApiError(admin)) return admin;
 
   const { label, amount, dueDate } = await request.json();
 
@@ -33,7 +28,7 @@ export async function POST(request: Request) {
     )
   );
 
-  await logAction(session.user!.id, "DUES_GENERATED", "Due", "bulk", {
+  await logAction(admin.userId, "DUES_GENERATED", "Due", "bulk", {
     label,
     amount,
     count: units.length,

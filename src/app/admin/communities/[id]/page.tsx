@@ -79,7 +79,7 @@ export default async function CommunityDetailPage({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                    m.role === "ADMIN" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800"
+                    m.role === "ADMIN" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
                   }`}>
                     {m.role}
                   </span>

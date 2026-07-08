@@ -2,35 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { requireApprovedResident } from "@/lib/staff-auth";
 import { getStaffReviewAggregates, searchStaffPersons } from "@/lib/staff";
-
-const searchLimits = new Map<string, { count: number; resetAt: number }>();
-
-function checkSearchRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = searchLimits.get(userId);
-  if (!entry || now > entry.resetAt) {
-    searchLimits.set(userId, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  if (entry.count >= 30) return false;
-  entry.count++;
-  return true;
-}
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { approvalRequiredResponse, unauthorizedResponse } from "@/lib/api-errors";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const approved = await requireApprovedResident(session.user.id);
   if (!approved) {
-    return NextResponse.json({ error: "Approval required" }, { status: 403 });
+    return approvalRequiredResponse();
   }
 
-  if (!checkSearchRateLimit(session.user.id)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-  }
+  const rl = checkUserRateLimit(session.user.id, "staff-search", 30, 60_000);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterMs);
 
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (q.length < 2 && q.replace(/\D/g, "").length < 10) {

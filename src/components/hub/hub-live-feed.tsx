@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Calendar, MessageSquare, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { SoftCard } from "@/components/shared/soft-card";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { FadeIn } from "@/components/shared/animated";
 import { empty } from "@/lib/microcopy";
 import { cn } from "@/lib/utils";
 import { hubEventFallback } from "@/lib/hub-images";
+import { featureColors, type FeatureKey } from "@/lib/feature-colors";
 import type { HubNotice, HubEvent, HubPoll, HubForumThread } from "@/types/hub";
 
 interface HubLiveFeedProps {
@@ -16,11 +17,18 @@ interface HubLiveFeedProps {
   forumThreads: HubForumThread[];
 }
 
-const typeConfig = {
-  notice: { icon: Bell, accent: "amber" as const, label: "Notice", bg: "bg-amber-100", text: "text-amber-700" },
-  event: { icon: Calendar, accent: "sky" as const, label: "Event", bg: "bg-sky-100", text: "text-sky-700" },
-  poll: { icon: MessageSquare, accent: "none" as const, label: "Poll", bg: "bg-violet-100", text: "text-violet-700" },
-  forum: { icon: MessageSquare, accent: "cyan" as const, label: "Forum", bg: "bg-cyan-100", text: "text-cyan-700" },
+const typeToFeature: Record<FeedItem["type"], FeatureKey> = {
+  notice: "notices",
+  event: "events",
+  poll: "polls",
+  forum: "forums",
+};
+
+const typeLabels: Record<FeedItem["type"], string> = {
+  notice: "Notice",
+  event: "Event",
+  poll: "Poll",
+  forum: "Forum",
 };
 
 const noticePriorityBorder: Record<string, string> = {
@@ -81,8 +89,8 @@ export function HubLiveFeed({ notices, events, polls, forumThreads }: HubLiveFee
         </div>
         <div className="space-y-2">
           {items.slice(0, 6).map((item) => {
-            const config = typeConfig[item.type];
-            const Icon = config.icon;
+            const style = featureColors[typeToFeature[item.type]];
+            const Icon = style.icon;
             const href =
               item.type === "poll"
                 ? `/polls/${item.data.id}`
@@ -107,7 +115,7 @@ export function HubLiveFeed({ notices, events, polls, forumThreads }: HubLiveFee
                 )}
               >
                 {item.type === "event" ? (
-                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg ring-1 ring-foreground/5">
+                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/5">
                     <Image
                       src={hubEventFallback.src}
                       alt={hubEventFallback.alt}
@@ -119,24 +127,24 @@ export function HubLiveFeed({ notices, events, polls, forumThreads }: HubLiveFee
                 ) : (
                   <div
                     className={cn(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg",
-                      config.bg
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+                      style.bg
                     )}
                   >
-                    <Icon className={cn("h-4 w-4", config.text)} />
+                    <Icon className={cn("h-4 w-4", style.text)} />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {config.label}
+                      {typeLabels[item.type]}
                     </span>
                     {item.type === "notice" && (
                       <FriendlyBadge value={item.data.priority} variant="priority" />
                     )}
                   </div>
                   <p className="text-sm font-medium truncate mt-0.5">
-                    {"title" in item.data ? item.data.title : ""}
+                    {item.data.title}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {item.sortDate.toLocaleDateString("en-IN", {

@@ -3,8 +3,9 @@ import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
+import { PageHeader } from "@/components/shared/page-header";
+import { SoftCard } from "@/components/shared/soft-card";
 import { MembershipTimeline } from "@/components/shared/membership-timeline";
 import { UnitLink } from "@/components/shared/unit-link";
 import { UserLink } from "@/components/shared/user-link";
@@ -112,13 +113,6 @@ export default async function UserProfilePage({
       })
     : [];
 
-  const roleBadgeColor: Record<string, string> = {
-    SUPER_ADMIN: "bg-gold text-black",
-    ADMIN: "bg-gold/20 text-gold-dark",
-    RESIDENT: "bg-muted text-muted-foreground",
-    NON_RESIDENT: "bg-secondary text-secondary-foreground",
-  };
-
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
@@ -129,15 +123,12 @@ export default async function UserProfilePage({
   return (
     <DashboardLayout user={layoutUser}>
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-heading text-2xl font-bold">User Profile</h1>
-            <p className="text-muted-foreground">
-              {isOwnProfile ? "Your profile" : `Viewing ${user.name}'s profile`}
-            </p>
-          </div>
-          {isOwnProfile && (
+      <PageHeader
+        feature="directory"
+        title="User Profile"
+        subtitle={isOwnProfile ? "Your profile" : `Viewing ${user.name}'s profile`}
+        action={
+          isOwnProfile ? (
             <UserProfileEdit
               user={user}
               onUpdate={async (data) => {
@@ -145,60 +136,52 @@ export default async function UserProfilePage({
                 await updateUserProfile(userId, data);
               }}
             />
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-4">
-                <Avatar size="lg">
-                  {user.avatarUrl && (
-                    <AvatarImage src={user.avatarUrl} alt={user.name} />
+          <SoftCard>
+            <div className="flex items-start gap-4">
+              <Avatar size="lg">
+                {user.avatarUrl && (
+                  <AvatarImage src={user.avatarUrl} alt={user.name} />
+                )}
+                <AvatarFallback className="bg-gold/10 text-gold text-lg">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <h2 className="font-heading text-xl font-bold">
+                  {user.name}
+                </h2>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  <FriendlyBadge value={user.globalRole} variant="semantic" />
+                  {user.approvalStatus !== "APPROVED" && (
+                    <FriendlyBadge value={user.approvalStatus} variant="semantic" />
                   )}
-                  <AvatarFallback className="bg-gold/10 text-gold text-lg">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h2 className="font-heading text-xl font-bold">
-                    {user.name}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    <Badge
-                      className={roleBadgeColor[user.globalRole] ?? ""}
-                    >
-                      {user.globalRole.replace("_", " ")}
-                    </Badge>
-                    {user.approvalStatus !== "APPROVED" && (
-                      <Badge variant="outline">{user.approvalStatus}</Badge>
-                    )}
-                    {user.phone && (
-                      <PhoneLink phone={user.phone} className="text-sm text-muted-foreground" />
-                    )}
-                  </div>
-                  {user.organization && (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {user.organization}
-                    </p>
+                  {user.phone && (
+                    <PhoneLink phone={user.phone} className="text-sm text-muted-foreground" />
                   )}
                 </div>
+                {user.organization && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {user.organization}
+                  </p>
+                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </SoftCard>
 
           {user.unitMemberships.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-gold" />
-                  Current Residence
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-gold" />
+                Current Residence
+              </h2>
+              <SoftCard className="space-y-3">
                 {user.unitMemberships.map((m) => (
                   <div
                     key={m.id}
@@ -210,22 +193,20 @@ export default async function UserProfilePage({
                         Floor {m.unit.floor}, Tower {m.unit.block}
                       </span>
                     </div>
-                    <Badge variant="outline">{m.role.replace("_", " ")}</Badge>
+                    <FriendlyBadge value={m.role} variant="semantic" />
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </SoftCard>
+            </div>
           )}
 
           {coResidents.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5 text-gold" />
-                  Family / Co-Residents
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+                <Users className="h-5 w-5 text-gold" />
+                Family / Co-Residents
+              </h2>
+              <SoftCard className="space-y-2">
                 {coResidents.map((cr) => (
                   <div
                     key={cr.id}
@@ -243,25 +224,21 @@ export default async function UserProfilePage({
                       <span className="text-xs text-muted-foreground">
                         {cr.unit.unitNumber}
                       </span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {cr.role.replace("_", " ")}
-                      </Badge>
+                      <FriendlyBadge value={cr.role} variant="semantic" />
                     </div>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </SoftCard>
+            </div>
           )}
 
           {allMemberships.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5 text-gold" />
-                  Membership History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-gold" />
+                Membership History
+              </h2>
+              <SoftCard>
                 <MembershipTimeline
                   memberships={allMemberships.map((m) => ({
                     ...m,
@@ -270,8 +247,8 @@ export default async function UserProfilePage({
                   }))}
                   perspective="user"
                 />
-              </CardContent>
-            </Card>
+              </SoftCard>
+            </div>
           )}
         </div>
 
@@ -296,11 +273,9 @@ export default async function UserProfilePage({
             />
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Activity Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <div className="space-y-3">
+            <h2 className="font-heading text-lg font-semibold">Activity Summary</h2>
+            <SoftCard className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground flex items-center gap-2">
                   <Vote className="h-4 w-4" /> Votes Cast
@@ -327,42 +302,36 @@ export default async function UserProfilePage({
                   {user._count.visitorPasses}
                 </span>
               </div>
-            </CardContent>
-          </Card>
+            </SoftCard>
+          </div>
 
           {user.communityMemberships.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5 text-gold" />
-                  Communities
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+                <Users className="h-5 w-5 text-gold" />
+                Communities
+              </h2>
+              <SoftCard className="space-y-2">
                 {user.communityMemberships.map((cm) => (
                   <div
                     key={cm.id}
                     className="flex items-center justify-between rounded-lg border p-2"
                   >
                     <span className="text-sm">{cm.subCommunity.name}</span>
-                    <Badge variant="outline" className="text-[10px]">
-                      {cm.role}
-                    </Badge>
+                    <FriendlyBadge value={cm.role} variant="semantic" />
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </SoftCard>
+            </div>
           )}
 
           {user.designations.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Award className="h-5 w-5 text-gold" />
-                  RWA Designations
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
+                <Award className="h-5 w-5 text-gold" />
+                RWA Designations
+              </h2>
+              <SoftCard className="space-y-2">
                 {user.designations.map((d) => (
                   <div key={d.id} className="text-sm">
                     <p className="font-medium">{designationTitleLabel(d.title)}</p>
@@ -371,16 +340,14 @@ export default async function UserProfilePage({
                     </p>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </SoftCard>
+            </div>
           )}
 
           {user.emergencyContactName && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Additional Info</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold">Additional Info</h2>
+              <SoftCard className="space-y-2 text-sm">
                 <div>
                   <span className="text-muted-foreground">
                     Emergency Contact:
@@ -394,21 +361,19 @@ export default async function UserProfilePage({
                     </>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </SoftCard>
+            </div>
           )}
 
-          <Card>
-            <CardContent className="pt-6 text-xs text-muted-foreground">
-              <p>
-                Member since{" "}
-                {new Date(user.createdAt).toLocaleDateString("en-IN", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
-            </CardContent>
-          </Card>
+          <SoftCard className="text-xs text-muted-foreground">
+            <p>
+              Member since{" "}
+              {new Date(user.createdAt).toLocaleDateString("en-IN", {
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </SoftCard>
         </div>
       </div>
     </div>

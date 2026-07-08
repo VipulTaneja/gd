@@ -5,6 +5,7 @@ import { MobileBottomNav } from "@/components/shell/mobile-bottom-nav";
 
 interface CommunityHubProps {
   isAuthenticated?: boolean;
+  isLeader?: boolean;
   header: ReactNode;
   hero: ReactNode;
   shortcuts: ReactNode;
@@ -16,6 +17,7 @@ interface CommunityHubProps {
 
 export function CommunityHub({
   isAuthenticated,
+  isLeader,
   header,
   hero,
   shortcuts,
@@ -47,7 +49,7 @@ export function CommunityHub({
       </main>
 
       {footer}
-      <MobileBottomNav isAuthenticated={isAuthenticated} />
+      <MobileBottomNav isAuthenticated={isAuthenticated} isLeader={isLeader} />
     </div>
   );
 }

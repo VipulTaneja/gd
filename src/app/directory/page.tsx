@@ -8,6 +8,7 @@ import { Users } from "lucide-react";
 import { buildAlignedFloorGrid, buildDirectoryTowers } from "@/lib/directory-layout";
 import { DirectoryTowerView } from "@/components/directory/directory-tower-view";
 import { DirectoryTowerFilter } from "@/components/directory/directory-tower-filter";
+import { activeMembershipWhere } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -51,12 +52,20 @@ export default async function DirectoryPage({
   const params = await searchParams;
   const { units, memberships } = await getDirectoryData(params.tower);
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { name: true, email: true, globalRole: true },
-  });
+  const [user, ownMembership] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, email: true, globalRole: true },
+    }),
+    db.unitMembership.findFirst({
+      where: { userId: session.user.id, ...activeMembershipWhere() },
+      select: { unit: { select: { block: true } } },
+    }),
+  ]);
 
   if (!user) redirect("/login");
+
+  const userTower = ownMembership?.unit.block;
 
   const towers = buildDirectoryTowers(units, memberships, params.tower);
   const alignedGrid = !params.tower ? buildAlignedFloorGrid(units, memberships) : null;
@@ -72,7 +81,7 @@ export default async function DirectoryPage({
           subtitle="Explore your community floor by floor — tap a neighbor to view their profile."
         />
 
-        <DirectoryTowerFilter activeTower={params.tower} />
+        <DirectoryTowerFilter activeTower={params.tower} userTower={userTower} />
 
         {units.length === 0 ? (
           <EmptyState

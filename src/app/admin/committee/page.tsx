@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
-import { designationTitleLabel } from "@/lib/designation-labels";
+import { designationTitleLabel, isActiveDesignation } from "@/lib/designation-labels";
 import { CommitteeForm } from "./committee-form";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +23,8 @@ export default async function AdminCommitteePage() {
     orderBy: [{ startDate: "desc" }],
   });
 
-  const current = designations.filter((d) => !d.endDate || d.endDate > new Date());
-  const past = designations.filter((d) => d.endDate && d.endDate <= new Date());
+  const current = designations.filter((d) => isActiveDesignation(d.endDate));
+  const past = designations.filter((d) => !isActiveDesignation(d.endDate));
 
   return (
     <DashboardLayout user={user}>

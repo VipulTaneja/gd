@@ -1,6 +1,9 @@
 import { db } from "@/lib/db";
+import { isValidContactCategory } from "@/lib/contact-category-style";
 
 export const NON_REVIEWABLE_CATEGORY = "Internal Intercom";
+
+export { isValidContactCategory };
 
 export function isContactReviewable(category: string): boolean {
   return category !== NON_REVIEWABLE_CATEGORY;

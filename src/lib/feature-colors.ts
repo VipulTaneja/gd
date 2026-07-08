@@ -14,6 +14,7 @@ import {
   Sparkles,
   UsersRound,
   HelpCircle,
+  Crown,
 } from "lucide-react";
 
 export type FeatureKey =
@@ -32,7 +33,8 @@ export type FeatureKey =
   | "team"
   | "contacts"
   | "staff"
-  | "faq";
+  | "faq"
+  | "leader";
 
 export interface FeatureStyle {
   icon: LucideIcon;
@@ -108,10 +110,10 @@ export const featureColors: Record<FeatureKey, FeatureStyle> = {
   },
   communities: {
     icon: Sparkles,
-    label: "Teams and Communities",
-    bg: "bg-amber-100",
-    text: "text-amber-700",
-    ring: "ring-amber-200",
+    label: "Communities",
+    bg: "bg-lime-100",
+    text: "text-lime-700",
+    ring: "ring-lime-200",
   },
   notifications: {
     icon: BellRing,
@@ -129,30 +131,37 @@ export const featureColors: Record<FeatureKey, FeatureStyle> = {
   },
   team: {
     icon: Users,
-    label: "Meet Our Team",
-    bg: "bg-rose-100",
-    text: "text-rose-700",
-    ring: "ring-rose-200",
+    label: "Our Team",
+    bg: "bg-pink-100",
+    text: "text-pink-700",
+    ring: "ring-pink-200",
   },
   contacts: {
     icon: Phone,
     label: "Contacts",
-    bg: "bg-emerald-100",
-    text: "text-emerald-700",
-    ring: "ring-emerald-200",
+    bg: "bg-blue-100",
+    text: "text-blue-700",
+    ring: "ring-blue-200",
   },
   staff: {
     icon: UsersRound,
     label: "Regular help",
-    bg: "bg-orange-100",
-    text: "text-orange-700",
-    ring: "ring-orange-200",
+    bg: "bg-purple-100",
+    text: "text-purple-700",
+    ring: "ring-purple-200",
   },
   faq: {
     icon: HelpCircle,
     label: "Help & FAQ",
-    bg: "bg-indigo-100",
-    text: "text-indigo-700",
-    ring: "ring-indigo-200",
+    bg: "bg-yellow-100",
+    text: "text-yellow-700",
+    ring: "ring-yellow-200",
+  },
+  leader: {
+    icon: Crown,
+    label: "Leader hub",
+    bg: "bg-fuchsia-100",
+    text: "text-fuchsia-700",
+    ring: "ring-fuchsia-200",
   },
 };

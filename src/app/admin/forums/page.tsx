@@ -3,16 +3,11 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
 import Link from "next/link";
 import { hidePost, deletePost, resolveReport, dismissReport } from "./actions";
 
 export const dynamic = "force-dynamic";
-
-const statusStyles: Record<string, string> = {
-  OPEN: "bg-blue-100 text-blue-800",
-  RESOLVED: "bg-green-100 text-green-800",
-  DISMISSED: "bg-gray-100 text-gray-800",
-};
 
 export default async function AdminForumsPage({
   searchParams,
@@ -114,11 +109,7 @@ export default async function AdminForumsPage({
                       <p className="truncate">{report.reason}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[report.status]}`}
-                      >
-                        {report.status}
-                      </span>
+                      <AdminStatusBadge value={report.status} />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {report.createdAt.toLocaleDateString()}

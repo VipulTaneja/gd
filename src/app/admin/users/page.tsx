@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { UserLink } from "@/components/shared/user-link";
 import { UnitLink } from "@/components/shared/unit-link";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { ApproveUserButton, RejectUserButton, DeactivateUserButton, ChangeRoleSelect, ApproveClaimButton, RejectClaimButton, EditUserButton } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -51,19 +52,6 @@ async function getPendingClaims() {
     ...user,
     claimedUnit: user.claimedUnitId ? unitById.get(user.claimedUnitId) : null,
   }));
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    PENDING: "bg-amber-100 text-amber-800",
-    APPROVED: "bg-green-100 text-green-800",
-    REJECTED: "bg-red-100 text-red-800",
-  };
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${styles[status] ?? "bg-gray-100 text-gray-800"}`}>
-      {status}
-    </span>
-  );
 }
 
 export default async function UsersPage({
@@ -126,7 +114,7 @@ export default async function UsersPage({
                     <UserLink userId={user.id} name={user.name} />
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
-                  <StatusBadge status={user.claimStatus ?? "PENDING"} />
+                  <FriendlyBadge value={user.claimStatus ?? "PENDING"} variant="semantic" />
                 </div>
                 <div className="text-sm">
                   <span className="text-muted-foreground">Claimed Unit: </span>
@@ -161,7 +149,7 @@ export default async function UsersPage({
                         {user.claimedUnit?.unitNumber ?? "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={user.claimStatus ?? "PENDING"} />
+                        <FriendlyBadge value={user.claimStatus ?? "PENDING"} variant="semantic" />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
@@ -202,7 +190,7 @@ export default async function UsersPage({
                     />
                     <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
-                  <StatusBadge status={user.approvalStatus} />
+                  <FriendlyBadge value={user.approvalStatus} variant="semantic" />
                 </div>
                 <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
                   <div>
@@ -271,7 +259,7 @@ export default async function UsersPage({
                         <ChangeRoleSelect userId={user.id} currentRole={user.globalRole} />
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge status={user.approvalStatus} />
+                        <FriendlyBadge value={user.approvalStatus} variant="semantic" />
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {user.unitMemberships[0]?.unit.unitNumber ? (

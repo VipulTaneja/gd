@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isAdmin } from "@/lib/rbac";
 import { requireApprovedResident } from "@/lib/staff-auth";
+import { isValidContactCategory } from "@/lib/contact-reviews";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -19,6 +20,10 @@ export async function POST(request: NextRequest) {
 
   if (!category || !typeOfService || !contactNo) {
     return NextResponse.json({ error: "Category, service type, and contact number are required" }, { status: 400 });
+  }
+
+  if (!isValidContactCategory(category)) {
+    return NextResponse.json({ error: "Unknown category" }, { status: 400 });
   }
 
   try {

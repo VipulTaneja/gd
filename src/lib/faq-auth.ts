@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 
-export async function canManageFaq(userId: string): Promise<boolean> {
+/** Admin, Super Admin, or active committee designation — shared editor permission. */
+export async function canManageCommunityContent(userId: string): Promise<boolean> {
   const user = await db.user.findFirst({
     where: { id: userId, isActive: true, approvalStatus: "APPROVED" },
     select: { globalRole: true },
@@ -17,8 +18,11 @@ export async function canManageFaq(userId: string): Promise<boolean> {
   return !!designation;
 }
 
+/** @deprecated Use canManageCommunityContent */
+export const canManageFaq = canManageCommunityContent;
+
 export async function requireFaqEditor(userId: string) {
-  const allowed = await canManageFaq(userId);
+  const allowed = await canManageCommunityContent(userId);
   if (!allowed) {
     throw new Error("Forbidden");
   }

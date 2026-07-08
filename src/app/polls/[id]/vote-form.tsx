@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { InlineAlert } from "@/components/shared/inline-alert";
+import { SuccessAnimation } from "@/components/shared/success-animation";
 
 interface Option {
   id: string;
@@ -17,9 +20,11 @@ export function VoteForm({
   options: Option[];
   maxChoices: number;
 }) {
+  const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
-  const [result, setResult] = useState<{ success?: boolean; error?: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const toggle = (optionId: string) => {
     if (maxChoices === 1) {
@@ -38,23 +43,36 @@ export function VoteForm({
   const handleVote = () => {
     if (selected.length === 0) return;
     startTransition(async () => {
+      setError(null);
       const res = await fetch("/api/polls/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pollId, optionIds: selected }),
       });
       const data = await res.json();
-      setResult(data);
-      if (data.success) window.location.reload();
+      if (!res.ok || !data.success) {
+        setError(data.error ?? "Failed to submit vote");
+        return;
+      }
+      setShowSuccess(true);
     });
   };
 
-  if (result?.error) {
-    return <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{result.error}</div>;
+  if (showSuccess) {
+    return (
+      <SuccessAnimation
+        message="Vote recorded!"
+        onComplete={() => {
+          setShowSuccess(false);
+          router.refresh();
+        }}
+      />
+    );
   }
 
   return (
     <div className="space-y-3">
+      {error && <InlineAlert>{error}</InlineAlert>}
       <p className="text-sm text-muted-foreground">
         Select {maxChoices === 1 ? "one option" : `up to ${maxChoices} options`}
       </p>

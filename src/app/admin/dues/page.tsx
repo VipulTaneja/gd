@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { GenerateDuesForm } from "@/components/dues/generate-dues-form";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
+import { MarkPaidButton } from "./mark-paid-button";
 
 export const dynamic = "force-dynamic";
 
@@ -86,13 +88,7 @@ export default async function AdminDuesPage() {
                     <td className="px-4 py-3">{formatCurrency(Number(due.amount))}</td>
                     <td className="px-4 py-3">{due.dueDate.toLocaleDateString()}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        due.status === "PAID" ? "bg-green-100 text-green-800" :
-                        due.status === "OVERDUE" ? "bg-red-100 text-red-800" :
-                        "bg-amber-100 text-amber-800"
-                      }`}>
-                        {due.status}
-                      </span>
+                      <AdminStatusBadge value={due.status} />
                     </td>
                     <td className="px-4 py-3 text-right">
                       {due.status !== "PAID" && (
@@ -107,25 +103,6 @@ export default async function AdminDuesPage() {
         </div>
       </div>
     </DashboardLayout>
-  );
-}
-
-function MarkPaidButton({ dueId }: { dueId: string }) {
-  return (
-    <button
-      onClick={() => {
-        if (confirm("Mark as paid?")) {
-          fetch("/api/dues/mark-paid", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dueId }),
-          }).then(() => window.location.reload());
-        }
-      }}
-      className="inline-flex h-8 items-center justify-center rounded-lg bg-green-600 px-3 text-xs font-medium text-white hover:bg-green-700"
-    >
-      Mark Paid
-    </button>
   );
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { SearchInput } from "@/components/shared/search-input";
 import { RichTextContent } from "@/components/shared/rich-text-content";
 import type { FaqSectionDto } from "@/lib/faq";
 import { cn } from "@/lib/utils";
@@ -70,16 +71,12 @@ export function FaqAccordion({ sections, showSearch = false }: FaqAccordionProps
   return (
     <div className="space-y-4">
       {showSearch && (
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={faqCopy.searchPlaceholder}
-            className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-3 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring md:text-sm"
-          />
-        </div>
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          placeholder={faqCopy.searchPlaceholder}
+          className="[&_input]:rounded-xl"
+        />
       )}
 
       {filtered.length === 0 ? (
@@ -87,7 +84,7 @@ export function FaqAccordion({ sections, showSearch = false }: FaqAccordionProps
       ) : (
         <div className="space-y-3">
           {filtered.map((section) => {
-            const isOpen = openSections.has(section.id);
+            const isOpen = openSections.has(section.id) || query.trim() !== "";
             return (
               <section
                 key={section.id}

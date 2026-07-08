@@ -2,8 +2,9 @@
 
 import { useState, useRef } from "react";
 import { Upload, Trash2 } from "lucide-react";
+import { formatBytes, mimeTypeIcon } from "@/lib/format-files";
 
-export function FileUpload({
+export function DocumentUpload({
   subCommunityId,
   onUpload,
 }: {
@@ -22,7 +23,6 @@ export function FileUpload({
     setError(null);
 
     try {
-      // Get presigned URL
       const res = await fetch("/api/files/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,14 +40,12 @@ export function FileUpload({
 
       const { url, key } = await res.json();
 
-      // Upload to MinIO
       await fetch(url, {
         method: "PUT",
         body: file,
         headers: { "Content-Type": file.type },
       });
 
-      // Save to DB
       await fetch("/api/files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -103,29 +101,15 @@ export function FileList({
   files: { id: string; name: string; sizeBytes: number; mimeType: string; createdAt: string }[];
   onDelete?: (id: string) => void;
 }) {
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.includes("pdf")) return "📄";
-    if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
-    if (mimeType.includes("excel") || mimeType.includes("spreadsheet")) return "📊";
-    if (mimeType.startsWith("image/")) return "🖼️";
-    return "📎";
-  };
-
   return (
     <div className="space-y-2">
       {files.map((file) => (
         <div key={file.id} className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50">
-          <span className="text-xl">{getFileIcon(file.mimeType)}</span>
+          <span className="text-xl">{mimeTypeIcon(file.mimeType)}</span>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm truncate">{file.name}</p>
             <p className="text-xs text-muted-foreground">
-              {formatSize(file.sizeBytes)} · {new Date(file.createdAt).toLocaleDateString()}
+              {formatBytes(file.sizeBytes)} · {new Date(file.createdAt).toLocaleDateString()}
             </p>
           </div>
           <a
@@ -150,3 +134,6 @@ export function FileList({
     </div>
   );
 }
+
+/** @deprecated Use DocumentUpload */
+export const FileUpload = DocumentUpload;

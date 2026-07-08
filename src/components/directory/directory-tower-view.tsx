@@ -1,5 +1,6 @@
 import { Building2, Users } from "lucide-react";
 import { SoftCard } from "@/components/shared/soft-card";
+import { StaggerChildren } from "@/components/shared/animated";
 import { cn } from "@/lib/utils";
 import {
   towerBalloonStyles,
@@ -175,20 +176,20 @@ export function DirectoryTowerView({
         <div className="hidden lg:block">
           <AlignedDirectoryView grid={alignedGrid} />
         </div>
-        <div className="space-y-4 lg:hidden">
+        <StaggerChildren className="space-y-4 lg:hidden">
           {towers.map((tower) => (
             <TowerCard key={tower.block} tower={tower} />
           ))}
-        </div>
+        </StaggerChildren>
       </>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <StaggerChildren className="space-y-4">
       {towers.map((tower) => (
         <TowerCard key={tower.block} tower={tower} />
       ))}
-    </div>
+    </StaggerChildren>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -37,6 +38,7 @@ export function AdminUserActions({
   onReactivate,
 }: AdminUserActionsProps) {
   const [loading, startLoading] = useTransition();
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
   const router = useRouter();
 
   const handleRoleChange = async (role: string) => {
@@ -46,10 +48,10 @@ export function AdminUserActions({
     });
   };
 
-  const handleDeactivate = async () => {
-    if (!confirm("Are you sure you want to deactivate this user?")) return;
+  const handleDeactivate = () => {
     startLoading(async () => {
       await onDeactivate();
+      setDeactivateOpen(false);
       router.refresh();
     });
   };
@@ -62,80 +64,92 @@ export function AdminUserActions({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Shield className="h-5 w-5 text-gold" />
-          Admin Controls
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Global Role</label>
-              <Select
-                value={globalRole}
-                onValueChange={handleRoleChange}
-              >
-                <SelectTrigger disabled={loading}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="RESIDENT">Resident</SelectItem>
-                  <SelectItem value="NON_RESIDENT">Non-Resident</SelectItem>
-                  <SelectItem value="SECURITY_STAFF">Security Staff</SelectItem>
-                </SelectContent>
-              </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Status</label>
-          <div className="flex items-center gap-2">
-            <Badge
-              variant={isActive ? "default" : "destructive"}
-              className={isActive ? "bg-green-100 text-green-800" : ""}
-            >
-              {isActive ? "Active" : "Inactive"}
-            </Badge>
-            <Badge variant="outline">{approvalStatus}</Badge>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Shield className="h-5 w-5 text-gold" />
+            Admin Controls
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Global Role</label>
+                <Select
+                  value={globalRole}
+                  onValueChange={handleRoleChange}
+                >
+                  <SelectTrigger disabled={loading}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
+                    <SelectItem value="RESIDENT">Resident</SelectItem>
+                    <SelectItem value="NON_RESIDENT">Non-Resident</SelectItem>
+                    <SelectItem value="SECURITY_STAFF">Security Staff</SelectItem>
+                  </SelectContent>
+                </Select>
           </div>
-        </div>
 
-        <div className="flex gap-2">
-          {isActive ? (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDeactivate}
-              disabled={loading}
-              className="gap-1"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserX className="h-4 w-4" />
-              )}
-              Deactivate
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReactivate}
-              disabled={loading}
-              className="gap-1"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserCheck className="h-4 w-4" />
-              )}
-              Reactivate
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Status</label>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={isActive ? "default" : "destructive"}
+                className={isActive ? "bg-green-100 text-green-800" : ""}
+              >
+                {isActive ? "Active" : "Inactive"}
+              </Badge>
+              <Badge variant="outline">{approvalStatus}</Badge>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            {isActive ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setDeactivateOpen(true)}
+                disabled={loading}
+                className="gap-1"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserX className="h-4 w-4" />
+                )}
+                Deactivate
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReactivate}
+                disabled={loading}
+                className="gap-1"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserCheck className="h-4 w-4" />
+                )}
+                Reactivate
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <ConfirmDialog
+        open={deactivateOpen}
+        onOpenChange={setDeactivateOpen}
+        title="Deactivate this user?"
+        description="They will no longer be able to sign in."
+        confirmLabel="Deactivate"
+        onConfirm={handleDeactivate}
+        pending={loading}
+      />
+    </>
   );
 }

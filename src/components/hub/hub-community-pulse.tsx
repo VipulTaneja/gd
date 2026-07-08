@@ -1,15 +1,9 @@
 import Image from "next/image";
-import { Home, Building2, Leaf, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { SoftCard } from "@/components/shared/soft-card";
 import { FadeIn } from "@/components/shared/animated";
 import { hubGallery } from "@/lib/hub-images";
-
-const stats = [
-  { icon: Home, label: "204 homes" },
-  { icon: Building2, label: "3 towers" },
-  { icon: Leaf, label: "IGBC Platinum" },
-  { icon: MapPin, label: "5.8 acres" },
-];
+import { communityStats } from "@/lib/community-stats";
 
 export function HubCommunityPulse() {
   return (
@@ -34,7 +28,7 @@ export function HubCommunityPulse() {
         <div className="p-4">
           <p className="text-sm font-medium text-foreground">Life at Gulshan Dynasty</p>
           <div className="mt-2.5 flex flex-wrap gap-2">
-            {stats.map(({ icon: Icon, label }) => (
+            {communityStats.map(({ icon: Icon, label }) => (
               <span
                 key={label}
                 className="inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-2.5 py-1 text-xs font-medium text-gold-dark"

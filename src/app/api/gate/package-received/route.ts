@@ -18,8 +18,15 @@ export async function POST(request: NextRequest) {
     include: { user: true, unit: true },
   });
 
-  if (!pass || pass.status !== "ACTIVE") {
-    return NextResponse.json({ error: "Invalid or inactive pass" }, { status: 400 });
+  if (!pass) {
+    return NextResponse.json({ error: "Pass not found" }, { status: 400 });
+  }
+
+  if (pass.status !== "ACTIVE") {
+    return NextResponse.json(
+      { error: "Invalid or inactive pass", status: pass.status },
+      { status: 400 },
+    );
   }
 
   await db.visitorPass.update({

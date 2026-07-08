@@ -4,14 +4,15 @@ import { redirect, notFound } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { SoftCard } from "@/components/shared/soft-card";
+import { DetailHeroCard } from "@/components/shared/detail-hero-card";
 import { UnitLink } from "@/components/shared/unit-link";
 import { PhoneLink } from "@/components/shared/phone-link";
 import { StaffReviewForm } from "@/components/staff/staff-review-form";
 import { StaffReviewList } from "@/components/staff/staff-review-list";
+import { StarRatingDisplay } from "@/components/shared/star-rating-display";
 import { getStaffProfile, getStaffReviewAggregate, staffInitials, staffRoleLabel } from "@/lib/staff";
 import { isSocietyStaffRole } from "@/lib/staff-labels";
 import { staff as staffCopy } from "@/lib/microcopy";
-import { Star } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -61,35 +62,33 @@ export default async function StaffProfilePage({
     <DashboardLayout user={layoutUser}>
       <div className="space-y-6">
         <PageHeader
-          feature="visitors"
+          feature="staff"
           title={profile.name}
           subtitle={staffCopy.profileTitle}
         />
 
-        <SoftCard accent="gold">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gold/10 text-xl font-bold text-gold">
-              {profile.photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.photoUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                staffInitials(profile.name)
-              )}
-            </div>
-            <div className="flex-1 space-y-2">
-              {aggregate.avgRating != null && (
-                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 fill-gold text-gold" />
-                  <span className="font-medium">{aggregate.avgRating}</span>
-                  <span className="text-sm text-muted-foreground">
-                    ({aggregate.reviewCount} rating{aggregate.reviewCount === 1 ? "" : "s"})
-                  </span>
-                </div>
-              )}
-              <PhoneLink phone={profile.phone} className="text-base font-medium" />
-            </div>
-          </div>
-        </SoftCard>
+        <DetailHeroCard
+          accent="gold"
+          avatarClassName="bg-gold/10 text-gold"
+          avatarContent={
+            profile.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.photoUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              staffInitials(profile.name)
+            )
+          }
+        >
+          {aggregate.avgRating != null && (
+            <StarRatingDisplay
+              rating={aggregate.avgRating}
+              reviewCount={aggregate.reviewCount}
+              size="md"
+              showValue
+            />
+          )}
+          <PhoneLink phone={profile.phone} className="text-base font-medium" />
+        </DetailHeroCard>
 
         {activeAssociations.length > 0 && (
           <section className="space-y-3">

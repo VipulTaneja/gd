@@ -3,9 +3,9 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import Link from "next/link";
-import { UserLink } from "@/components/shared/user-link";
 import { CommunityForm } from "./community-form";
 import { ArchiveCommunityButton } from "./archive-button";
+import { JoinRequestRow } from "./join-request-row";
 
 export const dynamic = "force-dynamic";
 
@@ -105,50 +105,3 @@ export default async function AdminCommunitiesPage() {
     </DashboardLayout>
   );
 }
-
-function JoinRequestRow({ request }: { request: { id: string; user: { id: string; name: string; email: string }; subCommunity: { name: string } } }) {
-  const [pending, startTransition] = React.useState(false);
-
-  return (
-    <div className="flex items-center justify-between rounded-lg border p-3">
-      <div>
-        <UserLink userId={request.user.id} name={request.user.name} className="font-medium" />
-        <p className="text-xs text-muted-foreground">
-          wants to join <strong>{request.subCommunity.name}</strong>
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <button
-          disabled={pending}
-          onClick={() => {
-            startTransition(true);
-            import("./actions").then(({ handleJoinRequest }) =>
-              handleJoinRequest(request.id, true).then(() => {
-                startTransition(false);
-              })
-            );
-          }}
-          className="inline-flex h-8 items-center justify-center rounded-lg bg-green-600 px-3 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-        >
-          Approve
-        </button>
-        <button
-          disabled={pending}
-          onClick={() => {
-            startTransition(true);
-            import("./actions").then(({ handleJoinRequest }) =>
-              handleJoinRequest(request.id, false).then(() => {
-                startTransition(false);
-              })
-            );
-          }}
-          className="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-3 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-        >
-          Reject
-        </button>
-      </div>
-    </div>
-  );
-}
-
-import React from "react";

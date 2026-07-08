@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Phone, Loader2, Search, Users, Home, Wrench, Heart, Truck, Leaf, ShoppingBasket, Flower2, Pill, UtensilsCrossed, Scissors, Sparkles, Stethoscope, Building, Dumbbell, Plus, Star } from "lucide-react";
-import { contacts as contactsCopy } from "@/lib/microcopy";
+import { Users, Plus, Star, Loader2 } from "lucide-react";
+import { SearchInput } from "@/components/shared/search-input";
+import { FilterPillRow } from "@/components/shared/filter-pill-row";
+import { EmptyState } from "@/components/shared/empty-state";
+import { StaggerChildren } from "@/components/shared/animated";
+import { InlineAlert } from "@/components/shared/inline-alert";
+import { contacts as contactsCopy, empty } from "@/lib/microcopy";
+import { contactCategoryStyle, CONTACT_CATEGORIES } from "@/lib/contact-category-style";
 
 interface Contact {
   id: string;
@@ -25,44 +32,6 @@ interface ContactsPageProps {
   isAdmin: boolean;
 }
 
-const categoryIcons: Record<string, typeof Phone> = {
-  "Internal": Home,
-  "Internal Intercom": Home,
-  "Regular Services": Wrench,
-  "Personal Care": Heart,
-  "Drycleaner": Scissors,
-  "Courier": Truck,
-  "Gardener": Leaf,
-  "Staples": ShoppingBasket,
-  "Florist": Flower2,
-  "Pharmacy": Pill,
-  "Caterer": UtensilsCrossed,
-  "Boutique & Tailor": Scissors,
-  "White Goods Servicing": Sparkles,
-  "Health": Stethoscope,
-  "Interior Hardware": Building,
-  "Sports": Dumbbell,
-};
-
-const categoryColors: Record<string, string> = {
-  "Internal": "bg-amber-100 text-amber-700",
-  "Internal Intercom": "bg-orange-100 text-orange-700",
-  "Regular Services": "bg-emerald-100 text-emerald-700",
-  "Personal Care": "bg-rose-100 text-rose-700",
-  "Drycleaner": "bg-violet-100 text-violet-700",
-  "Courier": "bg-sky-100 text-sky-700",
-  "Gardener": "bg-green-100 text-green-700",
-  "Staples": "bg-amber-100 text-amber-700",
-  "Florist": "bg-pink-100 text-pink-700",
-  "Pharmacy": "bg-red-100 text-red-700",
-  "Caterer": "bg-orange-100 text-orange-700",
-  "Boutique & Tailor": "bg-purple-100 text-purple-700",
-  "White Goods Servicing": "bg-cyan-100 text-cyan-700",
-  "Health": "bg-rose-100 text-rose-700",
-  "Interior Hardware": "bg-slate-100 text-slate-700",
-  "Sports": "bg-indigo-100 text-indigo-700",
-};
-
 function RatingBadge({ avgRating, reviewCount }: { avgRating: number | null; reviewCount: number }) {
   if (avgRating == null) {
     return <span className="text-xs text-muted-foreground">{contactsCopy.noRating}</span>;
@@ -77,7 +46,9 @@ function RatingBadge({ avgRating, reviewCount }: { avgRating: number | null; rev
 }
 
 export function ContactsList({ contacts }: ContactsPageProps) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [addError, setAddError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addData, setAddData] = useState<{ category: string; typeOfService: string; name: string; contactNo: string; remarks: string }>({
@@ -89,51 +60,59 @@ export function ContactsList({ contacts }: ContactsPageProps) {
   });
   const [pending, startTransition] = useTransition();
 
-  const categories = [...new Set(contacts.map((c) => c.category))];
+  const categories = useMemo(() => [...new Set(contacts.map((c) => c.category))], [contacts]);
 
-  const filteredContacts = contacts.filter((c) => {
-    const matchesSearch = searchQuery === "" ||
-      c.typeOfService.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.contactNo.includes(searchQuery);
-    const matchesCategory = selectedCategory === null || c.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredContacts = useMemo(
+    () =>
+      contacts.filter((c) => {
+        const matchesSearch = searchQuery === "" ||
+          c.typeOfService.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.contactNo.includes(searchQuery);
+        const matchesCategory = selectedCategory === null || c.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      }),
+    [contacts, searchQuery, selectedCategory],
+  );
 
-  const groupedContacts = filteredContacts.reduce((acc, contact) => {
-    if (!acc[contact.category]) acc[contact.category] = [];
-    acc[contact.category].push(contact);
-    return acc;
-  }, {} as Record<string, Contact[]>);
+  const groupedContacts = useMemo(
+    () =>
+      filteredContacts.reduce((acc, contact) => {
+        if (!acc[contact.category]) acc[contact.category] = [];
+        acc[contact.category].push(contact);
+        return acc;
+      }, {} as Record<string, Contact[]>),
+    [filteredContacts],
+  );
 
   const saveAdd = () => {
     startTransition(async () => {
+      setAddError(null);
       const res = await fetch("/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(addData),
       });
-      if (res.ok) {
-        setShowAddForm(false);
-        setAddData({ category: "", typeOfService: "", name: "", contactNo: "", remarks: "" });
-        window.location.reload();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAddError(data.error ?? "Failed to add contact");
+        return;
       }
+      setShowAddForm(false);
+      setAddData({ category: "", typeOfService: "", name: "", contactNo: "", remarks: "" });
+      router.refresh();
     });
   };
 
   return (
     <div className="space-y-6">
       <div className="flex gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search contacts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border bg-card pl-10 pr-4 py-3 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold min-h-11"
-          />
-        </div>
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search contacts..."
+          className="flex-1 [&_input]:rounded-xl [&_input]:bg-card [&_input]:py-3 [&_input]:focus-visible:ring-gold"
+        />
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-gold px-4 text-sm font-medium text-black hover:bg-gold-light transition-colors shrink-0"
@@ -146,6 +125,7 @@ export function ContactsList({ contacts }: ContactsPageProps) {
       {showAddForm && (
         <div className="rounded-xl border bg-card p-4 space-y-3">
           <h3 className="font-heading text-sm font-semibold">New Contact</h3>
+          {addError && <InlineAlert>{addError}</InlineAlert>}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Category *</label>
@@ -155,10 +135,9 @@ export function ContactsList({ contacts }: ContactsPageProps) {
                 className="mt-1 w-full min-h-11 rounded-lg border bg-transparent px-3 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
               >
                 <option value="">Select category</option>
-                {categories.map((cat) => (
+                {CONTACT_CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
-                <option value="Other">Other</option>
               </select>
             </div>
             <div>
@@ -221,7 +200,7 @@ export function ContactsList({ contacts }: ContactsPageProps) {
         </div>
       )}
 
-      <div className="flex gap-2 overflow-x-auto flex-nowrap snap-x snap-mandatory scrollbar-hide pb-1">
+      <FilterPillRow>
         <button
           onClick={() => setSelectedCategory(null)}
           className={`inline-flex min-h-11 shrink-0 snap-start items-center justify-center rounded-full px-4 text-sm font-medium transition-colors ${
@@ -231,7 +210,7 @@ export function ContactsList({ contacts }: ContactsPageProps) {
           All
         </button>
         {categories.map((cat) => {
-          const Icon = categoryIcons[cat] || Phone;
+          const { icon: Icon } = contactCategoryStyle(cat);
           return (
             <button
               key={cat}
@@ -245,58 +224,64 @@ export function ContactsList({ contacts }: ContactsPageProps) {
             </button>
           );
         })}
-      </div>
+      </FilterPillRow>
 
       {Object.entries(groupedContacts).map(([category, items]) => {
-        const Icon = categoryIcons[category] || Phone;
-        const colorClass = categoryColors[category] || "bg-muted text-muted-foreground";
+        const { icon: Icon, iconBg, iconColor } = contactCategoryStyle(category);
 
         return (
           <div key={category} className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${colorClass}`}>
+              <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${iconBg} ${iconColor}`}>
                 <Icon className="h-4 w-4" />
               </div>
               <h3 className="font-heading text-lg font-semibold">{category}</h3>
               <span className="text-sm text-muted-foreground">({items.length})</span>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {items.map((contact) => (
-                <Link
-                  key={contact.id}
-                  href={`/contacts/${contact.id}`}
-                  className="group rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:ring-1 hover:ring-gold/30 min-h-11"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm truncate group-hover:text-gold">{contact.typeOfService}</p>
-                      {contact.name && (
-                        <p className="text-xs text-muted-foreground truncate">{contact.name}</p>
-                      )}
-                    </div>
-                    <RatingBadge avgRating={contact.avgRating} reviewCount={contact.reviewCount} />
-                  </div>
-                  {contact.remarks && (
-                    <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{contact.remarks}</p>
-                  )}
-                  {contact.lastEditedBy && (
-                    <p className="mt-2 text-[10px] text-muted-foreground">
-                      Updated {new Date(contact.lastEditedAt).toLocaleDateString("en-IN")}
-                    </p>
-                  )}
-                </Link>
-              ))}
-            </div>
+            <StaggerChildren className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {items.map((contact) => {
+                const style = contactCategoryStyle(contact.category);
+                const ContactIcon = style.icon;
+                return (
+                  <Link key={contact.id} href={`/contacts/${contact.id}`}>
+                    <article className="group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-foreground/5 transition-shadow hover:shadow-md">
+                      <div className={`absolute left-0 top-0 h-full w-1 ${style.line}`} />
+                      <div className="flex flex-1 flex-col p-3 pl-3.5">
+                        <div className="flex items-start gap-2">
+                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${style.iconBg}`}>
+                            <ContactIcon className={`h-4 w-4 ${style.iconColor}`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-heading text-sm font-semibold leading-tight group-hover:text-gold">
+                              {contact.typeOfService}
+                            </p>
+                            {contact.name && (
+                              <p className="mt-0.5 text-[11px] text-muted-foreground truncate">{contact.name}</p>
+                            )}
+                          </div>
+                          <RatingBadge avgRating={contact.avgRating} reviewCount={contact.reviewCount} />
+                        </div>
+                        {contact.remarks && (
+                          <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{contact.remarks}</p>
+                        )}
+                        {contact.lastEditedBy && (
+                          <p className="mt-2 text-[10px] text-muted-foreground">
+                            Updated {new Date(contact.lastEditedAt).toLocaleDateString("en-IN")}
+                          </p>
+                        )}
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
+            </StaggerChildren>
           </div>
         );
       })}
 
       {filteredContacts.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>No contacts found</p>
-        </div>
+        <EmptyState icon={Users} title={empty.contacts.title} description={empty.contacts.description} />
       )}
     </div>
   );

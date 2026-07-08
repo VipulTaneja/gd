@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireAdminApi, isAdminApiError } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { createBulkNotifications } from "@/lib/notifications";
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const admin = await requireAdminApi();
+  if (isAdminApiError(admin)) return admin;
 
   const { title, description, startsAt, endsAt, location, resolutions } = await request.json();
 
@@ -26,7 +21,7 @@ export async function POST(request: NextRequest) {
       scope: "GLOBAL",
       startsAt: new Date(startsAt),
       endsAt: new Date(endsAt),
-      createdById: session.user.id,
+      createdById: admin.userId,
     },
   });
 
@@ -41,7 +36,7 @@ export async function POST(request: NextRequest) {
         eligibility: "OWNERS_ONLY",
         opensAt: new Date(startsAt),
         closesAt: new Date(endsAt),
-        createdById: session.user.id,
+        createdById: admin.userId,
         options: {
           create: [
             { label: "Yes", order: 0 },

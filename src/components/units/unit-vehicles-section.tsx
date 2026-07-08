@@ -5,6 +5,7 @@ import { Car, Plus, Trash2, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserLink } from "@/components/shared/user-link";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
   vehicleTypeLabels,
   VEHICLE_TYPES,
@@ -42,6 +43,7 @@ export function UnitVehiclesSection({ unitNumber, vehicles, canEdit }: UnitVehic
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const openCreate = () => {
     setEditingId(null);
@@ -81,9 +83,14 @@ export function UnitVehiclesSection({ unitNumber, vehicles, canEdit }: UnitVehic
   };
 
   const handleDelete = (vehicleId: string) => {
-    if (!confirm("Remove this vehicle from the unit registry?")) return;
+    setDeleteId(vehicleId);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteId) return;
     startTransition(async () => {
-      await deleteVehicle(unitNumber, vehicleId);
+      await deleteVehicle(unitNumber, deleteId);
+      setDeleteId(null);
     });
   };
 
@@ -239,6 +246,16 @@ export function UnitVehiclesSection({ unitNumber, vehicles, canEdit }: UnitVehic
           </form>
         )}
       </CardContent>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="Remove this vehicle?"
+        description="It will be removed from the unit registry."
+        confirmLabel="Remove"
+        onConfirm={confirmDelete}
+        pending={pending}
+      />
     </Card>
   );
 }

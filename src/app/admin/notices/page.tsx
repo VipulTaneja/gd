@@ -3,14 +3,9 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
 
 export const dynamic = "force-dynamic";
-
-const priorityStyles: Record<string, string> = {
-  EMERGENCY: "bg-red-100 text-red-800",
-  IMPORTANT: "bg-amber-100 text-amber-800",
-  NORMAL: "bg-gray-100 text-gray-800",
-};
 
 export default async function AdminNoticesPage() {
   const session = await auth();
@@ -51,9 +46,7 @@ export default async function AdminNoticesPage() {
                 <tr key={notice.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">{notice.title}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${priorityStyles[notice.priority]}`}>
-                      {notice.priority}
-                    </span>
+                    <AdminStatusBadge value={notice.priority} />
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {notice.targetBlock ? `Tower ${notice.targetBlock}` : "All"}

@@ -3,16 +3,10 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { UserLink } from "@/components/shared/user-link";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-const statusStyles: Record<string, string> = {
-  OPEN: "bg-blue-100 text-blue-800",
-  IN_PROGRESS: "bg-amber-100 text-amber-800",
-  RESOLVED: "bg-green-100 text-green-800",
-  CLOSED: "bg-gray-100 text-gray-800",
-};
 
 export default async function AdminTicketsPage({
   searchParams,
@@ -76,9 +70,7 @@ export default async function AdminTicketsPage({
                       </Link>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[ticket.status]}`}>
-                        {ticket.status.replace(/_/g, " ")}
-                      </span>
+                      <AdminStatusBadge value={ticket.status} />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{ticket.category}</td>
                     <td className="px-4 py-3 text-muted-foreground">{ticket.priority}</td>

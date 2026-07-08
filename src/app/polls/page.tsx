@@ -95,9 +95,7 @@ export default async function PollsPage({
                   <div className="flex items-start justify-between mb-3">
                     <FriendlyBadge value={status === "active" ? "OPEN" : status === "closed" ? "CLOSED" : "PENDING"} variant="status" />
                     {poll.isResolution && (
-                      <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
-                        Resolution
-                      </span>
+                      <FriendlyBadge value="RESOLUTION" variant="semantic" />
                     )}
                   </div>
                   <h3 className="font-heading text-base font-semibold group-hover:text-gold">{poll.title}</h3>

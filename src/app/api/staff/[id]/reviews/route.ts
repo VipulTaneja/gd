@@ -2,20 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { requireApprovedResident } from "@/lib/staff-auth";
-
-const reviewLimits = new Map<string, { count: number; resetAt: number }>();
-
-function checkReviewRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = reviewLimits.get(userId);
-  if (!entry || now > entry.resetAt) {
-    reviewLimits.set(userId, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  if (entry.count >= 10) return false;
-  entry.count++;
-  return true;
-}
+import { checkUserRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { approvalRequiredResponse, unauthorizedResponse } from "@/lib/api-errors";
 
 export async function GET(
   request: NextRequest,
@@ -62,17 +50,16 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 
   const approved = await requireApprovedResident(session.user.id);
   if (!approved) {
-    return NextResponse.json({ error: "Approval required" }, { status: 403 });
+    return approvalRequiredResponse();
   }
 
-  if (!checkReviewRateLimit(session.user.id)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-  }
+  const rl = checkUserRateLimit(session.user.id, "staff-review", 10, 60_000);
+  if (!rl.ok) return rateLimitResponse(rl.retryAfterMs);
 
   const { id: staffPersonId } = await params;
   const { rating, comment } = await request.json();

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { StaffAssociationStatus, StaffRole, StaffScope } from "@/generated/prisma/enums";
 import { staffInitials, staffRoleLabel, isSocietyStaffRole } from "@/lib/staff-labels";
+import { canManageStaffAssociation, getCallerUnitIds, isResidentStaffRole } from "@/lib/staff-auth";
 
 export { staffInitials, staffRoleLabel };
 
@@ -239,4 +240,54 @@ export async function getAllActiveStaff() {
     },
     orderBy: [{ staffPerson: { name: "asc" } }, { updatedAt: "desc" }],
   });
+}
+
+export async function getStaffListForCaller(userId: string) {
+  const associations = await getAllActiveStaff();
+  const aggregates = await getStaffReviewAggregates(
+    [...new Set(associations.map((a) => a.staffPersonId))],
+  );
+
+  const callerUnitIds = await getCallerUnitIds(userId);
+  const callerUnitIdSet = new Set(callerUnitIds);
+  const myStaffPersonIds = new Set(
+    associations
+      .filter((a) => a.unitId && callerUnitIdSet.has(a.unitId))
+      .map((a) => a.staffPersonId),
+  );
+
+  const staff = await Promise.all(
+    associations.map(async (a) => {
+      const isMyUnit = a.unitId ? callerUnitIdSet.has(a.unitId) : false;
+      const canManage =
+        isMyUnit && a.unitId
+          ? await canManageStaffAssociation(userId, a.unitId)
+          : false;
+      const canAddToMyUnit =
+        a.scope === "UNIT" &&
+        !isSocietyStaffRole(a.role) &&
+        !isMyUnit &&
+        callerUnitIds.length > 0 &&
+        !myStaffPersonIds.has(a.staffPersonId) &&
+        isResidentStaffRole(a.role);
+
+      return {
+        associationId: a.id,
+        staffPersonId: a.staffPerson.id,
+        name: a.staffPerson.name,
+        role: a.role,
+        scope: a.scope,
+        unitId: a.unitId,
+        unitNumber: a.unit?.unitNumber ?? null,
+        recurrenceDays: a.recurrenceDays,
+        avgRating: aggregates.get(a.staffPersonId)?.avgRating ?? null,
+        reviewCount: aggregates.get(a.staffPersonId)?.reviewCount ?? 0,
+        isMyUnit,
+        canManage,
+        canAddToMyUnit,
+      };
+    }),
+  );
+
+  return { staff, callerUnitIds };
 }

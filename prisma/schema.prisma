@@ -609,6 +609,9 @@ model VisitorPass {
   @@index([unitId, status])
   @@index([otp, status])
   @@index([staffPersonId, status])
+  // A partial unique index on (otp) WHERE status = 'ACTIVE' is enforced via raw SQL
+  // in migration 20260707223016_visitor_pass_otp_unique_active — Prisma's schema DSL
+  // has no syntax for partial unique constraints.
 }
 
 // ─── HELPDESK & TICKETING ───────────────────────────────────────

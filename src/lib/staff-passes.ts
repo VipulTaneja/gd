@@ -1,11 +1,7 @@
-import crypto from "crypto";
 import { db } from "@/lib/db";
+import { createVisitorPassWithUniqueOtp } from "@/lib/visitor-otp";
 
 const DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
-
-function generateOtp(): string {
-  return crypto.randomInt(100000, 999999).toString();
-}
 
 function todayWindow() {
   const today = new Date();
@@ -61,21 +57,23 @@ export async function generateStaffPasses(): Promise<number> {
     const oldestAssoc = person.associations[0];
     if (!oldestAssoc) continue;
 
-    await db.visitorPass.create({
-      data: {
-        userId: oldestAssoc.registeredById,
-        unitId: oldestAssoc.unitId,
-        staffPersonId: person.id,
-        visitorName: person.name,
-        visitorPhone: person.phone,
-        visitorType: "DAILY_HELP",
-        otp: generateOtp(),
-        validFrom: startOfDay,
-        validUntil: endOfDay,
-        isRecurring: true,
-        recurrenceDays: [dayName],
-      },
-    });
+    await createVisitorPassWithUniqueOtp((otp) =>
+      db.visitorPass.create({
+        data: {
+          userId: oldestAssoc.registeredById,
+          unitId: oldestAssoc.unitId,
+          staffPersonId: person.id,
+          visitorName: person.name,
+          visitorPhone: person.phone,
+          visitorType: "DAILY_HELP",
+          otp,
+          validFrom: startOfDay,
+          validUntil: endOfDay,
+          isRecurring: true,
+          recurrenceDays: [dayName],
+        },
+      }),
+    );
     created++;
   }
 

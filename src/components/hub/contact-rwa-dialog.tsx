@@ -22,17 +22,20 @@ interface ContactRwaDialogProps {
 export function ContactRwaDialog({ open, onOpenChange }: ContactRwaDialogProps) {
   const [submitting, startSubmitting] = useTransition();
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
 
   const handleSubmit = async () => {
     if (!form.name || !form.email || !form.message) return;
+    setError(null);
     startSubmitting(async () => {
       try {
-        await fetch("/api/enquiry", {
+        const res = await fetch("/api/enquiry", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(form),
         });
+        if (!res.ok) throw new Error("Failed to send message");
         setSubmitted(true);
         setTimeout(() => {
           onOpenChange(false);
@@ -41,6 +44,7 @@ export function ContactRwaDialog({ open, onOpenChange }: ContactRwaDialogProps) 
         }, 2000);
       } catch (err) {
         console.error(err);
+        setError("Something went wrong. Please try again.");
       }
     });
   };
@@ -98,6 +102,9 @@ export function ContactRwaDialog({ open, onOpenChange }: ContactRwaDialogProps) 
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
               />
             </div>
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
             <Button
               onClick={handleSubmit}
               disabled={submitting || !form.name || !form.email || !form.message}

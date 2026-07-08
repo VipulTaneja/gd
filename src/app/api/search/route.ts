@@ -85,7 +85,6 @@ export async function GET(request: NextRequest) {
           title: u.name,
           subtitle: u.unitMemberships[0] ? `${u.unitMemberships[0].unit.unitNumber} · ${u.unitMemberships[0].role.replace("_", " ")}` : undefined,
           href: `/users/${u.id}`,
-          meta: u.unitMemberships[0]?.unit.block,
         }));
 
         return items.length > 0 ? { type: "user", label: "Neighbors", results: items } : null;

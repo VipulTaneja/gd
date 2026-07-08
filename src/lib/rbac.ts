@@ -55,6 +55,11 @@ export async function isAdmin(userId: string): Promise<boolean> {
   return user?.globalRole === "SUPER_ADMIN" || user?.globalRole === "ADMIN";
 }
 
+/** Active unit membership filter — endDate null or in the future. */
+export function activeMembershipWhere() {
+  return { OR: [{ endDate: null }, { endDate: { gt: new Date() } }] };
+}
+
 export async function isOwner(userId: string, unitId: string): Promise<boolean> {
   return hasActiveUnitRole(userId, unitId, ["OWNER", "JOINT_OWNER"]);
 }

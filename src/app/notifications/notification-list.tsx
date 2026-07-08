@@ -2,6 +2,7 @@
 
 import { useTransition, useState } from "react";
 import Link from "next/link";
+import { InlineAlert } from "@/components/shared/inline-alert";
 
 interface Notification {
   id: string;
@@ -16,21 +17,32 @@ interface Notification {
 export function NotificationList({ notifications }: { notifications: Notification[] }) {
   const [pending, startTransition] = useTransition();
   const [items, setItems] = useState(notifications);
+  const [error, setError] = useState<string | null>(null);
 
   const handleMarkRead = (id: string) => {
     startTransition(async () => {
-      await fetch("/api/notifications/read", {
+      setError(null);
+      const res = await fetch("/api/notifications/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notificationId: id }),
       });
+      if (!res.ok) {
+        setError("Could not mark notification as read");
+        return;
+      }
       setItems((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
     });
   };
 
   const handleMarkAllRead = () => {
     startTransition(async () => {
-      await fetch("/api/notifications/read-all", { method: "POST" });
+      setError(null);
+      const res = await fetch("/api/notifications/read-all", { method: "POST" });
+      if (!res.ok) {
+        setError("Could not mark all notifications as read");
+        return;
+      }
       setItems((prev) => prev.map((n) => ({ ...n, isRead: true })));
     });
   };
@@ -39,6 +51,8 @@ export function NotificationList({ notifications }: { notifications: Notificatio
 
   return (
     <div className="space-y-4">
+      {error && <InlineAlert>{error}</InlineAlert>}
+
       {hasUnread && (
         <div className="flex justify-end">
           <button

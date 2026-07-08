@@ -1,9 +1,9 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { listPublicFaq } from "@/lib/faq";
 import { buildFaqJsonLd, buildFaqPageMetadata } from "@/lib/faq-metadata";
 import { FaqAccordion } from "@/components/faq/faq-accordion";
-import { FaqLoginRedirect } from "@/components/faq/faq-login-redirect";
 import { faq as faqCopy } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,10 @@ export default async function PublicFaqPage() {
   const jsonLd = buildFaqJsonLd(sections);
 
   if (session?.user?.id) {
-    return <FaqLoginRedirect />;
+    // A server-side redirect preserves any URL hash automatically — the browser
+    // re-appends the fragment on same-origin redirects, since fragments are never
+    // sent to the server in the first place. No client-side hash-reading needed.
+    redirect("/faq/app");
   }
 
   return (

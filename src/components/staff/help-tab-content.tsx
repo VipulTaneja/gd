@@ -1,15 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Building2, Loader2, Plus, UserMinus, UserPlus, UserRound } from "lucide-react";
 import { StaffLink } from "@/components/staff/staff-link";
 import { StaffAssociateForm } from "@/components/staff/staff-associate-form";
 import { UnitLink } from "@/components/shared/unit-link";
 import { EmptyState } from "@/components/shared/empty-state";
+import { StaggerChildren } from "@/components/shared/animated";
 import { StarRatingDisplay } from "@/components/shared/star-rating-display";
 import { staffRoleLabel, isSocietyStaffRole } from "@/lib/staff-labels";
 import { STAFF_ROLE_FILTER_ORDER, staffRoleStyle } from "@/lib/staff-role-style";
 import { staff as staffCopy } from "@/lib/microcopy";
+import { FilterPillRow } from "@/components/shared/filter-pill-row";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { cn } from "@/lib/utils";
 import type { StaffRole } from "@/generated/prisma/enums";
 
@@ -65,6 +69,7 @@ type ScopeFilter = "all" | "my-unit";
 
 interface HelpTabContentProps {
   units: UnitOption[];
+  staff: StaffEntry[];
 }
 
 function formatDays(days: string[]): string {
@@ -159,39 +164,16 @@ function groupStaffEntries(entries: StaffEntry[]): StaffCard[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function HelpTabContent({ units }: HelpTabContentProps) {
-  const [staff, setStaff] = useState<StaffEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+export function HelpTabContent({ units, staff }: HelpTabContentProps) {
+  const router = useRouter();
   const [showAdd, setShowAdd] = useState(false);
   const [scopeFilter, setScopeFilter] = useState<ScopeFilter>("all");
   const [roleFilter, setRoleFilter] = useState<StaffRole | "all">("all");
   const [addTarget, setAddTarget] = useState<string | null>(null);
   const [addUnitId, setAddUnitId] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
+  const [endConfirm, setEndConfirm] = useState<{ staffPersonId: string; associationId: string } | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const loadStaff = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const res = await fetch("/api/staff");
-      if (res.ok) {
-        const data = await res.json();
-        setStaff(data.staff ?? []);
-      } else if (res.status === 403) {
-        setLoadError("Your account must be approved before you can view regular help.");
-      } else {
-        setLoadError("Could not load regular help. Try refreshing the page.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadStaff();
-  }, [loadStaff]);
 
   const defaultUnitId = units[0]?.id ?? "";
 
@@ -221,14 +203,22 @@ export function HelpTabContent({ units }: HelpTabContentProps) {
   );
 
   const endAssociation = (staffPersonId: string, associationId: string) => {
-    if (!confirm(staffCopy.endConfirm)) return;
+    setEndConfirm({ staffPersonId, associationId });
+  };
+
+  const confirmEndAssociation = () => {
+    if (!endConfirm) return;
+    const { staffPersonId, associationId } = endConfirm;
     startTransition(async () => {
       const res = await fetch(`/api/staff/${staffPersonId}/associations`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ associationId }),
       });
-      if (res.ok) await loadStaff();
+      if (res.ok) {
+        setEndConfirm(null);
+        router.refresh();
+      }
     });
   };
 
@@ -254,17 +244,9 @@ export function HelpTabContent({ units }: HelpTabContentProps) {
         return;
       }
       setAddTarget(null);
-      await loadStaff();
+      router.refresh();
     });
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
@@ -284,20 +266,14 @@ export function HelpTabContent({ units }: HelpTabContentProps) {
       {showAdd && units.length > 0 && (
         <StaffAssociateForm
           units={units}
-          onSuccess={() => { setShowAdd(false); loadStaff(); }}
+          onSuccess={() => { setShowAdd(false); router.refresh(); }}
           onCancel={() => setShowAdd(false)}
         />
       )}
 
-      {loadError && (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {loadError}
-        </p>
-      )}
-
       {staffCards.length > 0 && (
         <div className="space-y-3">
-          <div className="flex gap-2 overflow-x-auto flex-nowrap snap-x snap-mandatory scrollbar-hide pb-1">
+          <FilterPillRow>
             {([
               ["all", staffCopy.filterAllHelp, staffCards.length],
               ["my-unit", staffCopy.filterMyUnit, myUnitCount],
@@ -322,9 +298,9 @@ export function HelpTabContent({ units }: HelpTabContentProps) {
                 </span>
               </button>
             ))}
-          </div>
+          </FilterPillRow>
 
-          <div className="flex gap-2 overflow-x-auto flex-nowrap snap-x snap-mandatory scrollbar-hide pb-1">
+          <FilterPillRow>
             <button
               type="button"
               onClick={() => setRoleFilter("all")}
@@ -360,7 +336,7 @@ export function HelpTabContent({ units }: HelpTabContentProps) {
                 </button>
               );
             })}
-          </div>
+          </FilterPillRow>
         </div>
       )}
 
@@ -388,7 +364,7 @@ export function HelpTabContent({ units }: HelpTabContentProps) {
           )}
         </div>
       ) : (
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <StaggerChildren className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredStaff.map((card) => {
             const style = staffRoleStyle(card.displayRole);
             const Icon = style.icon;
@@ -538,8 +514,18 @@ export function HelpTabContent({ units }: HelpTabContentProps) {
               </article>
             );
           })}
-        </div>
+        </StaggerChildren>
       )}
+
+      <ConfirmDialog
+        open={endConfirm !== null}
+        onOpenChange={(open) => { if (!open) setEndConfirm(null); }}
+        title="End this association?"
+        description={staffCopy.endConfirm}
+        confirmLabel="End association"
+        onConfirm={confirmEndAssociation}
+        pending={pending}
+      />
     </div>
   );
 }

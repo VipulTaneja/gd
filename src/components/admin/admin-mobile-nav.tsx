@@ -10,6 +10,16 @@ import {
   FileText,
   HelpCircle,
   Settings,
+  Crown,
+  Sparkles,
+  CreditCard,
+  Building2,
+  MessageSquare,
+  Truck,
+  LifeBuoy,
+  Car,
+  Download,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +40,16 @@ const adminNavIcons: Record<AdminNavIcon, LucideIcon> = {
   "file-text": FileText,
   "help-circle": HelpCircle,
   settings: Settings,
+  crown: Crown,
+  sparkles: Sparkles,
+  "credit-card": CreditCard,
+  building: Building2,
+  "message-square": MessageSquare,
+  truck: Truck,
+  "life-buoy": LifeBuoy,
+  car: Car,
+  download: Download,
+  history: History,
 };
 
 export function AdminMobileNav() {

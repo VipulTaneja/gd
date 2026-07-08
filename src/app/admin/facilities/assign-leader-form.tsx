@@ -19,6 +19,9 @@ export function AssignLeaderForm({ facilityId }: { facilityId: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Assigning a leader turns on approval-required bookings for this facility.
+      </p>
       {result?.error && (
         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{result.error}</div>
       )}

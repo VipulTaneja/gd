@@ -7,7 +7,7 @@ export interface HubUser {
   primaryUnit?: {
     unitNumber: string;
     block: string;
-    floor: number;
+    floor: number | null;
   } | null;
 }
 

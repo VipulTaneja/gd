@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
             <Image
-              src="https://www.gulshandynasty.com/images/logo.webp"
+              src="/logo.webp"
               alt="Gulshan Dynasty"
               width={160}
               height={40}

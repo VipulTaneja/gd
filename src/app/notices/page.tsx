@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { buildNoticeVisibilityFilter } from "@/lib/community-leaders";
+import { isAdmin } from "@/lib/rbac";
 import { DashboardLayout } from "@/components/dashboard/layout";
 import { PageHeader } from "@/components/shared/page-header";
 import { SoftCard } from "@/components/shared/soft-card";
@@ -29,21 +31,11 @@ export default async function NoticesPage() {
   });
   if (!user) redirect("/login");
 
-  // Get user's tower for filtering
-  const membership = await db.unitMembership.findFirst({
-    where: { userId: session.user!.id, OR: [{ endDate: null }, { endDate: { gt: new Date() } }] },
-    include: { unit: { select: { block: true } } },
-  });
-
-  const userTower = membership?.unit.block;
+  const noticeWhere = await buildNoticeVisibilityFilter(session.user.id);
+  const userIsAdmin = await isAdmin(session.user.id);
 
   const notices = await db.notice.findMany({
-    where: {
-      AND: [
-        { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
-        { OR: [{ targetBlock: null }, { targetBlock: userTower }] },
-      ],
-    },
+    where: noticeWhere,
     orderBy: [{ priority: "desc" }, { publishedAt: "desc" }],
   });
 
@@ -55,7 +47,7 @@ export default async function NoticesPage() {
           title={nav.notices}
           subtitle="Updates from your RWA and community"
           action={
-            ["SUPER_ADMIN", "ADMIN"].includes(user.globalRole) ? (
+            userIsAdmin ? (
               <Link
                 href="/admin/notices/new"
                 className="inline-flex h-10 items-center justify-center rounded-full bg-gold px-4 text-sm font-semibold text-black transition-colors hover:bg-gold-light"

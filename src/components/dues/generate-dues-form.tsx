@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 
 export function GenerateDuesForm() {
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [pending, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [result, setResult] = useState<{ success?: boolean; error?: string; count?: number } | null>(null);
   const [errors, setErrors] = useState<{ label?: string; amount?: string; dueDate?: string }>({});
 
@@ -22,7 +24,10 @@ export function GenerateDuesForm() {
 
   const handleBulk = () => {
     if (!validate()) return;
-    if (!confirm(`Generate ₹${amount} due for ALL units?`)) return;
+    setConfirmOpen(true);
+  };
+
+  const confirmBulk = () => {
     startTransition(async () => {
       const res = await fetch("/api/dues/generate", {
         method: "POST",
@@ -31,6 +36,7 @@ export function GenerateDuesForm() {
       });
       const data = await res.json();
       setResult(data);
+      setConfirmOpen(false);
     });
   };
 
@@ -79,6 +85,17 @@ export function GenerateDuesForm() {
           "Generate for All Units"
         )}
       </button>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Generate dues for all units?"
+        description={`This will create a ₹${amount} due for every unit.`}
+        confirmLabel="Generate"
+        onConfirm={confirmBulk}
+        pending={pending}
+        destructive={false}
+      />
     </div>
   );
 }

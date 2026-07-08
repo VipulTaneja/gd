@@ -1,22 +1,33 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireAdminApi, isAdminApiError } from "@/lib/api-auth";
 import { db } from "@/lib/db";
 import { logAction } from "@/lib/audit";
 import { parseDesignationTitle } from "@/lib/designation-labels";
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const user = await db.user.findUnique({ where: { id: session.user.id } });
-  if (!user || !["SUPER_ADMIN", "ADMIN"].includes(user.globalRole)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const admin = await requireAdminApi();
+  if (isAdminApiError(admin)) return admin;
 
   const { email, title, startDate, endDate } = await request.json();
   const parsedTitle = parseDesignationTitle(title);
   if (!parsedTitle) {
     return NextResponse.json({ error: "Invalid committee title" }, { status: 400 });
+  }
+
+  const parsedStartDate = new Date(startDate);
+  if (isNaN(parsedStartDate.getTime())) {
+    return NextResponse.json({ error: "Invalid start date" }, { status: 400 });
+  }
+
+  let parsedEndDate: Date | null = null;
+  if (endDate) {
+    parsedEndDate = new Date(endDate);
+    if (isNaN(parsedEndDate.getTime())) {
+      return NextResponse.json({ error: "Invalid end date" }, { status: 400 });
+    }
+    if (parsedEndDate <= parsedStartDate) {
+      return NextResponse.json({ error: "End date must be after start date" }, { status: 400 });
+    }
   }
 
   const targetUser = await db.user.findUnique({ where: { email } });
@@ -26,12 +37,12 @@ export async function POST(request: Request) {
     data: {
       userId: targetUser.id,
       title: parsedTitle,
-      startDate: new Date(startDate),
-      endDate: endDate ? new Date(endDate) : null,
+      startDate: parsedStartDate,
+      endDate: parsedEndDate,
     },
   });
 
-  await logAction(user.id, "DESIGNATION_CREATED", "Designation", designation.id, {
+  await logAction(admin.userId, "DESIGNATION_CREATED", "Designation", designation.id, {
     email,
     title: parsedTitle,
   });

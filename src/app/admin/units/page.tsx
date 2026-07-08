@@ -81,7 +81,48 @@ export default async function AdminUnitsPage({
           ))}
         </div>
 
-        <div className="rounded-xl border bg-card">
+        <div className="md:hidden space-y-3">
+          {units.length === 0 && (
+            <div className="rounded-xl border bg-card px-4 py-12 text-center text-muted-foreground">
+              No units found.
+            </div>
+          )}
+          {units.map((unit) => (
+            <div key={unit.id} className="rounded-xl border bg-card p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <UnitLink unitNumber={unit.unitNumber} />
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                  unit.memberships.length > 0
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-800"
+                }`}>
+                  {unit.memberships.length > 0 ? "Occupied" : "Vacant"}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                <span>{unit.unitType}</span>
+                <span>{unit.areaSqFt} sq ft</span>
+                <span>{unit.parkingSlots} parking</span>
+              </div>
+              {unit.memberships.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {unit.memberships.map((m, i) => (
+                    <UserLink
+                      key={i}
+                      userId={m.user.id}
+                      name={m.user.name}
+                      className="text-xs"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">No residents</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden md:block rounded-xl border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

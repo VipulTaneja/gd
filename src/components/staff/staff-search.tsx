@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Search, Star } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
+import { SearchInput } from "@/components/shared/search-input";
 import { UnitLink } from "@/components/shared/unit-link";
 import { staffRoleLabel } from "@/lib/staff-labels";
 import { staff as staffCopy } from "@/lib/microcopy";
@@ -64,14 +65,11 @@ export function StaffSearch({ onSelect, placeholder, autoFocus }: StaffSearchPro
   return (
     <div className="space-y-3">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="search"
+        <SearchInput
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={setQuery}
           placeholder={placeholder ?? staffCopy.searchPlaceholder}
-          autoFocus={autoFocus}
-          className="w-full rounded-xl border bg-card py-3 pl-10 pr-10 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold min-h-11"
+          className="[&_input]:rounded-xl [&_input]:bg-card [&_input]:pr-10 [&_input]:focus-visible:ring-gold"
         />
         {loading && (
           <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />

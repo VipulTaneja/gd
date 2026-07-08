@@ -3,10 +3,16 @@
 import { useState } from "react";
 import { PhoneLink } from "@/components/shared/phone-link";
 import { UnitLink } from "@/components/shared/unit-link";
+import { FadeIn } from "@/components/shared/animated";
+import { SuccessAnimation } from "@/components/shared/success-animation";
+import { FriendlyBadge } from "@/components/shared/friendly-badge";
 
 interface ValidationResult {
   valid: boolean;
   error?: string;
+  reason?: "NOT_FOUND" | "OUTSIDE_WINDOW";
+  validFrom?: string;
+  validUntil?: string;
   visitorName?: string;
   unitNumber?: string;
   unitNumbers?: string[];
@@ -21,6 +27,7 @@ export function GateValidation() {
   const [otp, setOtp] = useState("");
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleValidate = async () => {
     if (!otp || otp.length !== 6) return;
@@ -33,6 +40,7 @@ export function GateValidation() {
       });
       const data = await res.json();
       setResult(data);
+      if (data.valid) setShowSuccess(true);
     } catch {
       setResult({ valid: false, error: "Network error" });
     } finally {
@@ -54,7 +62,13 @@ export function GateValidation() {
           <p className="text-sm text-muted-foreground">Gulshan Dynasty Security</p>
         </div>
 
-        <div className="space-y-3">
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleValidate();
+          }}
+        >
           <input
             type="text"
             inputMode="numeric"
@@ -65,18 +79,22 @@ export function GateValidation() {
             className="flex h-14 w-full rounded-lg border-2 border-input bg-transparent px-4 text-center text-2xl font-mono tracking-widest shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
           />
           <button
-            onClick={handleValidate}
+            type="submit"
             disabled={loading || otp.length !== 6}
             className="flex h-12 w-full items-center justify-center rounded-lg bg-gold text-lg font-bold text-black transition-colors hover:bg-gold-light disabled:opacity-50"
           >
             {loading ? "Validating..." : "Validate"}
           </button>
-        </div>
+        </form>
+
+        {showSuccess && (
+          <SuccessAnimation message="Valid pass!" onComplete={() => setShowSuccess(false)} />
+        )}
 
         {result && (
           <div className={`rounded-xl p-6 ${result.valid ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
             {result.valid ? (
-              <div className="space-y-2">
+              <FadeIn className="space-y-2">
                 <div className="text-4xl">✅</div>
                 <p className="font-heading text-xl font-bold text-green-800">Valid Pass</p>
                 <p className="text-green-700"><strong>{result.visitorName}</strong></p>
@@ -89,18 +107,30 @@ export function GateValidation() {
                 )}
                 <p className="text-sm text-green-600">{result.visitorType?.replace(/_/g, " ")}</p>
                 {result.parkingSlot && <p className="text-sm text-green-600">Parking: {result.parkingSlot}</p>}
-                {result.recurring && <p className="text-sm text-purple-600">Recurring pass</p>}
+                {result.recurring && <FriendlyBadge value="RECURRING" variant="semantic" />}
                 {result.staffPhone && (
                   <div className="pt-2">
                     <PhoneLink phone={result.staffPhone} className="text-green-700 justify-center" />
                   </div>
                 )}
-              </div>
+              </FadeIn>
             ) : (
               <div className="space-y-2">
                 <div className="text-4xl">❌</div>
                 <p className="font-heading text-xl font-bold text-red-800">Invalid</p>
                 <p className="text-sm text-red-600">{result.error}</p>
+                {result.reason === "OUTSIDE_WINDOW" && result.validFrom && result.validUntil && (
+                  <p className="text-xs text-red-500">
+                    Valid {new Date(result.validFrom).toLocaleString()} — {new Date(result.validUntil).toLocaleString()}
+                  </p>
+                )}
+                <button
+                  onClick={handleValidate}
+                  disabled={loading}
+                  className="min-h-11 text-sm font-medium text-red-700 hover:underline disabled:opacity-50"
+                >
+                  {loading ? "Retrying..." : "Retry"}
+                </button>
               </div>
             )}
           </div>

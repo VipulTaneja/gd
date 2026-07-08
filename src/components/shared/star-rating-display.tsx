@@ -5,6 +5,7 @@ interface StarRatingDisplayProps {
   rating: number;
   reviewCount?: number;
   size?: "sm" | "md";
+  showValue?: boolean;
   className?: string;
 }
 
@@ -12,6 +13,7 @@ export function StarRatingDisplay({
   rating,
   reviewCount,
   size = "sm",
+  showValue = false,
   className,
 }: StarRatingDisplayProps) {
   const rounded = Math.round(rating);
@@ -30,6 +32,9 @@ export function StarRatingDisplay({
           />
         ))}
       </div>
+      {showValue && (
+        <span className="text-sm font-medium">{rating.toFixed(1)}</span>
+      )}
       {reviewCount != null && reviewCount > 0 && (
         <span className="text-[10px] text-muted-foreground tabular-nums">({reviewCount})</span>
       )}

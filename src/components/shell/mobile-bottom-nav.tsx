@@ -11,7 +11,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { featureColors, type FeatureKey } from "@/lib/feature-colors";
+import { featureColors } from "@/lib/feature-colors";
+import { moreLinks } from "@/lib/nav-items";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -34,21 +35,6 @@ const tabs = [
     icon: LifeBuoy,
     match: (p: string) => p.startsWith("/tickets"),
   },
-];
-
-const moreLinks: { feature: FeatureKey; href: string; publicHref?: string }[] = [
-  { feature: "notices", href: "/notices" },
-  { feature: "events", href: "/events" },
-  { feature: "polls", href: "/polls" },
-  { feature: "dues", href: "/dues" },
-  { feature: "directory", href: "/directory" },
-  { feature: "notifications", href: "/notifications" },
-  { feature: "forums", href: "/forums" },
-  { feature: "communities", href: "/communities" },
-  { feature: "staff", href: "/staff" },
-  { feature: "contacts", href: "/contacts" },
-  { feature: "faq", href: "/faq/app", publicHref: "/faq" },
-  { feature: "team", href: "/team" },
 ];
 
 interface MobileBottomNavProps {
@@ -151,7 +137,10 @@ export function MobileBottomNav({
                       ? href
                       : publicHref
                     : getHref(href);
-                  const active = pathname === linkHref || pathname.startsWith(`${linkHref}/`);
+                  const active =
+                    feature === "faq"
+                      ? pathname === "/faq" || pathname.startsWith("/faq/")
+                      : pathname === linkHref || pathname.startsWith(`${linkHref}/`);
                   return (
                     <Link
                       key={feature}

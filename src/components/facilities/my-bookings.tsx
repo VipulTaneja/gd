@@ -1,9 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
+import { ApproveRejectButtons } from "@/components/shared/approve-reject-buttons";
+import { RejectBookingDialog } from "@/components/shared/reject-booking-dialog";
 
 interface MyBooking {
   id: string;
@@ -97,22 +99,26 @@ function QueueRow({
     user: { id: string; name: string };
   };
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const handleAction = (approve: boolean) => {
-    let rejectionReason: string | undefined;
-    if (!approve) {
-      rejectionReason = window.prompt("Rejection reason (required):")?.trim();
-      if (!rejectionReason) return;
-    }
-
+  const submitAction = (approve: boolean, rejectionReason?: string) => {
     startTransition(async () => {
-      await fetch("/api/facilities/approve", {
+      setActionError(null);
+      const res = await fetch("/api/facilities/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingId: booking.id, approve, rejectionReason }),
       });
-      window.location.reload();
+      const data = await res.json();
+      if (!res.ok) {
+        setActionError(data.error ?? "Action failed");
+        return;
+      }
+      setRejectOpen(false);
+      router.refresh();
     });
   };
 
@@ -126,25 +132,19 @@ function QueueRow({
         <p className="text-sm text-muted-foreground">
           {booking.facility.name} · {start.toLocaleString()} — {end.toLocaleTimeString()}
         </p>
+        {actionError && <p className="text-xs text-red-600 mt-1">{actionError}</p>}
       </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => handleAction(true)}
-          className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg bg-green-600 px-3 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-        >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Approve"}
-        </button>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => handleAction(false)}
-          className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg bg-red-600 px-3 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-        >
-          Reject
-        </button>
-      </div>
+      <ApproveRejectButtons
+        pending={pending}
+        onApprove={() => submitAction(true)}
+        onReject={() => setRejectOpen(true)}
+      />
+      <RejectBookingDialog
+        open={rejectOpen}
+        onOpenChange={setRejectOpen}
+        pending={pending}
+        onConfirm={(reason) => submitAction(false, reason)}
+      />
     </div>
   );
 }
