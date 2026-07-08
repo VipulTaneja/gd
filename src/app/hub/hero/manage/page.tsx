@@ -38,6 +38,7 @@ export default async function HubHeroManagePage() {
             <Button
               variant="outline"
               render={<Link href="/" />}
+              nativeButton={false}
               className="min-h-11 w-full sm:w-auto"
             >
               {hubHero.viewHub}

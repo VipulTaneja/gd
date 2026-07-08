@@ -42,7 +42,7 @@ export default async function ResidentFaqPage() {
           subtitle={faqCopy.subtitle}
           action={
             canEdit ? (
-              <Button render={<Link href="/faq/manage" />} className="min-h-11 w-full sm:w-auto">
+              <Button render={<Link href="/faq/manage" />} nativeButton={false} className="min-h-11 w-full sm:w-auto">
                 {faqCopy.editFaq}
               </Button>
             ) : undefined
