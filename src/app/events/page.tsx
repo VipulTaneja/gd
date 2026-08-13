@@ -9,6 +9,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { actions, empty } from "@/lib/microcopy";
 import { RichTextPreview } from "@/components/shared/rich-text-preview";
+import { isAdmin } from "@/lib/rbac";
+import { getLeaderScopes } from "@/lib/leader-scopes";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,12 @@ export default async function EventsPage() {
     select: { name: true, email: true, globalRole: true },
   });
   if (!user) redirect("/login");
+
+  const [admin, leaderScopes] = await Promise.all([
+    isAdmin(session.user.id),
+    getLeaderScopes(session.user.id),
+  ]);
+  const canPlanEvent = admin || leaderScopes.communityLeaderIds.length > 0;
 
   const events = await db.event.findMany({
     where: { startsAt: { gte: new Date() } },
@@ -39,10 +47,14 @@ export default async function EventsPage() {
           title="Events"
           subtitle="Community gatherings and activities"
           action={
-            <Link href="/events/new"
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light w-full sm:w-auto">
-              {actions.newEvent}
-            </Link>
+            canPlanEvent ? (
+              <Link
+                href="/events/new"
+                className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light sm:w-auto"
+              >
+                {actions.newEvent}
+              </Link>
+            ) : undefined
           }
         />
 
@@ -51,7 +63,7 @@ export default async function EventsPage() {
             icon={Calendar}
             title={empty.events.title}
             description={empty.events.description}
-            action={{ label: actions.newEvent, href: "/events/new" }}
+            action={canPlanEvent ? { label: actions.newEvent, href: "/events/new" } : undefined}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

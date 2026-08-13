@@ -166,21 +166,34 @@ async function migrateSocietyStaffAssociations(): Promise<number> {
 
 async function ensureDevMemberships(): Promise<number> {
   let created = 0;
-  const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+  // Match directory seed's fixed startDate so re-runs don't stack memberships.
+  const startDate = new Date("2024-01-01T00:00:00.000Z");
 
   for (const { email, unitNumber, role } of DEV_RESIDENTS) {
     const user = await prisma.user.findUnique({ where: { email } });
     const unit = await prisma.unit.findUnique({ where: { unitNumber } });
     if (!user || !unit) continue;
 
+    // One open membership per user+unit — don't stack OWNER on top of OWNER_FAMILY.
     const existing = await prisma.unitMembership.findFirst({
       where: {
         userId: user.id,
         unitId: unit.id,
         OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
       },
+      orderBy: { startDate: "asc" },
     });
-    if (existing) continue;
+
+    if (existing) {
+      if (existing.role !== role) {
+        // Promote/downgrade to the intended seed role instead of adding a second row.
+        await prisma.unitMembership.update({
+          where: { id: existing.id },
+          data: { role, isPrimary: true },
+        });
+      }
+      continue;
+    }
 
     await prisma.unitMembership.create({
       data: {

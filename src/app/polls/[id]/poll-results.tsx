@@ -16,26 +16,37 @@ interface Poll {
 
 export function PollResults({
   poll,
+  highlightedOptionIds = [],
 }: {
   poll: Poll;
+  highlightedOptionIds?: string[];
 }) {
   const totalVotes = poll._count.votes;
   const maxVotes = Math.max(...poll.options.map((o) => o._count.votes), 1);
+  const highlighted = new Set(highlightedOptionIds);
 
   return (
     <div className="space-y-3">
       {poll.options.map((opt) => {
         const pct = totalVotes > 0 ? Math.round((opt._count.votes / totalVotes) * 100) : 0;
         const barWidth = totalVotes > 0 ? (opt._count.votes / maxVotes) * 100 : 0;
+        const isYours = highlighted.has(opt.id);
         return (
           <div key={opt.id} className="space-y-1">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">{opt.label}</span>
+              <span className={`font-medium ${isYours ? "text-gold-dark" : ""}`}>
+                {opt.label}
+                {isYours && (
+                  <span className="ml-2 rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-dark">
+                    Your vote
+                  </span>
+                )}
+              </span>
               <span className="text-muted-foreground">
                 {opt._count.votes} vote{opt._count.votes !== 1 ? "s" : ""} ({pct}%)
               </span>
             </div>
-            <div className="h-3 rounded-full bg-muted overflow-hidden">
+            <div className="h-3 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-gold transition-all duration-500"
                 style={{ width: `${barWidth}%` }}
@@ -47,12 +58,8 @@ export function PollResults({
 
       {poll.isResolution && poll.quorumPercentage && (
         <div className="mt-4 rounded-lg border p-3 text-sm">
-          <p className="font-medium">
-            Quorum: {totalVotes} votes cast
-          </p>
-          <p className="text-muted-foreground">
-            {poll.quorumPercentage}% participation required
-          </p>
+          <p className="font-medium">Quorum: {totalVotes} votes cast</p>
+          <p className="text-muted-foreground">{poll.quorumPercentage}% participation required</p>
         </div>
       )}
     </div>

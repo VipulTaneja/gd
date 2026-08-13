@@ -38,6 +38,7 @@ export default async function FaqManagePage() {
             <Button
               variant="outline"
               render={<Link href="/faq/app" />}
+              nativeButton={false}
               className="min-h-11 w-full sm:w-auto"
             >
               {faqCopy.viewPublic}

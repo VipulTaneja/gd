@@ -96,7 +96,7 @@ export default async function ForumThreadsPage({
 
         <div className="space-y-3">
           {threads.map((thread) => (
-            <Link key={thread.id} href={`/forums/${slug}/${thread.id}`}>
+            <Link key={thread.id} href={`/forums/${slug}/${thread.id}`} className="block">
               <SoftCard className="transition-all hover:shadow-md hover:ring-cyan-200">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

@@ -29,32 +29,45 @@ export function VoteForm({
   const toggle = (optionId: string) => {
     if (maxChoices === 1) {
       setSelected([optionId]);
-    } else {
-      setSelected((prev) =>
-        prev.includes(optionId)
-          ? prev.filter((id) => id !== optionId)
-          : prev.length < maxChoices
+      return;
+    }
+    setSelected((prev) =>
+      prev.includes(optionId)
+        ? prev.filter((id) => id !== optionId)
+        : prev.length < maxChoices
           ? [...prev, optionId]
           : prev,
-      );
-    }
+    );
   };
 
   const handleVote = () => {
-    if (selected.length === 0) return;
+    if (selected.length === 0 || pending) return;
     startTransition(async () => {
       setError(null);
-      const res = await fetch("/api/polls/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pollId, optionIds: selected }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setError(data.error ?? "Failed to submit vote");
-        return;
+      try {
+        const res = await fetch("/api/polls/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pollId, optionIds: selected }),
+        });
+
+        let data: { success?: boolean; error?: string } = {};
+        try {
+          data = await res.json();
+        } catch {
+          setError(res.ok ? "Unexpected response from server" : "Failed to submit vote");
+          return;
+        }
+
+        if (!res.ok || !data.success) {
+          setError(data.error ?? "Failed to submit vote");
+          return;
+        }
+
+        setShowSuccess(true);
+      } catch {
+        setError("Network error — check your connection and try again");
       }
-      setShowSuccess(true);
     });
   };
 
@@ -63,7 +76,6 @@ export function VoteForm({
       <SuccessAnimation
         message="Vote recorded!"
         onComplete={() => {
-          setShowSuccess(false);
           router.refresh();
         }}
       />
@@ -76,27 +88,31 @@ export function VoteForm({
       <p className="text-sm text-muted-foreground">
         Select {maxChoices === 1 ? "one option" : `up to ${maxChoices} options`}
       </p>
-      {options.map((opt) => (
-        <label
-          key={opt.id}
-          className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-            selected.includes(opt.id) ? "border-gold bg-gold/5" : "hover:bg-muted/50"
-          }`}
-        >
-          <input
-            type={maxChoices === 1 ? "radio" : "checkbox"}
-            name="poll-option"
-            checked={selected.includes(opt.id)}
-            onChange={() => toggle(opt.id)}
-            className="h-4 w-4"
-          />
-          <span className="text-sm font-medium">{opt.label}</span>
-        </label>
-      ))}
+      {options.map((opt) => {
+        const isSelected = selected.includes(opt.id);
+        return (
+          <label
+            key={opt.id}
+            className={`flex min-h-11 items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+              isSelected ? "border-gold bg-gold/5" : "hover:bg-muted/50"
+            }`}
+          >
+            <input
+              type={maxChoices === 1 ? "radio" : "checkbox"}
+              name="poll-option"
+              checked={isSelected}
+              onChange={() => toggle(opt.id)}
+              className="h-4 w-4 accent-gold"
+            />
+            <span className="text-sm font-medium">{opt.label}</span>
+          </label>
+        );
+      })}
       <button
+        type="button"
         onClick={handleVote}
         disabled={pending || selected.length === 0}
-        className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light disabled:opacity-50"
+        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg bg-gold px-4 text-sm font-medium text-black transition-colors hover:bg-gold-light disabled:opacity-50"
       >
         {pending ? "Submitting..." : "Submit Vote"}
       </button>

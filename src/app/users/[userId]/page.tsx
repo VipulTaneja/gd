@@ -8,11 +8,12 @@ import { FriendlyBadge } from "@/components/shared/friendly-badge";
 import { PageHeader } from "@/components/shared/page-header";
 import { SoftCard } from "@/components/shared/soft-card";
 import { MembershipTimeline } from "@/components/shared/membership-timeline";
+import { DemographicsDisplay } from "@/components/profile/demographics-display";
 import { UnitLink } from "@/components/shared/unit-link";
 import { UserLink } from "@/components/shared/user-link";
 import { UserProfileEdit } from "@/components/shared/user-profile-edit";
 import { PhoneLink } from "@/components/shared/phone-link";
-import { designationTitleLabel } from "@/lib/designation-labels";
+import { designationTitleLabel, uniqueDesignationsByTitle } from "@/lib/designation-labels";
 import { AdminUserActions } from "@/components/shared/admin-user-actions";
 import {
   updateUserProfile,
@@ -65,11 +66,18 @@ export default async function UserProfilePage({
       organization: true,
       emergencyContactName: true,
       emergencyContactPhone: true,
+      bio: true,
+      dietaryPreference: true,
+      drinkingPreference: true,
+      likes: true,
+      interests: true,
       createdAt: true,
       unitMemberships: {
-        where: { endDate: null },
+        where: {
+          OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
+        },
         include: { unit: true },
-        orderBy: { startDate: "desc" },
+        orderBy: [{ isPrimary: "desc" }, { startDate: "desc" }],
       },
       communityMemberships: {
         include: { subCommunity: true },
@@ -90,6 +98,8 @@ export default async function UserProfilePage({
   });
 
   if (!user) notFound();
+
+  const activeDesignations = uniqueDesignationsByTitle(user.designations);
 
   const allMemberships = await db.unitMembership.findMany({
     where: { userId },
@@ -326,21 +336,36 @@ export default async function UserProfilePage({
             </div>
           )}
 
-          {user.designations.length > 0 && (
+          {activeDesignations.length > 0 && (
             <div className="space-y-3">
               <h2 className="font-heading text-lg font-semibold flex items-center gap-2">
                 <Award className="h-5 w-5 text-gold" />
                 RWA Designations
               </h2>
               <SoftCard className="space-y-2">
-                {user.designations.map((d) => (
-                  <div key={d.id} className="text-sm">
+                {activeDesignations.map((d) => (
+                  <div key={d.title} className="text-sm">
                     <p className="font-medium">{designationTitleLabel(d.title)}</p>
                     <p className="text-xs text-muted-foreground">
                       Since {new Date(d.startDate).toLocaleDateString("en-IN")}
                     </p>
                   </div>
                 ))}
+              </SoftCard>
+            </div>
+          )}
+
+          {(user.bio || user.dietaryPreference || user.drinkingPreference || user.likes || user.interests) && (
+            <div className="space-y-3">
+              <h2 className="font-heading text-lg font-semibold">About {user.name.split(" ")[0]}</h2>
+              <SoftCard>
+                <DemographicsDisplay
+                  bio={user.bio}
+                  dietaryPreference={user.dietaryPreference}
+                  drinkingPreference={user.drinkingPreference}
+                  likes={user.likes}
+                  interests={user.interests}
+                />
               </SoftCard>
             </div>
           )}

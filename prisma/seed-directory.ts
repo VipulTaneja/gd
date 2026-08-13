@@ -209,12 +209,17 @@ async function main() {
   const allUnits = await prisma.unit.findMany({ select: { id: true, unitNumber: true } });
   const unitIdMap = new Map(allUnits.map(u => [u.unitNumber, u.id]));
 
-  // Get existing memberships
+  // Get existing memberships — one open row per user+unit regardless of role
   const existingMemberships = await prisma.unitMembership.findMany({
-    select: { userId: true, unitId: true, role: true }
+    select: { userId: true, unitId: true, role: true, endDate: true },
   });
-  const existingSet = new Set(
-    existingMemberships.map(m => `${m.userId}-${m.unitId}-${m.role}`)
+  const existingRoleSet = new Set(
+    existingMemberships.map((m) => `${m.userId}-${m.unitId}-${m.role}`),
+  );
+  const existingOpenUnitSet = new Set(
+    existingMemberships
+      .filter((m) => !m.endDate || m.endDate > new Date())
+      .map((m) => `${m.userId}-${m.unitId}`),
   );
 
   let membershipCount = 0;
@@ -227,11 +232,13 @@ async function main() {
 
     if (!userId || !unitId) continue;
 
-    const key = `${userId}-${unitId}-${m.role}`;
-    if (existingSet.has(key)) continue;
+    const roleKey = `${userId}-${unitId}-${m.role}`;
+    const unitKey = `${userId}-${unitId}`;
+    if (existingRoleSet.has(roleKey) || existingOpenUnitSet.has(unitKey)) continue;
 
     membershipBatch.push({ userId, unitId, role: m.role, isPrimary: m.isPrimary });
-    existingSet.add(key);
+    existingRoleSet.add(roleKey);
+    existingOpenUnitSet.add(unitKey);
   }
 
   // Batch insert memberships

@@ -51,7 +51,8 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-4">
-          {process.env.NEXT_PUBLIC_APP_URL?.includes("localhost") && (
+          {(process.env.NEXT_PUBLIC_APP_URL?.includes("localhost") ||
+            process.env.NEXT_PUBLIC_DEV_LOGIN === "true") && (
             <div className="rounded-lg border border-dashed border-gold/50 bg-gold/5 p-4 space-y-2">
               <p className="text-xs font-medium text-gold">Dev Mode — Quick Login</p>
               {devError && (

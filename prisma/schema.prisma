@@ -29,6 +29,23 @@ enum ClaimStatus {
   REJECTED
 }
 
+enum DietaryPreference {
+  VEGETARIAN
+  VEGAN
+  NON_VEGETARIAN
+  JAIN
+  EGGETERIAN
+  OTHER
+}
+
+enum DrinkingPreference {
+  NEVER
+  OCCASIONAL
+  SOCIAL
+  REGULAR
+  PREFER_NOT_TO_SAY
+}
+
 model User {
   id                    String          @id @default(cuid())
   name                  String
@@ -50,6 +67,11 @@ model User {
   allowDeliveriesToday  Boolean      @default(false)
   notificationPrefs     Json?
   staffPin              String?
+  bio                   String?
+  dietaryPreference     DietaryPreference?
+  drinkingPreference    DrinkingPreference?
+  likes                 String?
+  interests             String?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 

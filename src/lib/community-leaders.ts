@@ -69,7 +69,13 @@ export async function canCreateScopedEventOrPoll(
 }
 
 export async function canCreateGlobalEventOrPoll(userId: string): Promise<boolean> {
-  return isAdmin(userId);
+  if (await isAdmin(userId)) return true;
+  // Community leaders may also post society-wide events/polls (chosen explicitly).
+  const leader = await db.communityMembership.findFirst({
+    where: { userId, role: "ADMIN" },
+    select: { id: true },
+  });
+  return !!leader;
 }
 
 export async function getCommunityLeaderUserIds(subCommunityId: string): Promise<string[]> {

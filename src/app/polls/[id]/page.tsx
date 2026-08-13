@@ -44,9 +44,11 @@ export default async function PollDetailPage({
   const isClosed = poll.closesAt < now;
 
   const existingVotes = await db.vote.findMany({
-    where: { pollId: id, userId: session.user!.id },
+    where: { pollId: id, userId: session.user.id },
+    select: { optionId: true },
   });
   const hasVoted = existingVotes.length > 0;
+  const votedOptionIds = existingVotes.map((v) => v.optionId);
 
   return (
     <DashboardLayout user={user}>
@@ -62,7 +64,9 @@ export default async function PollDetailPage({
           </div>
           <div className="flex flex-wrap gap-2">
             {poll.isAnonymous && (
-              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">Anonymous</span>
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                Anonymous
+              </span>
             )}
             {poll.isResolution && (
               <FriendlyBadge value="RESOLUTION" variant="semantic" />
@@ -71,24 +75,45 @@ export default async function PollDetailPage({
         </div>
 
         <div className="rounded-xl border bg-card p-6">
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mb-4">
+          <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
             <span>Eligibility: {poll.eligibility.replace(/_/g, " ")}</span>
             <span>Max choices: {poll.maxChoices}</span>
-            <span>{poll._count.votes} vote{poll._count.votes !== 1 ? "s" : ""}</span>
+            <span>
+              {poll._count.votes} vote{poll._count.votes !== 1 ? "s" : ""}
+            </span>
           </div>
 
+          {hasVoted && (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              Your vote is already recorded
+              {votedOptionIds.length > 0 && (
+                <>
+                  {" "}
+                  —{" "}
+                  <span className="font-medium">
+                    {poll.options
+                      .filter((o) => votedOptionIds.includes(o.id))
+                      .map((o) => o.label)
+                      .join(", ")}
+                  </span>
+                </>
+              )}
+              . Votes can’t be changed once submitted.
+            </div>
+          )}
+
           {hasVoted || isClosed ? (
-            <PollResults poll={poll} />
+            <PollResults poll={poll} highlightedOptionIds={votedOptionIds} />
           ) : isActive ? (
             <VoteForm pollId={poll.id} options={poll.options} maxChoices={poll.maxChoices} />
           ) : (
-            <p className="text-center text-muted-foreground py-4">Poll has not started yet.</p>
+            <p className="py-4 text-center text-muted-foreground">Poll has not started yet.</p>
           )}
         </div>
 
         {poll.isResolution && poll.quorumPercentage && (
           <div className="rounded-xl border bg-card p-6">
-            <h2 className="font-heading text-lg font-semibold mb-2">Quorum</h2>
+            <h2 className="font-heading mb-2 text-lg font-semibold">Quorum</h2>
             <p className="text-sm text-muted-foreground">
               Required: {poll.quorumPercentage}% participation
             </p>

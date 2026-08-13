@@ -1,20 +1,22 @@
 import Image from "next/image";
 import { db } from "@/lib/db";
 import { UserLink } from "@/components/shared/user-link";
-import { designationTitleLabel } from "@/lib/designation-labels";
+import { designationTitleLabel, uniqueDesignationsByTitle } from "@/lib/designation-labels";
 import { StaggerChildren } from "@/components/shared/animated";
 import { committee as committeeCopy } from "@/lib/microcopy";
 
 export const dynamic = "force-dynamic";
 
 export default async function PublicCommitteePage() {
-  const designations = await db.designation.findMany({
-    where: {
-      OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
-    },
-    include: { user: { select: { id: true, name: true, avatarUrl: true } } },
-    orderBy: [{ startDate: "desc" }],
-  });
+  const designations = uniqueDesignationsByTitle(
+    await db.designation.findMany({
+      where: {
+        OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
+      },
+      include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+      orderBy: [{ startDate: "desc" }],
+    }),
+  );
 
   return (
     <div className="min-h-screen bg-background">

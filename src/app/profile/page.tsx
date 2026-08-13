@@ -8,6 +8,7 @@ import { PhoneLink } from "@/components/shared/phone-link";
 import { UnitLink } from "@/components/shared/unit-link";
 import { UnitInviteCard } from "@/components/profile/unit-invite-card";
 import { OwnerConsentCard } from "@/components/profile/owner-consent-card";
+import { DemographicsEditor } from "@/components/profile/demographics-editor";
 import { MyFacilityBookings } from "@/components/facilities/my-bookings";
 import {
   acceptUnitInviteAction,
@@ -16,6 +17,7 @@ import {
   getOwnerConsentInvitesForUser,
   getPendingInvitesForUser,
 } from "@/app/profile/invite-actions";
+import { getProfileDemographics } from "@/app/profile/demographics-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +37,7 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/login");
 
-  const [pendingInvites, ownerConsentInvites, myBookings] = await Promise.all([
+  const [pendingInvites, ownerConsentInvites, myBookings, demographics] = await Promise.all([
     getPendingInvitesForUser(user.id),
     getOwnerConsentInvitesForUser(user.id),
     db.facilityBooking.findMany({
@@ -48,6 +50,7 @@ export default async function ProfilePage() {
       orderBy: { startsAt: "desc" },
       take: 10,
     }),
+    getProfileDemographics(),
   ]);
 
   const layoutUser = {
@@ -125,6 +128,11 @@ export default async function ProfilePage() {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="rounded-xl border bg-card p-6">
+          <h3 className="font-heading text-lg font-semibold mb-4">About You</h3>
+          <DemographicsEditor initial={demographics} />
         </div>
 
         {user.unitMemberships.length > 0 && (

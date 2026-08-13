@@ -3,17 +3,17 @@ import type { FeatureKey } from "@/lib/feature-colors";
 /** Desktop header top-level nav links. */
 export const headerNav: { feature: FeatureKey; href: string }[] = [
   { feature: "notices", href: "/notices" },
-  { feature: "communities", href: "/communities" },
+  { feature: "forums", href: "/forums" },
   { feature: "contacts", href: "/contacts" },
   { feature: "staff", href: "/staff" },
   { feature: "team", href: "/team" },
 ];
 
-/** Icon-only shortcuts on mobile — contacts, regular help, teams. */
+/** Icon-only shortcuts on mobile — contacts, regular help, forums. */
 export const mobileQuickNav: { feature: FeatureKey; href: string }[] = [
   { feature: "staff", href: "/staff" },
   { feature: "contacts", href: "/contacts" },
-  { feature: "communities", href: "/communities" },
+  { feature: "forums", href: "/forums" },
 ];
 
 /** Long-tail links in the mobile bottom nav's "More" sheet. */

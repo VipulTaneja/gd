@@ -33,6 +33,24 @@ export async function POST(request: Request) {
   const targetUser = await db.user.findUnique({ where: { email } });
   if (!targetUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+  // Avoid stacking identical open designations (seed / double-submit).
+  if (!parsedEndDate) {
+    const openExisting = await db.designation.findFirst({
+      where: {
+        userId: targetUser.id,
+        title: parsedTitle,
+        OR: [{ endDate: null }, { endDate: { gt: new Date() } }],
+      },
+      select: { id: true },
+    });
+    if (openExisting) {
+      return NextResponse.json(
+        { error: "This user already has an active designation with that title" },
+        { status: 409 },
+      );
+    }
+  }
+
   const designation = await db.designation.create({
     data: {
       userId: targetUser.id,

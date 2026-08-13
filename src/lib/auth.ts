@@ -49,7 +49,7 @@ if (process.env.RESEND_API_KEY) {
   );
 }
 
-if (process.env.NODE_ENV === "development") {
+if (process.env.NODE_ENV === "development" || process.env.ALLOW_DEV_LOGIN === "true") {
   providers.push(
     Credentials({
       name: "Dev Login",

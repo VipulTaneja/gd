@@ -25,6 +25,24 @@ export function isActiveDesignation(endDate: Date | null, now: Date = new Date()
   return !endDate || endDate > now;
 }
 
+/**
+ * Active designations can be duplicated by re-seed / repeat admin create.
+ * Prefer one row per user+title (or title alone if userId absent), keeping the earliest start.
+ */
+export function uniqueDesignationsByTitle<
+  T extends { title: DesignationTitle; startDate: Date; userId?: string },
+>(designations: T[]): T[] {
+  const byKey = new Map<string, T>();
+  for (const d of designations) {
+    const key = d.userId ? `${d.userId}:${d.title}` : d.title;
+    const existing = byKey.get(key);
+    if (!existing || d.startDate < existing.startDate) {
+      byKey.set(key, d);
+    }
+  }
+  return [...byKey.values()].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+}
+
 /** Form/API string values → enum */
 export function parseDesignationTitle(value: string): DesignationTitle | null {
   const map: Record<string, DesignationTitle> = {

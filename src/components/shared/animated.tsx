@@ -1,6 +1,13 @@
 "use client";
 
-import { ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 
 interface FadeInProps {
@@ -26,24 +33,36 @@ interface StaggerChildrenProps {
   staggerMs?: number;
 }
 
+type StaggerChildProps = {
+  className?: string;
+  style?: CSSProperties;
+};
+
+/**
+ * Applies staggered entrance animation to each child without wrapping them.
+ * Wrappers break CSS grid/flex layouts (extra grid cells with detached backgrounds).
+ */
 export function StaggerChildren({
   children,
   className,
   staggerMs = 60,
 }: StaggerChildrenProps) {
-  const items = Array.isArray(children) ? children : [children];
+  const items = Children.toArray(children);
 
   return (
     <div className={className}>
-      {items.map((child, i) => (
-        <div
-          key={i}
-          className="animate-fade-in-up"
-          style={{ animationDelay: `${i * staggerMs}ms` }}
-        >
-          {child}
-        </div>
-      ))}
+      {items.map((child, i) => {
+        if (!isValidElement(child)) return child;
+
+        const element = child as ReactElement<StaggerChildProps>;
+        return cloneElement(element, {
+          className: cn("animate-fade-in-up", element.props.className),
+          style: {
+            ...element.props.style,
+            animationDelay: `${i * staggerMs}ms`,
+          },
+        });
+      })}
     </div>
   );
 }

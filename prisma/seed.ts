@@ -100,23 +100,27 @@ async function seedProd() {
   console.log(`   ✅ ${FACILITIES.length} facilities created`);
 
   console.log("\n📢 Seeding sample notices...");
-  await prisma.notice.create({
-    data: {
+  const sampleNotices = [
+    {
       title: "Welcome to Gulshan Dynasty Portal",
       body: "Welcome to the Gulshan Dynasty Residents' Welfare Association portal. This platform helps you manage your community life — from booking amenities to raising tickets and staying updated with notices.",
-      priority: "IMPORTANT",
+      priority: "IMPORTANT" as NoticePriority,
       createdById: admin.id,
     },
-  });
-  await prisma.notice.create({
-    data: {
+    {
       title: "Emergency: Water Supply Maintenance",
       body: "Water supply will be interrupted on Saturday from 10 AM to 4 PM for maintenance work. Please store water accordingly.",
-      priority: "EMERGENCY",
+      priority: "EMERGENCY" as NoticePriority,
       createdById: admin.id,
     },
-  });
-  console.log("   ✅ 2 sample notices created");
+  ];
+  for (const n of sampleNotices) {
+    const existing = await prisma.notice.findFirst({ where: { title: n.title } });
+    if (!existing) {
+      await prisma.notice.create({ data: n });
+    }
+  }
+  console.log("   ✅ 2 sample notices ensured");
 
   console.log("\n🎉 PROD seed complete!");
   console.log(`   Admin login: ${adminEmail}`);
@@ -330,14 +334,15 @@ async function seedDev() {
   addMember(bhanu, "Senior Citizens' Circle", "MEMBER");
 
   for (const cm of cmData) {
-    const existing = await prisma.communityMembership.findUnique({
-      where: { userId_subCommunityId: { userId: cm.userId, subCommunityId: cm.subCommunityId } },
+    await prisma.communityMembership.upsert({
+      where: {
+        userId_subCommunityId: { userId: cm.userId, subCommunityId: cm.subCommunityId },
+      },
+      update: { role: cm.role },
+      create: cm,
     });
-    if (!existing) {
-      await prisma.communityMembership.create({ data: cm });
-    }
   }
-  console.log(`   ✅ ${cmData.length} community memberships created`);
+  console.log(`   ✅ ${cmData.length} community memberships ensured`);
 
   // Sync tower community memberships from active unit residents
   console.log("\n🏢 Syncing tower community memberships...");
@@ -362,8 +367,10 @@ async function seedDev() {
   ).filter((d): d is { userId: string; title: DesignationTitle; startDate: Date } => !!d.userId);
 
   for (const d of designationData) {
+    // Match any open designation of this title — startDate moves with daysAgo()
+    // on each seed run, so an exact date match would create duplicates.
     const existing = await prisma.designation.findFirst({
-      where: { userId: d.userId, title: d.title, startDate: d.startDate },
+      where: { userId: d.userId, title: d.title, endDate: null },
     });
     if (!existing) {
       await prisma.designation.create({ data: d });
@@ -399,146 +406,159 @@ async function seedDev() {
 
   // ─── POLLS ─────────────────────────────────────────────────────
   console.log("\n📊 Creating polls...");
-  const poll1 = await prisma.poll.create({
-    data: {
-      title: "Best time for gardening workshops?",
-      description: "When would you prefer to attend gardening workshops organized by the Garden Club?",
-      scope: "GLOBAL",
-      eligibility: "ALL_RESIDENTS",
-      isAnonymous: false,
-      resultVisibility: "LIVE",
-      opensAt: daysAgo(3),
-      closesAt: daysFromNow(4),
-      createdById: rajesh!.id,
-      options: {
-        create: [
-          { label: "Weekday mornings (7–9 AM)", order: 0 },
-          { label: "Weekday evenings (5–7 PM)", order: 1 },
-          { label: "Saturday mornings (8–10 AM)", order: 2 },
-          { label: "Sunday mornings (8–10 AM)", order: 3 },
-        ],
+
+  async function ensurePoll(data: {
+    title: string;
+    description: string;
+    scope: "GLOBAL" | "SUB_COMMUNITY";
+    subCommunityId?: string;
+    eligibility: "ALL_RESIDENTS" | "OWNERS_ONLY" | "ONE_PER_UNIT";
+    isAnonymous: boolean;
+    resultVisibility: "LIVE" | "AFTER_CLOSE";
+    opensAt: Date;
+    closesAt: Date;
+    createdById: string;
+    options: { label: string; order: number }[];
+  }) {
+    const existing = await prisma.poll.findFirst({
+      where: { title: data.title },
+      include: { options: { orderBy: { order: "asc" } } },
+    });
+    if (existing) return existing;
+    return prisma.poll.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        scope: data.scope,
+        subCommunityId: data.subCommunityId,
+        eligibility: data.eligibility,
+        isAnonymous: data.isAnonymous,
+        resultVisibility: data.resultVisibility,
+        opensAt: data.opensAt,
+        closesAt: data.closesAt,
+        createdById: data.createdById,
+        options: { create: data.options },
       },
-    },
+      include: { options: { orderBy: { order: "asc" } } },
+    });
+  }
+
+  const poll1 = await ensurePoll({
+    title: "Best time for gardening workshops?",
+    description: "When would you prefer to attend gardening workshops organized by the Garden Club?",
+    scope: "GLOBAL",
+    eligibility: "ALL_RESIDENTS",
+    isAnonymous: false,
+    resultVisibility: "LIVE",
+    opensAt: daysAgo(3),
+    closesAt: daysFromNow(4),
+    createdById: rajesh!.id,
+    options: [
+      { label: "Weekday mornings (7–9 AM)", order: 0 },
+      { label: "Weekday evenings (5–7 PM)", order: 1 },
+      { label: "Saturday mornings (8–10 AM)", order: 2 },
+      { label: "Sunday mornings (8–10 AM)", order: 3 },
+    ],
   });
 
-  const poll2 = await prisma.poll.create({
-    data: {
-      title: "Proposal: Upgrade gym equipment",
-      description: "The current gym equipment is over 3 years old. Should we allocate ₹5,00,000 from the maintenance fund to purchase new treadmills, ellipticals, and a functional training rig?",
-      scope: "GLOBAL",
-      eligibility: "OWNERS_ONLY",
-      isAnonymous: false,
-      resultVisibility: "AFTER_CLOSE",
-      opensAt: daysAgo(10),
-      closesAt: daysAgo(3),
-      createdById: vipul!.id,
-      options: {
-        create: [
-          { label: "Yes, approve the upgrade", order: 0 },
-          { label: "No, use funds elsewhere", order: 1 },
-          { label: "Reduce budget and do partial upgrade", order: 2 },
-        ],
-      },
-    },
+  const poll2 = await ensurePoll({
+    title: "Proposal: Upgrade gym equipment",
+    description: "The current gym equipment is over 3 years old. Should we allocate ₹5,00,000 from the maintenance fund to purchase new treadmills, ellipticals, and a functional training rig?",
+    scope: "GLOBAL",
+    eligibility: "OWNERS_ONLY",
+    isAnonymous: false,
+    resultVisibility: "AFTER_CLOSE",
+    opensAt: daysAgo(10),
+    closesAt: daysAgo(3),
+    createdById: vipul!.id,
+    options: [
+      { label: "Yes, approve the upgrade", order: 0 },
+      { label: "No, use funds elsewhere", order: 1 },
+      { label: "Reduce budget and do partial upgrade", order: 2 },
+    ],
   });
 
-  const poll3 = await prisma.poll.create({
-    data: {
-      title: "Which movie should we screen this Saturday?",
-      description: "Vote for this weekend's movie night at the Mini Theatre. Popcorn is on us!",
-      scope: "GLOBAL",
-      eligibility: "ALL_RESIDENTS",
-      isAnonymous: false,
-      resultVisibility: "LIVE",
-      opensAt: daysAgo(1),
-      closesAt: daysFromNow(2),
-      createdById: neha!.id,
-      options: {
-        create: [
-          { label: "3 Idiots", order: 0 },
-          { label: "Dangal", order: 1 },
-          { label: "Zindagi Na Milegi Dobara", order: 2 },
-          { label: "PK", order: 3 },
-        ],
-      },
-    },
+  const poll3 = await ensurePoll({
+    title: "Which movie should we screen this Saturday?",
+    description: "Vote for this weekend's movie night at the Mini Theatre. Popcorn is on us!",
+    scope: "GLOBAL",
+    eligibility: "ALL_RESIDENTS",
+    isAnonymous: false,
+    resultVisibility: "LIVE",
+    opensAt: daysAgo(1),
+    closesAt: daysFromNow(2),
+    createdById: neha!.id,
+    options: [
+      { label: "3 Idiots", order: 0 },
+      { label: "Dangal", order: 1 },
+      { label: "Zindagi Na Milegi Dobara", order: 2 },
+      { label: "PK", order: 3 },
+    ],
   });
 
-  await prisma.poll.create({
-    data: {
-      title: "Festival decoration budget per tower",
-      description: "How much should each tower spend on common area decorations for upcoming festivals? Current proposal is ₹15,000 per tower per festival.",
-      scope: "GLOBAL",
-      eligibility: "ONE_PER_UNIT",
-      isAnonymous: true,
-      resultVisibility: "AFTER_CLOSE",
-      opensAt: daysFromNow(2),
-      closesAt: daysFromNow(12),
-      createdById: meenalKumar!.id,
-      options: {
-        create: [
-          { label: "₹10,000 — keep it minimal", order: 0 },
-          { label: "₹15,000 — moderate decorations", order: 1 },
-          { label: "₹25,000 — go all out!", order: 2 },
-          { label: "No decoration budget needed", order: 3 },
-        ],
-      },
-    },
+  await ensurePoll({
+    title: "Festival decoration budget per tower",
+    description: "How much should each tower spend on common area decorations for upcoming festivals? Current proposal is ₹15,000 per tower per festival.",
+    scope: "GLOBAL",
+    eligibility: "ONE_PER_UNIT",
+    isAnonymous: true,
+    resultVisibility: "AFTER_CLOSE",
+    opensAt: daysFromNow(2),
+    closesAt: daysFromNow(12),
+    createdById: meenalKumar!.id,
+    options: [
+      { label: "₹10,000 — keep it minimal", order: 0 },
+      { label: "₹15,000 — moderate decorations", order: 1 },
+      { label: "₹25,000 — go all out!", order: 2 },
+      { label: "No decoration budget needed", order: 3 },
+    ],
   });
 
-  const poll5 = await prisma.poll.create({
-    data: {
-      title: "Book Club: Next month's pick",
-      description: "Vote for our next book! We'll discuss it on the last Saturday of the month.",
-      scope: "SUB_COMMUNITY",
-      subCommunityId: byName["Book Club"].id,
-      eligibility: "ALL_RESIDENTS",
-      isAnonymous: false,
-      resultVisibility: "LIVE",
-      opensAt: daysAgo(5),
-      closesAt: daysFromNow(2),
-      createdById: neha!.id,
-      options: {
-        create: [
-          { label: "The White Tiger — Aravind Adiga", order: 0 },
-          { label: "Half Girlfriend — Chetan Bhagat", order: 1 },
-          { label: "The Immortals of Meluha — Amish Tripathi", order: 2 },
-        ],
-      },
-    },
+  const poll5 = await ensurePoll({
+    title: "Book Club: Next month's pick",
+    description: "Vote for our next book! We'll discuss it on the last Saturday of the month.",
+    scope: "SUB_COMMUNITY",
+    subCommunityId: byName["Book Club"].id,
+    eligibility: "ALL_RESIDENTS",
+    isAnonymous: false,
+    resultVisibility: "LIVE",
+    opensAt: daysAgo(5),
+    closesAt: daysFromNow(2),
+    createdById: neha!.id,
+    options: [
+      { label: "The White Tiger — Aravind Adiga", order: 0 },
+      { label: "Half Girlfriend — Chetan Bhagat", order: 1 },
+      { label: "The Immortals of Meluha — Amish Tripathi", order: 2 },
+    ],
   });
 
-  const poll6 = await prisma.poll.create({
-    data: {
-      title: "Which sports should be included in the annual tournament?",
-      description: "Sumit Tayal is organizing the annual sports tournament. Vote for the events you'd like to participate in!",
-      scope: "GLOBAL",
-      eligibility: "ALL_RESIDENTS",
-      isAnonymous: false,
-      resultVisibility: "LIVE",
-      opensAt: daysAgo(2),
-      closesAt: daysFromNow(5),
-      createdById: sumitTayal!.id,
-      options: {
-        create: [
-          { label: "Cricket", order: 0 },
-          { label: "Badminton", order: 1 },
-          { label: "Table Tennis", order: 2 },
-          { label: "Carrom", order: 3 },
-          { label: "Chess", order: 4 },
-        ],
-      },
-    },
+  const poll6 = await ensurePoll({
+    title: "Which sports should be included in the annual tournament?",
+    description: "Sumit Tayal is organizing the annual sports tournament. Vote for the events you'd like to participate in!",
+    scope: "GLOBAL",
+    eligibility: "ALL_RESIDENTS",
+    isAnonymous: false,
+    resultVisibility: "LIVE",
+    opensAt: daysAgo(2),
+    closesAt: daysFromNow(5),
+    createdById: sumitTayal!.id,
+    options: [
+      { label: "Cricket", order: 0 },
+      { label: "Badminton", order: 1 },
+      { label: "Table Tennis", order: 2 },
+      { label: "Carrom", order: 3 },
+      { label: "Chess", order: 4 },
+    ],
   });
-  console.log("   ✅ 6 polls created");
+  console.log("   ✅ 6 polls ensured");
 
   // ─── VOTES ─────────────────────────────────────────────────────
   console.log("\n🗳️ Creating votes...");
-  const poll1Opts = await prisma.pollOption.findMany({ where: { pollId: poll1.id }, orderBy: { order: "asc" } });
-  const poll2Opts = await prisma.pollOption.findMany({ where: { pollId: poll2.id }, orderBy: { order: "asc" } });
-  const poll3Opts = await prisma.pollOption.findMany({ where: { pollId: poll3.id }, orderBy: { order: "asc" } });
-  const poll5Opts = await prisma.pollOption.findMany({ where: { pollId: poll5.id }, orderBy: { order: "asc" } });
-  const poll6Opts = await prisma.pollOption.findMany({ where: { pollId: poll6.id }, orderBy: { order: "asc" } });
+  const poll1Opts = poll1.options;
+  const poll2Opts = poll2.options;
+  const poll3Opts = poll3.options;
+  const poll5Opts = poll5.options;
+  const poll6Opts = poll6.options;
 
   const votes = [
     // Poll 1 — gardening workshops

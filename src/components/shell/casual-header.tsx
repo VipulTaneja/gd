@@ -93,7 +93,7 @@ export function CasualHeader({ user, unreadCount: unreadProp }: CasualHeaderProp
           </div>
         </Link>
 
-        {/* Mobile: regular help, contacts, teams & communities */}
+        {/* Mobile: regular help, contacts, forums */}
         <nav className="flex md:hidden items-center gap-0.5">
           {mobileQuickNav.map((item) => renderNavLink(item, { iconOnly: true }))}
         </nav>

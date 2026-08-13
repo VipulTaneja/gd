@@ -45,26 +45,23 @@ export function HubHero({ user, slides, canManage = false }: HubHeroProps) {
             alt: slide.altText,
             href: slide.linkUrl,
           }))}
+          overlayClassNames={[
+            cn("bg-gradient-to-t", overlayTint),
+            "bg-gradient-to-r from-black/20 via-transparent to-transparent",
+          ]}
         />
-        <div
-          className={cn(
-            "absolute inset-0 bg-gradient-to-t",
-            overlayTint
-          )}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent" />
 
         {canManage && (
           <Link
             href="/hub/hero/manage"
-            className="absolute right-4 top-4 z-10 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/30 bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/55"
+            className="absolute right-4 top-4 z-20 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/30 bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/55"
           >
             <Settings2 className="h-3.5 w-3.5" />
             Edit carousel
           </Link>
         )}
 
-        <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8">
+        <div className="pointer-events-none relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-6 sm:px-6 sm:pb-8 lg:px-8">
           <FadeIn className="max-w-2xl text-white">
             {user ? (
               <>
@@ -80,7 +77,7 @@ export function HubHero({ user, slides, canManage = false }: HubHeroProps) {
                     <span className="text-white/50">·</span>
                     <UnitLink
                       unitNumber={user.primaryUnit.unitNumber}
-                      className="border-white/30 bg-white/15 text-white hover:bg-white/25"
+                      className="pointer-events-auto border-white/30 bg-white/15 text-white hover:bg-white/25"
                     />
                   </p>
                 )}
@@ -96,7 +93,7 @@ export function HubHero({ user, slides, canManage = false }: HubHeroProps) {
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <Link
                     href="/login"
-                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-gold px-6 text-sm font-semibold text-black shadow-lg transition-colors hover:bg-gold-light"
+                    className="pointer-events-auto inline-flex min-h-11 items-center justify-center rounded-full bg-gold px-6 text-sm font-semibold text-black shadow-lg transition-colors hover:bg-gold-light"
                   >
                     {actions.signIn}
                   </Link>

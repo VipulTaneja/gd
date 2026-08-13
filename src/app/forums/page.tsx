@@ -65,7 +65,7 @@ export default async function ForumsPage() {
 
         <div className="space-y-3">
           {forums.map((forum) => (
-            <Link key={forum.id} href={`/forums/${forum.slug}`}>
+            <Link key={forum.id} href={`/forums/${forum.slug}`} className="block">
               <SoftCard className="transition-all hover:shadow-md hover:ring-cyan-200">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
